@@ -1,0 +1,77 @@
+import itertools
+import logging
+import unittest
+from math import factorial
+from test.common_circuit import CircuitTestCase
+
+from qat.lang.AQASM import Program
+
+from qat.external.utils.qroutines.hamming_weight_generate import bartschi
+
+
+class BartschiTestCase(CircuitTestCase):
+    @classmethod
+    def setUpClass(cls):
+        CircuitTestCase.setUpClass()
+        bartschi_logger = logging.getLogger(
+            'isdquantum.qroutins.hamming_weight_generate.bartschi')
+        bartschi_logger.setLevel(cls.logger.level)
+        bartschi_logger.handlers = cls.logger.handlers
+
+    def _generate_program(self, n, k):
+        self.pr = Program()
+        qr = self.pr.qalloc(n)
+        # pr.apply(dicke_scs(nbqbits), qr)
+        self.pr.apply(bartschi.generate(n, k), qr)
+
+    def _analyse_res_extensive(self, n, k):
+        circ = self.pr.to_circ()
+        res = self.qpu.submit(circ.to_job())
+        ress = []
+        amps = []
+        for sample in res:
+            ress.append(tuple(
+                int(i) for i in sample.state if i == 0 or i == 1))
+            amps.append(sample.probability)
+        s = set(itertools.permutations([0] * (n - k) + [1] * k))
+        self.assertEqual(len(ress), len(s))
+        for i, j in zip(sorted(ress), sorted(s)):
+            self.assertEqual(i, j)
+        minp, maxp = min(amps), max(amps)
+        self.assertAlmostEqual(minp, maxp, delta=1e-15)
+        # self.assertAlmostEqual() abs(minp - maxp) <= 1e-15
+
+    def _analyse_res_quick(self, n, k):
+        circ = self.pr.to_circ()
+        res = self.qpu.submit(circ.to_job())
+        self.assertEqual(len(res.raw_data),
+                         factorial(n) // factorial(k) // factorial(n - k))
+
+    def test_small(self):
+        for (n, k) in itertools.product(range(4, 10), range(1, 4)):
+            with self.subTest(n=n, k=k):
+                self._generate_program(n, k)
+                # self._analyse_res_extensive(n, k)
+                self._analyse_res_extensive(n, k)
+
+    def test_small_dagger(self):
+        for (n, k) in itertools.product(range(4, 10), range(1, 4)):
+            with self.subTest(n=n, k=k):
+                self._generate_program(n, k)
+                self.pr.apply(
+                    bartschi.generate(n, k).dag(), self.pr.registers[0])
+                circ = self.pr.to_circ()
+                res = self.qpu.submit(circ.to_job())
+                self.assertEqual(len(res.raw_data), 1)
+                state = res.raw_data[0].state.state
+                self.assertEqual(state, 0)
+
+    # TODO quite useless, just bigger
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON, CircuitTestCase.SLOW_TEST_ON_REASON)
+    def test_bigger(self):
+        for n in range(10, 20):
+            for k in range(0, int(n / 2)):
+                print(n, k)
+                with self.subTest(n=n, k=k):
+                    self._generate_program(n, k)
+                    self._analyse_res_quick(n, k)
