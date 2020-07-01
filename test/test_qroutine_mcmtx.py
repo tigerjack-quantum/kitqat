@@ -9,33 +9,42 @@ from .common_circuit import CircuitTestCase
 
 
 class MctrlsTest(CircuitTestCase):
-    def test_mccnot(self):
+    @parameterized.expand([
+        ("sqrt", mcx.mccnot_sqrroot),
+        ("ht", mcx.mccnot_ht),
+    ])
+    def test_mccnot(self, name, implementation):
         pr = Program()
-        qr = pr.qalloc(5)
+        nqbits = 5
+        qr = pr.qalloc(nqbits)
 
         for qb in qr:
             pr.apply(H, qb)
 
         pr2 = deepcopy(pr)
-        pr.apply(CCNOT, qr[:3])
-        pr.apply(CCNOT, qr[0], qr[1], qr[3])
-        pr.apply(CCNOT, qr[0], qr[1], qr[4])
+        for qb in qr[2:]:
+            pr.apply(CCNOT, qr[0], qr[1], qb)
         res = self.qpu.submit(pr.to_circ().to_job())
 
-        for global_phase in (True, False):
+        global_phases = (True, False) if name == "sqrt" else (False, )
+
+        for global_phase in global_phases:
             with self.subTest(global_phase=global_phase):
                 pr2 = deepcopy(pr2)
-                pr2.apply(mcx.mccnot(3, global_phase), pr2.registers[0])
+                pr2.apply(mcx.MTCCNOT(nqbits - 2, global_phase),
+                          pr2.registers[0])
 
-                res2 = self.qpu.submit(pr2.to_circ().to_job())
+                res2 = self.qpu.submit(
+                    pr2.to_circ(link=[implementation]).to_job())
 
                 for sample, sample2 in zip(res, res2):
                     self.assertEqual(sample.state.state, sample2.state.state)
                     if not global_phase:
-                        self.assertEqual(sample.probability,
-                                         sample2.probability)
+                        self.assertAlmostEqual(sample.probability,
+                                               sample2.probability)
                     else:
-                        self.assertEqual(sample.amplitude, sample2.amplitude)
+                        self.assertAlmostEqual(sample.amplitude,
+                                               sample2.amplitude)
 
     def test_mcccnot(self):
         pr = Program()
