@@ -1,16 +1,9 @@
-from qat.lang.AQASM import QRoutine, Program, Qbit
-
 from typing import Dict, List
 
+from qat.lang.AQASM import AbstractGate, Program, Qbit, QRoutine
 
-# @build_gate("", [str])
-def fake(name):
-    qf = QRoutine(1)
+
+def fake_gate(name: str, arity: int) -> AbstractGate:
+    """Just a fake qroutine used to add some visualization effect. """
+    qf = QRoutine(arity)
     return qf.box(name)
-
-
-def add_fake_following_pattern(program: Program,
-                               pattern: Dict[str, List[Qbit]]):
-    for k, qbits in pattern.items():
-        for i, qbit in enumerate(qbits):
-            program.apply(fake(f"{k}_{i}"), qbit)
