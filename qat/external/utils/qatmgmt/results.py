@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import (Result)
+    from qat.lang.AQASM import (Result, QRegister)
+    from qat.core.wrappers.result import Sample
 
 
 def get_state_vector_from_result(res: 'Result', nqubits: int) -> np.array:
@@ -14,7 +15,9 @@ def get_state_vector_from_result(res: 'Result', nqubits: int) -> np.array:
     return state_vec
 
 
-def get_sample_for_basis_dec_from_res(res: 'Result', basis_state_dec: int, little_endian=False):
+def get_sample_for_basis_dec_from_res(res: 'Result',
+                                      basis_state_dec: int,
+                                      little_endian=False):
     attr = 'lsb_int' if little_endian else 'int'
     for sample in res.raw_data:
         if getattr(sample.state, attr) == basis_state_dec:
@@ -32,3 +35,41 @@ def get_sample_for_basis_str_from_res(res: 'Result', basis_str_dec: int):
         if sample.state.bitstring == basis_str_dec:
             return sample
     return None
+
+
+def get_qreg_name_to_bitstring_from_sample(name_to_reg: Dict[str, 'QRegister'],
+                                           sample: 'Sample') -> Dict[str, str]:
+    """Given a Sample object, returns the bitstring for each register. The
+    name_to_reg dictionary contains all the wanted qregs, together with their
+    names. To note that this dictionary should be prepared in advance.
+    """
+    dicc = {}
+    for name, reg in name_to_reg.items():
+        dicc[name] = get_qreg_to_bitstring_from_sample(reg, sample)
+    return dicc
+
+
+def get_qregs_to_bitstring_from_sample(registers: List['QRegister'],
+                                       sample: 'Sample') -> List[str]:
+    """Given a Sample object, returns the bitstring for each register. The
+    name_to_reg dictionary contains all the wanted qregs, together with their
+    names. To note that this dictionary should be prepared in advance.
+    """
+    liss = []
+    for reg in registers:
+        liss.append(get_qreg_to_bitstring_from_sample(reg, sample))
+    return liss
+
+
+def get_qreg_to_bitstring_from_sample(register: 'QRegister',
+                                      sample: 'Sample') -> str:
+    """Given a Sample object, returns the bitstring for each register. The
+    name_to_reg dictionary contains all the wanted qregs, together with their
+    names. To note that this dictionary should be prepared in advance.
+    """
+    return sample.state.bitstring[register.start:register.start +
+                                  register.length]
+
+
+def get_qreg_bitstring_from_sample(qreg: 'QRegister', sample: 'Sample') -> str:
+    return sample.state.bitstring[qreg.start:qreg.start + qreg.length]
