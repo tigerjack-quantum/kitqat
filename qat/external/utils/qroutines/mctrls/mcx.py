@@ -131,18 +131,14 @@ def _vshape_chain(qfun, ctrls, tgts):
     qfun.apply(CCNOT, ctrls[0], ctrls[1], ancs[0])
 
     for cidx, aidx in zip(range(2, len(ctrls) - 1), range(len(ancs) - 1)):
-        print(cidx, aidx)
         qfun.apply(CCNOT, ctrls[cidx], ancs[aidx], ancs[aidx + 1])
 
     for tqb in tgts:
         qfun.apply(CCNOT, ctrls[-1], ancs[-1], tqb)
 
-    # for cqb, aqb in zip(reversed(ctrls[2:-1]), reversed(ancs[1:])):
-    # qfun.apply(CCNOT, cqb, aqb)
     for cidx, aidx in zip(reversed(range(2,
                                          len(ctrls) - 1)),
                           reversed(range(len(ancs) - 1))):
-        print(cidx, aidx)
         qfun.apply(CCNOT, ctrls[cidx], ancs[aidx], ancs[aidx + 1])
     qfun.apply(CCNOT, ctrls[0], ctrls[1], ancs[0])
 

@@ -1,7 +1,8 @@
 from copy import deepcopy
 
 from parameterized import parameterized
-from qat.external.utils.qroutines import fake
+from qat.external.utils.qatmgmt.qbits import \
+    add_name_to_qbits_following_pattern
 from qat.external.utils.qroutines.mctrls import mcx
 from qat.lang.AQASM import CCNOT, H, Program, X
 
@@ -78,7 +79,10 @@ class MctrlsTest(CircuitTestCase):
     def _common_mcmtx_1tft(self):
         pr = Program()
         qr = pr.qalloc(5)
-        fake.add_fake_following_pattern(pr, {'ctrl': qr[:-1], 'tgt': [qr[-1]]})
+        add_name_to_qbits_following_pattern(pr, {
+            'ctrl': qr[:-1],
+            'tgt': [qr[-1]]
+        })
 
         for qb in qr[:-1]:
             pr.apply(X, qb)
