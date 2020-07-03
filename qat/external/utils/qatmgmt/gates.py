@@ -1,53 +1,86 @@
 import itertools
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
                             SQRTSWAP, SWAP, AbstractGate, H, I, S, T, X, Y, Z)
 
+from qat.external.utils.numpy.qstate_manipulation import (
+    get_ctrl_from_matrix, get_conjugate_from_matrix, get_transpose_from_matrix,
+    get_dagger_from_matrix)
+
 if TYPE_CHECKING:
-    from qat.lang.AQASM import (Circuit, Program, QRegister, Term, Gate, Qbit)
+    from qat.lang.AQASM import (Circuit, Gate)
     from qat.comm.datamodel.ttypes import Op
 
 LOGGER = logging.getLogger(__name__)
 
 GATE_SET = {
     'H': [H, 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]], dtype=complex)],
-    'X': [X, np.array([[0, 1], [1, 0]])],
+    'X': [X, np.array([[0, 1], [1, 0]], dtype=complex)],
     'Y': [Y, np.array([[0, -1j], [1j, 0]], dtype=complex)],
-    'Z': [Z, np.array([[1, 0], [0, -1]])],
+    'Z': [Z, np.array([[1, 0], [0, -1]], dtype=complex)],
     'I': [I, np.eye(2)],
-    'S': [S, None],
-    'T': [T, None],
+    'PH': [PH, lambda theta: np.array([[1, 0], [0, np.e**(1j * theta)]])],
+    'S': [S, lambda theta: np.array([[1, 0], [0, 1j]], dtype=complex)],
+    'T': [T, lambda theta: np.array([[1, 0], [0, np.e**(1j * theta / 4)]])],
     'CNOT': [
         CNOT,
         np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]],
                  dtype=complex)
     ],
-    'CCNOT': [CCNOT, None],
+    'CCNOT': [
+        CCNOT,
+        np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 1, 0]],
+                 dtype=complex)
+    ],
     'CSIGN': [
         CSIGN,
         np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]],
                  dtype=complex)
     ],
-    'SWAP':
-    [SWAP,
-     np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])],
+    'SWAP': [
+        SWAP,
+        np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]],
+                 dtype=complex)
+    ],
     'SQRTSWAP': [
         SQRTSWAP,
         np.array([[1, 0, 0, 0], [0, .5 + .5j, .5 - .5j, 0],
-                  [0, .5 - .5j, .5 + .5j, 0], [0, 0, 0, 1]])
+                  [0, .5 - .5j, .5 + .5j, 0], [0, 0, 0, 1]],
+                 dtype=complex)
     ],
-    'ISWAP': [ISWAP, None],
-    'RZ': [RZ, None],
-    'RX': [RX, None],
-    'RY': [RY, None],
-    'PH': [PH, None]
+    'ISWAP': [
+        ISWAP,
+        np.array([[1, 0, 0, 0], [0, 0, 1j, 0], [0, 1j, 0, 0], [0, 0, 0, 1]],
+                 dtype=complex)
+    ],
+    'RX': [
+        RX,
+        lambda theta: np.array([[np.cos(theta / 2), -1j * np.sin(theta / 2)],
+                                [-1j * np.sin(theta / 2),
+                                 np.cos(theta / 2)]],
+                               dtype=complex)
+    ],
+    'RY': [
+        RY, lambda theta: np.array([[np.cos(theta / 2), -np.sin(theta / 2)],
+                                    [np.sin(theta / 2),
+                                     np.cos(theta / 2)]],
+                                   dtype=complex)
+    ],
+    'RZ': [
+        RZ, lambda theta: np.array([[np.e(-1j * theta / 2), 0],
+                                    [0, np.e(1j * theta / 2)]],
+                                   dtype=complex)
+    ],
 }
 
 
-def get_np_matrix_from_gate_name_default(gate_name: str):
+def get_np_matrix_from_gate_name_default(gate_name: str) -> Optional[np.array]:
     try:
         return GATE_SET[gate_name][1]
     except KeyError:
@@ -57,13 +90,19 @@ def get_np_matrix_from_gate_name_default(gate_name: str):
 def get_np_matrix_from_gate_name(circuit: 'Circuit', gate_name: str):
     gate_def = circuit.gateDic[gate_name]
     gate_matrix_qlm = gate_def.matrix
+    if gate_matrix_qlm is None:
+        return None
     gate_matrix = mat2nparray(gate_matrix_qlm)
     return gate_matrix
 
 
-def get_np_matrix_from_op(circuit: 'Circuit', op: 'Op'):
+def get_np_matrix_from_circuit_operation(circuit: 'Circuit', op: 'Op'):
     gate_name = op.gate
-    return get_np_matrix_from_gate_name(circuit, gate_name)
+    matrix = get_np_matrix_from_gate_name(circuit, gate_name)
+    if matrix is None:
+        gate = get_gate_from_circuit_operation(circuit, op)
+        matrix = generate_np_matrix_from_gate_signature(gate)
+    return matrix
 
 
 def get_abstractgate_from_nparray(name: str, gate_matrix: np.array,
@@ -76,7 +115,7 @@ def get_abstractgate_from_nparray(name: str, gate_matrix: np.array,
 
 def get_abstractgate_from_circuit_operation(circuit: 'Circuit',
                                             operation: 'Op') -> AbstractGate:
-    gate_matrix = get_np_matrix_from_op(circuit, operation)
+    gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
     gate = get_abstractgate_from_nparray(operation.gate, gate_matrix,
                                          len(operation.qbits))
     return gate
@@ -87,7 +126,7 @@ def get_gate_from_circuit_operation(circuit: 'Circuit',
     name = operation.gate
     gate = get_gate_from_gate_name(circuit, name)
     if gate is None:
-        gate_matrix = get_np_matrix_from_op(circuit, operation)
+        gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
         gate = get_abstractgate_from_nparray(operation.gate, gate_matrix,
                                              len(operation.qbits))()
     return gate
@@ -109,17 +148,32 @@ def get_gate_from_gate_name(circuit: 'Circuit', name: str) -> 'Gate':
             if gatedef.subgate is not None:
                 gate = gatedef.subgate
                 gate = get_gate_from_gate_name(circuit, gate)
+        if gatedef.nbctrls is not None:
+            gate = gate.ctrl(gatedef.nbctrls)
         if gatedef.is_conj:
             gate = gate.conj()
         if gatedef.is_dag:
             gate = gate.dag()
         if gatedef.is_trans:
             gate = gate.trans()
-        if gatedef.nbctrls is not None:
-            gate = gate.ctrl(gatedef.nbctrls)
     else:
         gate = globals()[name]
     return gate
+
+
+def generate_np_matrix_from_gate_signature(gate: 'Gate'):
+    if gate.name in GATE_SET:
+        return GATE_SET[f'{gate.name}'][1]
+    matrix = GATE_SET[f'{gate.subgate.name}'][1]
+    if gate.nb_ctrls is not None:
+        matrix = get_ctrl_from_matrix(matrix, gate.nb_ctrls)
+    if gate.is_dag is not None:
+        matrix = get_dagger_from_matrix(matrix)
+    if gate.is_conj is not None:
+        matrix = get_conjugate_from_matrix(matrix)
+    if gate.is_trans is not None:
+        matrix = get_transpose_from_matrix(matrix)
+    return matrix
 
 
 # from myqlm
