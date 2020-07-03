@@ -16,7 +16,28 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-GATE_SET = {
+GATE_SET_QAT = {
+    'H': [H, H.extract_signatures()[0].matrix_generator()],
+    'X': [X, X.extract_signatures()[0].matrix_generator()],
+    'Y': [Y, Y.extract_signatures()[0].matrix_generator()],
+    'Z': [Z, Z.extract_signatures()[0].matrix_generator()],
+    'I': [I, I.extract_signatures()[0].matrix_generator()],
+    'PH': [PH, PH.matrix_generator],
+    'S': [S, S.extract_signatures()[0].matrix_generator()],
+    'T': [T, T.extract_signatures()[0].matrix_generator()],
+    'CNOT': [CNOT, CNOT.extract_signatures()[0].matrix_generator()],
+    'CCNOT': [CCNOT, CCNOT.extract_signatures()[0].matrix_generator()],
+    'CSIGN': [CSIGN, CSIGN.extract_signatures()[0].matrix_generator()],
+    'SWAP': [SWAP, SWAP.extract_signatures()[0].matrix_generator()],
+    'SQRTSWAP':
+    [SQRTSWAP, SQRTSWAP.extract_signatures()[0].matrix_generator()],
+    'ISWAP': [ISWAP, ISWAP.extract_signatures()[0].matrix_generator()],
+    'RX': [RX, RX.matrix_generator],
+    'RY': [RY, RY.matrix_generator],
+    'RZ': [RZ, RZ.matrix_generator],
+}
+
+GATE_SET_NUMPY = {
     'H': [H, 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]], dtype=complex)],
     'X': [X, np.array([[0, 1], [1, 0]], dtype=complex)],
     'Y': [Y, np.array([[0, -1j], [1j, 0]], dtype=complex)],
@@ -82,7 +103,7 @@ GATE_SET = {
 
 def get_np_matrix_from_gate_name_default(gate_name: str) -> Optional[np.array]:
     try:
-        return GATE_SET[gate_name][1]
+        return GATE_SET_QAT[gate_name][1]
     except KeyError:
         return None
 
@@ -137,9 +158,9 @@ def get_gate_from_gate_name(circuit: 'Circuit', name: str) -> 'Gate':
         gatedef = circuit.gateDic[name]
         syntax = gatedef.syntax
         if syntax is not None:
-            if syntax.name in GATE_SET.keys():
+            if syntax.name in GATE_SET_QAT.keys():
                 # gate = globals()[syntax.name]
-                gate = GATE_SET[syntax.name][0]
+                gate = GATE_SET_QAT[syntax.name][0]
                 for parameter in syntax.parameters:
                     gate = gate(parameter.double_p)
             else:
@@ -162,9 +183,9 @@ def get_gate_from_gate_name(circuit: 'Circuit', name: str) -> 'Gate':
 
 
 def generate_np_matrix_from_gate_signature(gate: 'Gate'):
-    if gate.name in GATE_SET:
-        return GATE_SET[f'{gate.name}'][1]
-    matrix = GATE_SET[f'{gate.subgate.name}'][1]
+    if gate.name in GATE_SET_QAT:
+        return GATE_SET_QAT[f'{gate.name}'][1]
+    matrix = GATE_SET_QAT[f'{gate.subgate.name}'][1]
     if gate.nb_ctrls is not None:
         matrix = get_ctrl_from_matrix(matrix, gate.nb_ctrls)
     if gate.is_dag is not None:

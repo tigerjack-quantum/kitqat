@@ -1,6 +1,6 @@
 from numpy import testing as nptesting
 from qat.external.utils.qatmgmt.gates import (
-    GATE_SET, get_gate_from_circuit_operation,
+    GATE_SET_QAT, get_gate_from_circuit_operation,
     get_np_matrix_from_circuit_operation)
 from qat.lang.AQASM import H, Program, X, Y
 
@@ -8,7 +8,6 @@ from .common_circuit import CircuitTestCase
 
 
 class TestQatmgmtGates(CircuitTestCase):
-
     def test_get_np_matrix_from_op(self):
         p = Program()
         q = p.qalloc(3)
@@ -21,7 +20,7 @@ class TestQatmgmtGates(CircuitTestCase):
         for op in c:
             matrix = get_np_matrix_from_circuit_operation(c, op)
             self.assertIsNotNone(matrix)
-            nptesting.assert_array_equal(matrix, GATE_SET[op.gate][1])
+            nptesting.assert_array_equal(matrix, GATE_SET_QAT[op.gate][1])
 
     def test_get_np_matrix_from_op_submatrices_only(self):
         p = Program()
@@ -30,7 +29,13 @@ class TestQatmgmtGates(CircuitTestCase):
         p.apply(Y.ctrl(), q[0], q[1])
         c = p.to_circ(submatrices_only=True)
         c2 = p.to_circ(submatrices_only=False)
-        expected = [{'subgate': H, 'nb_ctrls': 2}, {'subgate': Y, 'nb_ctrls': 1}]
+        expected = [{
+            'subgate': H,
+            'nb_ctrls': 2
+        }, {
+            'subgate': Y,
+            'nb_ctrls': 1
+        }]
 
         for op, op2, expgate in zip(c, c2, expected):
             matrix = get_np_matrix_from_circuit_operation(c, op)
