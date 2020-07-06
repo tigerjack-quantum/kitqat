@@ -3,7 +3,7 @@ from copy import deepcopy
 from parameterized import parameterized
 from qat.external.utils.qatmgmt.qbits import \
     add_name_to_qbits_following_pattern
-from qat.external.utils.qroutines.mctrls import mcx
+from qat.external.utils.synthesis.mctrls import mcx
 from qat.lang.AQASM import CCNOT, H, Program, X
 
 from .common_circuit import CircuitTestCase

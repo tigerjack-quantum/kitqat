@@ -1,5 +1,5 @@
 from parameterized import parameterized
-from qat.external.utils.qroutines.roots.paulis import nrootx, nrooty, nrootz
+from qat.external.utils.synthesis.roots.paulis import nrootx, nrooty, nrootz
 from qat.lang.AQASM import Program, X
 
 from test.common_circuit import CircuitTestCase
