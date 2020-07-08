@@ -75,7 +75,7 @@ def get_vector_from_basis_bitstring(bitstring) -> np.array:
     # The bitstring should represent a basis vector
     state_vec = np.zeros(2**len(bitstring))
     basis_decimal = int(bitstring, 2)
-    LOGGER.debug(f"bitstring = {bitstring}, decimal = {basis_decimal}")
+    LOGGER.debug("bitstring = %s, decimal = %d", bitstring, basis_decimal)
     state_vec[basis_decimal] = 1
     return state_vec
 
@@ -88,22 +88,22 @@ def get_tensor_from_matrix(matrix: np.array) -> np.array:
 
 def apply_gate_matrix_to_tensor_state(start_state: np.array,
                                       gate_matrix: np.array, *qubits: 'Qbit'):
-    LOGGER.debug(f"matrix = {gate_matrix}")
-    LOGGER.debug(f"qubits = {qubits}")
+    # LOGGER.debug(f"matrix = {gate_matrix}")
+    LOGGER.debug("qubits %s", qubits)
     arity = len(qubits)
-    LOGGER.debug(f"arity = {arity}")
+    LOGGER.debug("arity = %d", arity)
 
     # reshape for easy application.
     tensor = gate_matrix.reshape(tuple([2 for _ in range(2 * arity)]))
-    LOGGER.debug(f"tensor = {tensor}")
+    # LOGGER.debug(f"tensor = {tensor}")
 
     # axes for tensor dot: last indices of gate tensor.
     gate_axes = [k for k in range(arity, 2 * arity)]
-    LOGGER.debug(f"gate axes = {gate_axes}")
+    LOGGER.debug("gate axes = %s", gate_axes)
 
     # actual gate application
     state_vec = np.tensordot(tensor, start_state, axes=(gate_axes, qubits))
-    LOGGER.debug(f"state vector after tensordot is = {state_vec}")
+    # LOGGER.debug(f"state vector after tensordot is = {state_vec}")
 
     # moving axes back to correct positions
     state_vec = np.moveaxis(state_vec, range(len(qubits)), qubits)

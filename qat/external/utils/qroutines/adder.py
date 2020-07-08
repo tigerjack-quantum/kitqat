@@ -65,7 +65,7 @@ def _common(qfun, a, b, cin, cout, b_is_bigger, bits, overflow_qbit,
         return None, None, None
 
     sub = 0 if (overflow_qbit or b_l > a_l) else 1
-    LOGGER.debug(f"sub is {sub}")
+    LOGGER.debug("sub is %d", sub)
     end = bits - 1
     ends = end - sub
     mrange = range(0, ends)
