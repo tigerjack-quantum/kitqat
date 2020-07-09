@@ -1,16 +1,11 @@
-# DONE
 import itertools
-import unittest
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.lang.AQASM import Program
-
 from qat.external.utils.bits import conversion, misc
 from qat.external.utils.qroutines import adder
 from qat.external.utils.qroutines import qregs_init as qregs
-
-DEBUG = False
+from qat.lang.AQASM import Program
 
 
 class AdderTestCase(CircuitTestCase):
@@ -42,7 +37,6 @@ class AdderTestCase(CircuitTestCase):
         (15, 1),
         (24, 7),
     ])
-    @unittest.skipIf(DEBUG, "already working")
     def test_adder(self, a_int, b_int):
         """
         Add a_int and b_int and check their result.
@@ -118,7 +112,6 @@ class AdderTestCase(CircuitTestCase):
         (15, 1),
         (24, 7),
     ])
-    @unittest.skipIf(DEBUG, "already working")
     def test_adder_inverse(self, a_int, b_int):
         """
         Test the adder + adder_inverse.
@@ -174,7 +167,6 @@ class AdderTestCase(CircuitTestCase):
         (1, 15),
         (2, 33),
     ])
-    @unittest.skipIf(DEBUG, "already working")
     def test_adder_different_size_b_bigger(self, a_int, b_int):
         """
         Test the adder when the output reg is bigger than the other one.
@@ -254,7 +246,6 @@ class AdderTestCase(CircuitTestCase):
         (33, 1),
         (33, 2),
     ])
-    @unittest.skipIf(DEBUG, "already working")
     def test_adder_different_size_a_bigger(self, a_int, b_int):
         """
         Test the adder when the output reg is smaller than the other one.
@@ -332,7 +323,6 @@ class AdderTestCase(CircuitTestCase):
         ("7_on_3bits", 7, 3),
         ("7_on_5bits", 7, 5),
     ])
-    @unittest.skipIf(DEBUG, "already working")
     def test_halves_sum(self, name, a_int, bits):
         """
         Add two halves of a register on a given number of bits
@@ -340,7 +330,7 @@ class AdderTestCase(CircuitTestCase):
         if bits % 2 == 1:
             bits = bits + 1
         self.logger.debug("n bits = %s", bits)
-        misc.check_enough_bits(a_int, bits)
+        misc.assert_enough_bits(a_int, bits)
         half_bits = int(bits / 2)
         for little_endian, overflow in itertools.product((True, False),
                                                          (True, False)):
@@ -417,7 +407,6 @@ class AdderTestCase(CircuitTestCase):
         (3, 6),
         (2, 10)
     ])
-    @unittest.skipIf(DEBUG, "already working")
     def test_subtractor(self, a_int, b_int):
         """
         Execute a_int - b_int and check their result.
