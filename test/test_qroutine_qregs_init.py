@@ -1,12 +1,9 @@
-# DONE
-# import logging
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.lang.AQASM import Program
-
 from qat.external.utils.bits import conversion, misc
 from qat.external.utils.qroutines import qregs_init as qregs
+from qat.lang.AQASM import Program
 
 
 class QregInitTestCase(CircuitTestCase):

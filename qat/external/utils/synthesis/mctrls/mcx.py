@@ -113,7 +113,7 @@ def mcmtx_vshape(n_ctrls: int,
     _common(qfun, ctrls, tgts, max_unsplitted_ctrls)
 
     if max_unsplitted_ctrls < 2:
-        raise Exception(
+        raise ValueError(
             "vshape mode requires CCNOTs, so max_unsplitted_ctrls should be >= 2"
         )
     _vshape_chain(qfun, ctrls, tgts)

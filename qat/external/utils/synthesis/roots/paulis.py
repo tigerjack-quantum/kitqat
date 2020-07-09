@@ -10,7 +10,7 @@ def _peek_rgate(gate):
     elif gate == 'Z':
         return RZ
     else:
-        raise Exception(f"Gate {gate} not valid")
+        raise ValueError(f"Gate {gate} not valid")
 
 
 def _get_nroot(gate_name, n, global_phase_enabled):

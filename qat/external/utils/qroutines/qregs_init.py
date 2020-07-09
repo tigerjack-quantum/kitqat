@@ -1,4 +1,3 @@
-# DONE
 import functools
 import logging
 from typing import TYPE_CHECKING, Sequence
@@ -10,7 +9,7 @@ from qat.external.utils.bits import conversion
 if TYPE_CHECKING:
     from qat.lang.AQASM import QRegister
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 # In big endian the MSB is on the left, while the LSB is on the right. So in
@@ -39,8 +38,7 @@ def conditionally_initialize_qureg_given_bitarray(
         if aint == 1:
             part(qbit)
         elif aint != 0:
-            raise Exception(
-                "binary string contains wrong value {0}".format(aint))
+            raise ValueError(f"string {aint} contains non-binary value(s)")
     return qr
 
 
@@ -64,6 +62,7 @@ def conditionally_initialize_qureg_to_complement_of_bitarray(
     a_n_str = conversion.get_negated_bitarray(a_str)
     return conditionally_initialize_qureg_given_bitarray(
         a_n_str, qreg, qcontrols, little_endian)
+
 
 def initialize_qureg_given_bitarray(a_str, qreg, little_endian) -> QRoutine:
     """Given a binary string, initialize the qreg to the proper value

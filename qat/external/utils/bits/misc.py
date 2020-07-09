@@ -23,12 +23,12 @@ integer. The number of bits required depends on the enabled flags.
 
     """
     if len(ints) == 0:
-        raise Exception("number of ints must be greater than 0")
+        raise ValueError("number of ints must be greater than 0")
     if len(ints) == 1:
         to_check_int = ints[0]
     elif not signed:
         if any(i < 0 for i in ints):
-            raise Exception("signed flag on, all ints must be non-negative")
+            raise ValueError("signed flag on, all ints must be non-negative")
         to_check_int = max(ints)
     elif ones_complement:
         maxi = abs(max(ints))

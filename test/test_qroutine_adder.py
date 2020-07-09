@@ -174,7 +174,7 @@ class AdderTestCase(CircuitTestCase):
         a_bits = misc.get_required_bits(a_int)
         b_bits = misc.get_required_bits(b_int)
         if a_bits == b_bits:
-            raise Exception(
+            raise ValueError(
                 f"We are testing for b_bigger, while a={a_int} and b={b_int}")
 
         for little_endian, overflow in itertools.product((True, False),
@@ -253,7 +253,7 @@ class AdderTestCase(CircuitTestCase):
         a_bits = misc.get_required_bits(a_int)
         b_bits = misc.get_required_bits(b_int)
         if a_bits == b_bits:
-            raise Exception(
+            raise ValueError(
                 f"We are testing for a_bigger, while a={a_int} and b={b_int}")
 
         for little_endian, overflow in itertools.product((True, False),

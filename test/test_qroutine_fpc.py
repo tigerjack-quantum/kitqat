@@ -1,4 +1,3 @@
-# DONE
 import unittest
 from math import factorial
 from test.common_circuit import CircuitTestCase

@@ -1,4 +1,3 @@
-# DONE
 import logging
 from math import ceil, log
 from typing import TYPE_CHECKING
@@ -44,7 +43,9 @@ def get_qroutine_for_qubits_weight(a_len: int, cout_len: int,
             elif j[0] == 'c':
                 input_qubits.append(cout_qs[int(j[1:])])
             else:
-                raise Exception("Invalid")
+                raise ValueError(
+                    ("Invalid data in patterns_dict, has it been generated"
+                     "using the get_pattern() routine?"))
         tmp_a = [input_qubits[i] for i in range(half_bits)]
         tmp_b = [input_qubits[i] for i in range(half_bits, 2 * half_bits)
                  ] + [cout_qs[cout_idx]]
@@ -67,7 +68,9 @@ def get_to_measure_qubits(a_qs: 'QRegister', cout_qs: 'QRegister',
         elif j[0] == 'c':
             to_measure_qubits.append(cout_qs[int(j[1:])])
         else:
-            raise Exception("Invalid")
+            raise ValueError(
+                ("Invalid data in patterns_dict, has it been generated"
+                 "using the get_pattern() routine?"))
     return to_measure_qubits
 
 

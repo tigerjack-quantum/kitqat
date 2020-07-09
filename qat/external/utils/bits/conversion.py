@@ -1,8 +1,7 @@
-# DONE
 import logging
 from typing import List
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 # WARN: Returns 2's complement. If you want the negation of the bitstring
@@ -13,7 +12,7 @@ def get_bitstring_from_int(i: int, max_bits: int, littleEndian=False) -> str:
     else:
         bitstr = bin(2**max_bits + i)[2:].zfill(max_bits)
     if len(bitstr) > max_bits:
-        raise Exception("more than max_bits")
+        raise ValueError("more than max_bits")
     return bitstr if not littleEndian else bitstr[::-1]
 
 

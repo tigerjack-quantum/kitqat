@@ -1,6 +1,6 @@
 import logging
 from math import ceil, log
-from typing import TYPE_CHECKING, Any, Dict
+from typing import Any, Dict
 
 from qat.lang.AQASM import SWAP, H, QRegister, QRoutine, X
 from qat.lang.AQASM.misc import build_gate
@@ -81,7 +81,7 @@ def get_generate_pattern(n, r) -> Dict[str, Any]:
     nwr_dict['n_lines'] = 2**steps
     nwr_dict['swaps_pattern'] = []
     if (r == 0 or r == nwr_dict['n_lines']):
-        raise Exception("No combination is possible")
+        raise ValueError("No permutation possible with r = {r}")
 
     # bcz ncr(8;5) == ncr(8;3)
     if r > nwr_dict['n_lines'] / 2:

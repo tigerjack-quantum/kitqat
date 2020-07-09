@@ -37,69 +37,6 @@ GATE_SET_QAT = {
     'RZ': [RZ, RZ.matrix_generator],
 }
 
-GATE_SET_NUMPY = {
-    'H': [H, 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]], dtype=complex)],
-    'X': [X, np.array([[0, 1], [1, 0]], dtype=complex)],
-    'Y': [Y, np.array([[0, -1j], [1j, 0]], dtype=complex)],
-    'Z': [Z, np.array([[1, 0], [0, -1]], dtype=complex)],
-    'I': [I, np.eye(2)],
-    'PH': [PH, lambda theta: np.array([[1, 0], [0, np.e**(1j * theta)]])],
-    'S': [S, lambda theta: np.array([[1, 0], [0, 1j]], dtype=complex)],
-    'T': [T, lambda theta: np.array([[1, 0], [0, np.e**(1j * theta / 4)]])],
-    'CNOT': [
-        CNOT,
-        np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]],
-                 dtype=complex)
-    ],
-    'CCNOT': [
-        CCNOT,
-        np.array([[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 1, 0]],
-                 dtype=complex)
-    ],
-    'CSIGN': [
-        CSIGN,
-        np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]],
-                 dtype=complex)
-    ],
-    'SWAP': [
-        SWAP,
-        np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]],
-                 dtype=complex)
-    ],
-    'SQRTSWAP': [
-        SQRTSWAP,
-        np.array([[1, 0, 0, 0], [0, .5 + .5j, .5 - .5j, 0],
-                  [0, .5 - .5j, .5 + .5j, 0], [0, 0, 0, 1]],
-                 dtype=complex)
-    ],
-    'ISWAP': [
-        ISWAP,
-        np.array([[1, 0, 0, 0], [0, 0, 1j, 0], [0, 1j, 0, 0], [0, 0, 0, 1]],
-                 dtype=complex)
-    ],
-    'RX': [
-        RX,
-        lambda theta: np.array([[np.cos(theta / 2), -1j * np.sin(theta / 2)],
-                                [-1j * np.sin(theta / 2),
-                                 np.cos(theta / 2)]],
-                               dtype=complex)
-    ],
-    'RY': [
-        RY, lambda theta: np.array([[np.cos(theta / 2), -np.sin(theta / 2)],
-                                    [np.sin(theta / 2),
-                                     np.cos(theta / 2)]],
-                                   dtype=complex)
-    ],
-    'RZ': [
-        RZ, lambda theta: np.array([[np.e(-1j * theta / 2), 0],
-                                    [0, np.e(1j * theta / 2)]],
-                                   dtype=complex)
-    ],
-}
-
 
 def get_np_matrix_from_gate_name_default(gate_name: str) -> Optional[np.array]:
     try:
