@@ -1,8 +1,9 @@
 from numpy import testing as nptesting
 from qat.external.utils.qatmgmt.gates import (
     GATE_SET_QAT, get_gate_from_circuit_operation,
-    get_np_matrix_from_circuit_operation)
-from qat.lang.AQASM import H, Program, X, Y
+    get_np_matrix_from_circuit_operation,
+    get_gate_from_circuit_operation)
+from qat.lang.AQASM import H, Program, X, Y, RX, RY, RZ
 
 from .common_circuit import CircuitTestCase
 
@@ -42,7 +43,31 @@ class TestQatmgmtGates(CircuitTestCase):
             self.assertIsNotNone(matrix)
             matrix2 = get_np_matrix_from_circuit_operation(c2, op2)
             nptesting.assert_array_equal(matrix, matrix2)
-            gate = get_gate_from_circuit_operation(c, op)
+            gate, _ = get_gate_from_circuit_operation(c, op)
             self.assertIsNotNone(gate)
             self.assertEqual(gate.subgate, expgate['subgate'])
             self.assertEqual(gate.nb_ctrls, expgate['nb_ctrls'])
+
+    def test_get_gate_from_circuit_operation_param(self):
+        p = Program()
+        q = p.qalloc(2)
+        p.apply(H, q[0])
+        p.apply(H, q[1])
+        p.apply(RX(1.23), q[0])
+        p.apply(RY(2.34).ctrl(), q)
+        c = p.to_circ()
+
+        p2 = Program()
+        q2 = p2.qalloc(2)
+        for op in c.ops:
+            g, _ = get_gate_from_circuit_operation(c, op)
+            p2.apply(g, [q2[i] for i in op.qbits])
+
+
+        c2 = p2.to_circ()
+
+        res = self.qpu.submit(c.to_job())
+        res2 = self.qpu.submit(c2.to_job())
+        print(res)
+        print(res2)
+
