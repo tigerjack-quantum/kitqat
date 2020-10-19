@@ -85,7 +85,6 @@ def get_qroutine_for_qubits_weight_get_pattern(n):
     """
     steps = ceil(log(n, 2))
     # TODO maybe we can use fewer lines
-    # n_lines = n if n % 2 == 0 else n + 1
     n_lines = 2**steps
     patterns_dict = {}
     patterns_dict['n_lines'] = n_lines
