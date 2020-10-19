@@ -1,6 +1,6 @@
 import itertools
 import logging
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union, Sequence
 
 import numpy as np
 from qat.external.utils.numpy.qstate_manipulation import (
@@ -8,7 +8,10 @@ from qat.external.utils.numpy.qstate_manipulation import (
     get_transpose_from_matrix)
 from qat.external.utils.qatmgmt import variables
 from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                            SQRTSWAP, SWAP, AbstractGate, H, I, S, T, X, Y, Z)
+                            SQRTSWAP, SWAP, AbstractGate, H, I, S, T, X, Y, Z,
+                            ParamGate)
+from qat.core.circuit_builder.matrix_util import (get_predef_generator,
+                                                  get_param_generator)
 
 if TYPE_CHECKING:
     from qat.lang.AQASM import (Circuit, Gate, Variable)
@@ -39,14 +42,40 @@ GATE_SET_QAT = {
 }
 
 
-def get_np_matrix_from_gate_name_default(gate_name: str) -> Optional[np.array]:
+def get_np_matrix_for_gate(
+    gate: 'Gate', variables: Sequence[Union[int, float, 'Variable']] = ()
+) -> np.array:
+    matrix = get_np_matrix_from_standard_gates(gate.name)
+    if matrix is not None:
+        return matrix
+    matrix = get_np_matrix_from_generator(gate, variables)
+    return matrix
+
+
+def get_np_matrix_from_standard_gates(gate_name: str) -> Optional[np.array]:
     try:
-        return GATE_SET_QAT[gate_name][1]
+        return get_predef_generator()[gate_name]
     except KeyError:
-        return None
+        try:
+            return get_param_generator()[gate_name]
+        except KeyError:
+            return None
 
 
-def get_np_matrix_from_gate_name(circuit: 'Circuit', gate_name: str):
+def get_np_matrix_from_generator(
+    gate: Union[AbstractGate, ParamGate],
+    variables: Sequence[Union[int, float, 'Variable']] = ()
+) -> np.array:
+    if isinstance(gate, ParamGate):
+        agate = gate.abstract_gate
+    elif isinstance(gate, AbstractGate):
+        agate = gate
+    else:
+        raise Exception("Only Param or Abstract gate accepted")
+    return agate.matrix_generator(*variables)
+
+
+def get_np_matrix_from_circuit(circuit: 'Circuit', gate_name: str):
     gate_def = circuit.gateDic[gate_name]
     gate_matrix_qlm = gate_def.matrix
     if gate_matrix_qlm is None:
@@ -57,23 +86,25 @@ def get_np_matrix_from_gate_name(circuit: 'Circuit', gate_name: str):
 
 def get_np_matrix_from_circuit_operation(circuit: 'Circuit', op: 'Op'):
     gate_name = op.gate
-    matrix = get_np_matrix_from_gate_name(circuit, gate_name)
+    matrix = get_np_matrix_from_circuit(circuit, gate_name)
     if matrix is None:
         gate, _ = get_gate_from_circuit_operation(circuit, op)
         matrix = generate_np_matrix_from_gate_signature(gate)
     return matrix
 
 
-def get_abstractgate_from_nparray(name: str, gate_matrix: np.array,
-                                  arity: int) -> AbstractGate:
+# TODO change to get_paramgate
+def get_abstractgate_from_nparray(
+        name: str, gate_matrix: np.array,
+        arity: int) -> Union[AbstractGate, ParamGate]:
     gate = AbstractGate(name, [],
                         matrix_generator=callback_matrix_lambda(gate_matrix),
                         arity=arity)
-    return gate
+    return gate()
 
 
-def get_abstractgate_from_circuit_operation(circuit: 'Circuit',
-                                            operation: 'Op') -> AbstractGate:
+def get_abstractgate_from_circuit_operation(
+        circuit: 'Circuit', operation: 'Op') -> Union[AbstractGate, ParamGate]:
     gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
     gate = get_abstractgate_from_nparray(operation.gate, gate_matrix,
                                          len(operation.qbits))
@@ -101,7 +132,7 @@ def get_gate_from_circuit_operation(
 def get_gate_from_gate_name(
         circuit: 'Circuit',
         name: str) -> Tuple[Union[None, 'Gate'], Dict[str, 'Variable']]:
-    logging.DEBUG("name is %s", name)
+    LOGGER.debug("name is %s", name)
     vname_to_var = {}
     if name.startswith("_"):
         # a. = Parametrized (RX, RY, RZ, PH) or user-defined gate
