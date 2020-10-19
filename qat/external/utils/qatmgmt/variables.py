@@ -21,7 +21,7 @@ def get_variable_from_circuit(circuit: 'Circuit', var_name: str) -> Variable:
     if value.value.type == 0:
         vtype = int
     elif value.value.type == 1:
-        vtype = float
+        vtype = float  # type: ignore
     else:
         raise Exception(f"type {value.value.type} still not convertable")
     var = Variable(var_name, vtype)
