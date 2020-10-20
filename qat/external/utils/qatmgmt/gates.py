@@ -1,17 +1,17 @@
 import itertools
 import logging
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from qat.core.circuit_builder.matrix_util import (get_param_generator,
+                                                  get_predef_generator)
 from qat.external.utils.numpy.qstate_manipulation import (
     get_conjugate_from_matrix, get_ctrl_from_matrix, get_dagger_from_matrix,
     get_transpose_from_matrix)
 from qat.external.utils.qatmgmt import variables
 from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                            SQRTSWAP, SWAP, AbstractGate, H, I, S, T, X, Y, Z,
-                            ParamGate)
-from qat.core.circuit_builder.matrix_util import (get_predef_generator,
-                                                  get_param_generator)
+                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate, S,
+                            T, X, Y, Z)
 
 if TYPE_CHECKING:
     from qat.lang.AQASM import (Circuit, Gate, Variable)
@@ -93,21 +93,19 @@ def get_np_matrix_from_circuit_operation(circuit: 'Circuit', op: 'Op'):
     return matrix
 
 
-# TODO change to get_paramgate
-def get_abstractgate_from_nparray(
-        name: str, gate_matrix: np.array,
-        arity: int) -> Union[AbstractGate, ParamGate]:
+def get_paramgate_from_nparray(name: str, gate_matrix: np.array,
+                               arity: int) -> Union[AbstractGate, ParamGate]:
     gate = AbstractGate(name, [],
                         matrix_generator=callback_matrix_lambda(gate_matrix),
                         arity=arity)
     return gate()
 
 
-def get_abstractgate_from_circuit_operation(
+def get_paramgate_from_circuit_operation(
         circuit: 'Circuit', operation: 'Op') -> Union[AbstractGate, ParamGate]:
     gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
-    gate = get_abstractgate_from_nparray(operation.gate, gate_matrix,
-                                         len(operation.qbits))
+    gate = get_paramgate_from_nparray(operation.gate, gate_matrix,
+                                      len(operation.qbits))
     return gate
 
 
@@ -118,14 +116,13 @@ def get_gate_from_circuit_operation(
         operation: 'Op') -> Tuple['Gate', Dict[str, 'Variable']]:
     name = operation.gate
     tup = get_gate_from_gate_name(circuit, name)
-    if tup is None:
+    if tup is None or tup[0] is None:
         # This fails (???) if the circuit has been generated without
         # submatrices
         gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
-        gate = get_abstractgate_from_nparray(operation.gate, gate_matrix,
-                                             len(operation.qbits))()
-        variables = None
-        tup = (gate, variables)
+        gate = get_paramgate_from_nparray(operation.gate, gate_matrix,
+                                          len(operation.qbits))
+        tup = (gate, {})
     return tup
 
 
