@@ -205,5 +205,44 @@ def mat2nparray(matrix):
     return A
 
 
+def extend_default_gate_set_from_custom_gates(
+        gates: Sequence[Union[AbstractGate, ParamGate,
+                              QRoutine]]) -> 'GateSet':
+    gds = default_gate_set()
+    signatures = []
+    for gate in gates:
+        if isinstance(gate, AbstractGate):
+            signatures.append(gate)
+        elif isinstance(gate, ParamGate):
+            signatures.append(gate.abstract_gate)
+        elif isinstance(gate, QRoutine):
+            gds.union(extend_default_gate_set_from_custom_gates(gate))
+        else:
+            raise Exception(f"Gate of type {type(gate)} not acceptable")
+    gds.union(generate_gate_set(*signatures))
+    return gds
+
+
+def generate_gate_set_from_abstract_gates(
+        abstract_gates: Sequence[AbstractGate]) -> 'GateSet':
+    return generate_gate_set(*abstract_gates)
+
+
+def extract_custom_gates_from_program(
+        program: 'Program') -> Sequence['AbstractGate']:
+    lst = []
+    for op in program.op_list:
+        if op.gate.name not in GATE_SET_QAT:
+            if isinstance(op.gate, AbstractGate):
+                lst.append(op.gate)
+            elif isinstance(op.gate, ParamGate):
+                lst.append(op.gate.abstract_gate)
+            elif isinstance(op.gate, QRoutine):
+                lst.extend(extract_custom_gates_from_program(op.gate))
+            else:
+                raise Exception(f"Gate of type {type(op.gate)} not acceptable")
+    return lst
+
+
 def callback_matrix_lambda(matrix: np.array):
     return lambda: matrix
