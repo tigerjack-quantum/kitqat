@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from qat.core.circuit_builder.builder import default_gate_set
 from qat.core.circuit_builder.matrix_util import (get_param_generator,
                                                   get_predef_generator)
 from qat.external.utils.numpy.qstate_manipulation import (
@@ -10,35 +11,35 @@ from qat.external.utils.numpy.qstate_manipulation import (
     get_transpose_from_matrix)
 from qat.external.utils.qatmgmt import variables
 from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate, S,
-                            T, X, Y, Z)
+                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate,
+                            QRoutine, S, T, X, Y, Z)
+from qat.lang.AQASM.misc import generate_gate_set
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import (Circuit, Gate, Variable)
+    from qat.lang.AQASM import (Circuit, Gate, Variable, GateSet, Program)
     from qat.comm.datamodel.ttypes import Op
 
 LOGGER = logging.getLogger(__name__)
 
 # TODO change to get_param_generator or get_predef_generator
 GATE_SET_QAT = {
-    'H': [H, H.extract_signatures()[0].matrix_generator()],
-    'X': [X, X.extract_signatures()[0].matrix_generator()],
-    'Y': [Y, Y.extract_signatures()[0].matrix_generator()],
-    'Z': [Z, Z.extract_signatures()[0].matrix_generator()],
-    'I': [I, I.extract_signatures()[0].matrix_generator()],
-    'S': [S, S.extract_signatures()[0].matrix_generator()],
-    'T': [T, T.extract_signatures()[0].matrix_generator()],
-    'CNOT': [CNOT, CNOT.extract_signatures()[0].matrix_generator()],
-    'CCNOT': [CCNOT, CCNOT.extract_signatures()[0].matrix_generator()],
-    'CSIGN': [CSIGN, CSIGN.extract_signatures()[0].matrix_generator()],
-    'SWAP': [SWAP, SWAP.extract_signatures()[0].matrix_generator()],
-    'SQRTSWAP':
-    [SQRTSWAP, SQRTSWAP.extract_signatures()[0].matrix_generator()],
-    'ISWAP': [ISWAP, ISWAP.extract_signatures()[0].matrix_generator()],
-    'RX': [RX, RX.matrix_generator],
-    'RY': [RY, RY.matrix_generator],
-    'RZ': [RZ, RZ.matrix_generator],
-    'PH': [PH, PH.matrix_generator],
+    'H': H,
+    'X': X,
+    'Y': Y,
+    'Z': Z,
+    'I': I,
+    'S': S,
+    'T': T,
+    'CNOT': CNOT,
+    'CCNOT': CCNOT,
+    'CSIGN': CSIGN,
+    'SWAP': SWAP,
+    'SQRTSWAP': SQRTSWAP,
+    'ISWAP': ISWAP,
+    'RX': RX,
+    'RY': RY,
+    'RZ': RZ,
+    'PH': PH,
 }
 
 
@@ -84,11 +85,15 @@ def get_np_matrix_from_circuit(circuit: 'Circuit', gate_name: str):
     return gate_matrix
 
 
-def get_np_matrix_from_circuit_operation(circuit: 'Circuit', op: 'Op'):
+def get_np_matrix_from_circuit_operation(
+    circuit: 'Circuit',
+    op: 'Op',
+    variables_map: Dict[str, 'Variable'],
+):
     gate_name = op.gate
     matrix = get_np_matrix_from_circuit(circuit, gate_name)
     if matrix is None:
-        gate, _ = get_gate_from_circuit_operation(circuit, op)
+        gate, _ = get_gate_from_circuit_operation(circuit, op, variables_map)
         matrix = generate_np_matrix_from_gate_signature(gate)
     return matrix
 
@@ -102,8 +107,12 @@ def get_paramgate_from_nparray(name: str, gate_matrix: np.array,
 
 
 def get_paramgate_from_circuit_operation(
-        circuit: 'Circuit', operation: 'Op') -> Union[AbstractGate, ParamGate]:
-    gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
+    circuit: 'Circuit',
+    operation: 'Op',
+    variables_map: Dict[str, 'Variable'],
+) -> Union[AbstractGate, ParamGate]:
+    gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation,
+                                                       variables_map)
     gate = get_paramgate_from_nparray(operation.gate, gate_matrix,
                                       len(operation.qbits))
     return gate
@@ -112,14 +121,17 @@ def get_paramgate_from_circuit_operation(
 # Returns a gate and, if it depends on a variable (f.e. parametrized gates) the
 # name of that variable
 def get_gate_from_circuit_operation(
-        circuit: 'Circuit',
-        operation: 'Op') -> Tuple['Gate', Dict[str, 'Variable']]:
+    circuit: 'Circuit',
+    operation: 'Op',
+    variables_map: Dict[str, 'Variable'],
+) -> Tuple['Gate', Dict[str, 'Variable']]:
     name = operation.gate
-    tup = get_gate_from_gate_name(circuit, name)
+    tup = get_gate_from_gate_name(circuit, name, variables_map)
     if tup is None or tup[0] is None:
         # This fails (???) if the circuit has been generated without
         # submatrices
-        gate_matrix = get_np_matrix_from_circuit_operation(circuit, operation)
+        gate_matrix = get_np_matrix_from_circuit_operation(
+            circuit, operation, variables_map)
         gate = get_paramgate_from_nparray(operation.gate, gate_matrix,
                                           len(operation.qbits))
         tup = (gate, {})
@@ -127,10 +139,13 @@ def get_gate_from_circuit_operation(
 
 
 def get_gate_from_gate_name(
-        circuit: 'Circuit',
-        name: str) -> Tuple[Union[None, 'Gate'], Dict[str, 'Variable']]:
+    circuit: 'Circuit',
+    name: str,
+    variables_map: Dict[str, 'Variable'],
+    generate_variables_if_missing=False,
+) -> Tuple[Union[None, 'Gate'], Dict[str, 'Variable']]:
     LOGGER.debug("name is %s", name)
-    vname_to_var = {}
+    vname_to_var: Dict[str, 'Variable'] = {}
     if name.startswith("_"):
         # a. = Parametrized (RX, RY, RZ, PH) or user-defined gate
         gatedef = circuit.gateDic[name]
@@ -140,33 +155,37 @@ def get_gate_from_gate_name(
             # In other words, no need to check subgate
             if syntax.name in GATE_SET_QAT.keys():
                 # b. +  parametrized gate
-                gate = GATE_SET_QAT[syntax.name][0]
+                gate = GATE_SET_QAT[syntax.name]
                 for parameter in syntax.parameters:
-                    if parameter.is_abstract is not None:
-                        var = variables.get_variable_from_circuit(
-                            circuit, parameter.string_p)
-                        vname_to_var[parameter.string_p] = var
-                        gate = gate(var)
+                    if parameter.is_abstract:
+                        if parameter.string_p in variables_map:
+                            gate = gate(variables_map[parameter.string_p])
+                        elif generate_variables_if_missing:
+                            var = variables.generate_variable_from_circuit(
+                                circuit, parameter.string_p)
+                            vname_to_var[parameter.string_p] = var
+                            gate = gate(var)
+                        else:
+                            raise Exception("Unable to associate a variable")
                     elif parameter.double_p is not None:
                         gate = gate(parameter.double_p)
                     elif parameter.int_p is not None:
-                        gate = gate(parameter.double_p)
+                        gate = gate(parameter.int_p)
             else:
                 # b. + user defined
-                return None, dict()
+                return None, vname_to_var
         else:
             # b. = a. + subgate
             if gatedef.subgate is not None:
                 subname = gatedef.subgate
                 LOGGER.debug("subname is %s", subname)
                 gate, subvname_to_vars = get_gate_from_gate_name(
-                    circuit, subname)
-                if subvname_to_vars is not None:
-                    vname_to_var.update(subvname_to_vars)
+                    circuit, subname, variables_map,
+                    generate_variables_if_missing)
+                vname_to_var.update(subvname_to_vars)
 
         if gate is not None:
             if gatedef.nbctrls is not None:
-                print(gatedef.nbctrls)
                 gate = gate.ctrl(gatedef.nbctrls)
             if gatedef.is_conj:
                 gate = gate.conj()
@@ -182,9 +201,12 @@ def get_gate_from_gate_name(
 
 
 def generate_np_matrix_from_gate_signature(gate: 'Gate'):
-    if gate.name in GATE_SET_QAT:
-        return GATE_SET_QAT[f'{gate.name}'][1]
-    matrix = GATE_SET_QAT[f'{gate.subgate.name}'][1]
+    matrix = get_np_matrix_from_standard_gates(gate.name)
+    if matrix is None:
+        matrix = get_np_matrix_from_standard_gates(gate.subgate.name)
+    # if gate.name in GATE_SET_QAT:
+    #     return GATE_SET_QAT[f'{gate.name}'][1]
+    # matrix = GATE_SET_QAT[f'{gate.subgate.name}'][1]
     if gate.nb_ctrls is not None:
         matrix = get_ctrl_from_matrix(matrix, gate.nb_ctrls)
     if gate.is_dag is not None:
