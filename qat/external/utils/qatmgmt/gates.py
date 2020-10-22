@@ -11,7 +11,7 @@ from qat.external.utils.numpy.qstate_manipulation import (
     get_transpose_from_matrix)
 from qat.external.utils.qatmgmt import variables
 from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate,
+                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate, Gate,
                             QRoutine, S, T, X, Y, Z)
 from qat.lang.AQASM.misc import generate_gate_set
 
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-# TODO change to get_param_generator or get_predef_generator
 GATE_SET_QAT = {
     'H': H,
     'X': X,
@@ -153,7 +152,7 @@ def get_gate_from_gate_name(
         if syntax is not None:
             # b. = a. + no ctrl(), dag(), ... to apply
             # In other words, no need to check subgate
-            if syntax.name in GATE_SET_QAT.keys():
+            if syntax.name in GATE_SET_QAT:
                 # b. +  parametrized gate
                 gate = GATE_SET_QAT[syntax.name]
                 for parameter in syntax.parameters:
@@ -204,9 +203,6 @@ def generate_np_matrix_from_gate_signature(gate: 'Gate'):
     matrix = get_np_matrix_from_standard_gates(gate.name)
     if matrix is None:
         matrix = get_np_matrix_from_standard_gates(gate.subgate.name)
-    # if gate.name in GATE_SET_QAT:
-    #     return GATE_SET_QAT[f'{gate.name}'][1]
-    # matrix = GATE_SET_QAT[f'{gate.subgate.name}'][1]
     if gate.nb_ctrls is not None:
         matrix = get_ctrl_from_matrix(matrix, gate.nb_ctrls)
     if gate.is_dag is not None:
@@ -261,8 +257,11 @@ def extract_custom_gates_from_program(
                 lst.append(op.gate.abstract_gate)
             elif isinstance(op.gate, QRoutine):
                 lst.extend(extract_custom_gates_from_program(op.gate))
-            else:
-                raise Exception(f"Gate of type {type(op.gate)} not acceptable")
+            elif isinstance(op.gate, Gate):
+                if isinstance(op.gate.subgate, AbstractGate):
+                    lst.append(op.gate)
+                elif isinstance(op.gate.subgate, ParamGate):
+                    lst.append(op.gate.subgate.abstract_gate)
     return lst
 
 
