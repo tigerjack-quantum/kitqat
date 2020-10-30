@@ -11,8 +11,8 @@ from qat.external.utils.numpy.qstate_manipulation import (
     get_transpose_from_matrix)
 from qat.external.utils.qatmgmt import variables
 from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate, Gate,
-                            QRoutine, S, T, X, Y, Z)
+                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate,
+                            Gate, QRoutine, S, T, X, Y, Z)
 from qat.lang.AQASM.misc import generate_gate_set
 
 if TYPE_CHECKING:
@@ -137,6 +137,7 @@ def get_gate_from_circuit_operation(
     return tup
 
 
+# The list of variables returned contains the newly generated variables
 def get_gate_from_gate_name(
     circuit: 'Circuit',
     name: str,

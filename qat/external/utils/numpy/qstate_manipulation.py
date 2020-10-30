@@ -86,7 +86,7 @@ def get_tensor_from_matrix(matrix: np.array) -> np.array:
     return tensor
 
 
-def apply_gate_matrix_to_tensor_state(start_state: np.array,
+def apply_matrix_to_tensor_state(start_state: np.array,
                                       gate_matrix: np.array, *qubits: 'Qbit'):
     # LOGGER.debug(f"matrix = {gate_matrix}")
     LOGGER.debug("qubits %s", qubits)
