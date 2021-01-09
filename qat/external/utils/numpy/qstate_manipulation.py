@@ -5,7 +5,7 @@ import numpy as np
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from qat.lang.AQASM import Qbit
+    from qat.lang.AQASM.bits import Qbit
 
 LOGGER = logging.getLogger(__name__)
 

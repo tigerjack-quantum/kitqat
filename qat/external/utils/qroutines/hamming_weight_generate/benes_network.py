@@ -2,7 +2,8 @@ import logging
 from math import ceil, log
 from typing import Any, Dict
 
-from qat.lang.AQASM import SWAP, H, QRegister, QRoutine, X
+from qat.lang.AQASM import SWAP, H, QRoutine, X
+from qat.lang.AQASM.bits import QRegister
 from qat.lang.AQASM.misc import build_gate
 
 # if TYPE_CHECKING:

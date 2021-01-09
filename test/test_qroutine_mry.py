@@ -7,7 +7,9 @@ from .common_circuit import CircuitTestCase
 from random import random
 from math import pi
 from qat.core.util import statistics
-from qat.core.console import display
+# from qat.core.console import display
+
+import unittest
 
 
 class MCRyTest(CircuitTestCase):
@@ -29,8 +31,8 @@ class MCRyTest(CircuitTestCase):
         circ2 = pr2.to_circ(link=[mry.mcry_simple])
         print(statistics(circ))
         print(statistics(circ2))
-        display(circ)
-        display(circ2, max_depth=1)
+        # display(circ)
+        # display(circ2, max_depth=1)
         res = self.qpu.submit(circ.to_job())
         res2 = self.qpu.submit(circ2.to_job())
         self.assertEqual(len(res2.raw_data), len(res.raw_data))
@@ -82,8 +84,8 @@ class MCRyTest(CircuitTestCase):
             pr.apply(RY(angle).ctrl(), qr[i], qr[i + 1])
         circ = pr.to_circ()
         circ2 = pr.to_circ(link=[mry.mcry_simple])
-        display(circ)
-        display(circ2, max_depth=2)
+        # display(circ)
+        # display(circ2, max_depth=2)
         print(statistics(circ))
         print(statistics(circ2))
         res = self.qpu.submit(circ.to_job())

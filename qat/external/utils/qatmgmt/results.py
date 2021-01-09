@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Dict, List
 import numpy as np
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import (Result, QRegister)
+    from qat.lang.AQASM import Result
+    from qat.lang.AQASM.bits import QRegister
     from qat.core.wrappers.result import Sample
 
 

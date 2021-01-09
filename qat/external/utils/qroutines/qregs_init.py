@@ -7,7 +7,7 @@ from qat.lang.AQASM import QRoutine, X
 from qat.external.utils.bits import conversion
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import QRegister
+    from qat.lang.AQASM.bits import QRegister
 
 LOGGER = logging.getLogger(__name__)
 
