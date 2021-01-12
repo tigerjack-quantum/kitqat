@@ -3,12 +3,16 @@
 from setuptools import setup, find_packages
 
 
-requirements = [
+install_requirements = [
     "qat-comm",
     "qat-core",
     "qat-lang",
     "typing",
     "numpy>=1.15",
+]
+
+tests_requirements = [
+        "parameterized",
 ]
 
 setup(
@@ -29,7 +33,9 @@ setup(
     ],
     keywords="qat atos quantum qlm",
     packages=find_packages(exclude=['test*', 'experiments*']),
-    install_requires=requirements,
+    install_requires=install_requirements,
+    tests_requires=tests_requirements,
+    test_suite="unittest",
     include_package_data=True,
-    python_requires=">=3.6,<3.7",
+    python_requires=">=3.8,<3.9",
 )

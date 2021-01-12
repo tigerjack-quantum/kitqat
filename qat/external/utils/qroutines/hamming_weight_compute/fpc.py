@@ -10,7 +10,7 @@ from qat.external.utils.qroutines import adder
 from qat.external.utils.qroutines import qregs_init as qregs
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import QRegister
+    from qat.lang.AQASM.bits import QRegister
 
 LOGGER = logging.getLogger(__name__)
 

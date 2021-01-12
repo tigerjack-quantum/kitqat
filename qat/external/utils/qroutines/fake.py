@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from qat.lang.AQASM import AbstractGate, Program, Qbit, QRoutine
+from qat.lang.AQASM import AbstractGate, Program, QRoutine
 
 
 def fake_gate(name: str, arity: int) -> AbstractGate:
