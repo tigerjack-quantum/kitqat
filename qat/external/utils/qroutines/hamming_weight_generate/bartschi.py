@@ -12,18 +12,16 @@ def _scs(n: int, k: int) -> QRoutine:
     wires = qf.new_wires(n)
     # i = 1
     angle = 2 * np.arccos(1 / np.sqrt(n))
-    # print(f"angle sqrt of 1/{n}")
+    # (i)
     qf.apply(CNOT, wires[n - 2], wires[n - 1])
     qf.apply(RY(angle).ctrl(), wires[n - 1], wires[n - 2])
     qf.apply(CNOT, wires[n - 2], wires[n - 1])
-    # others i
-    for i in range(2, k + 1):
-        # print(f"i {i}")
-        angle = 2 * np.arccos(np.sqrt(i / n))
-        # print(f"angle sqrt of {i}/{n}")
-        qf.apply(CNOT, wires[n - i - 1], wires[n - 1])
-        qf.apply(RY(angle).ctrl(2), n - 1, n - i, n - i - 1)
-        qf.apply(CNOT, wires[n - i - 1], wires[n - 1])
+    # (ii)_l
+    for l in range(2, k + 1):
+        angle = 2 * np.arccos(np.sqrt(l / n))
+        qf.apply(CNOT, wires[n - l - 1], wires[n - 1])
+        qf.apply(RY(angle).ctrl(2), n - 1, n - l, n - l - 1)
+        qf.apply(CNOT, wires[n - l - 1], wires[n - 1])
     return qf
 
 
@@ -42,11 +40,8 @@ def generate(n: int, k: int) -> QRoutine:
     for i in range(n - 1, n - localk - 1, -1):
         qf.apply(X, wires[i])
     for i in range(n, localk, -1):
-        # print(f"i, localk -> {i}, {localk}")
         qf.apply(_scs(i, localk), wires[:i])
-    # print("****")
     for i in range(localk, 1, -1):
-        # print(f"i, i-1 -> {i}, {i-1}")
         qf.apply(_scs(i, i - 1), wires[:i])
     if localk != k:
         for qb in wires:
