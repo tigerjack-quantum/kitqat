@@ -72,5 +72,5 @@ class RrefTestCase(CircuitTestCase):
 
         # display(self.pr.to_circ(), max_depth=3)
         print(self.pr.qbit_count)
-        # res = self.qpu.submit(self.pr.to_circ().to_job())
-        # self._build_from_result(res, self.qbit_range, matrix.shape)
+        res = self.qpu.submit(self.pr.to_circ().to_job())
+        self._build_from_result(res, self.qbit_range, matrix.shape)
