@@ -7,6 +7,9 @@ from qat.external.utils.qasm.converters.chp import simulate_chp, to_chp
 from qat.external.utils.qroutines import qregs_init, rref
 from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
 from qat.lang.AQASM.program import Program
+from qat.core.console import display
+from qat.qpus import Stabs
+from qat.qpus import LinAlg
 
 
 def _prepare_circuit(matrix):
@@ -34,30 +37,29 @@ def test_simple():
     for i in range(nrows):
         agate = rref.get_row_swap(matrix_list, i)
         aoutn = len(range(i + 1, nrows))
-        boutn = nrows - 1
         aout = pr.qalloc(aoutn)
-        bout = pr.qalloc(boutn)
-        bgate = rref.get_row_addition(matrix_list, i)
         print(f"Row {i}")
         print(f"qregs {[j for j in qregs_rows[i]]}")
         pr.apply(agate, *qregs_rows, aout)
+
+        bgate = rref.get_row_addition(matrix_list, i)
+        boutn = nrows - 1
+        bout = pr.qalloc(boutn)
         pr.apply(bgate, *qregs_rows, bout)
         print(f"Row {i} end")
+
+    display(pr.to_circ(), max_depth=3)
+
+    qpu = LinAlg()
+    cr = pr.to_circ()
+    res = qpu.submit(cr.to_job(qubits=qregs_rows))
+    sample = res.raw_data[0]
 
     measuring = functools.reduce(operator.concat,
                                  [i.qbits for i in qregs_rows])
     measuring_idxs = [qb.index for qb in measuring]
-    pr.measure(qbits=measuring)
-    # display(self.pr.to_circ(), max_depth=3)
-    # res = self.qpu.submit(self.pr.to_circ(link=[get_ccnot]).to_job())
-    cr = pr.to_circ(link=[ccnot, x], inline=True)
-    cr.dump('./rref.circ')
-    # jb = cr.to_job(nbshots=1)
-    # jb.dump('./rref.job')
-    os.system('circ2aqasm rref.circ')
-    to_chp('rref.circ.aqasm', 'rref.chp')
-    res = simulate_chp('rref.chp')
     mat = rref.build_rref_matrix_from_result(res, measuring_idxs, matrix.shape)
+
     print("original matrix")
     print(matrix)
     print("rref matrix")

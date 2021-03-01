@@ -63,6 +63,7 @@ def get_row_swap(matrix: List[List[int]], row_src_idx: int):
     for _ in range(nrows):
         row_wires.append(qfun.new_wires(ncols))
 
+    # the pivot is on the diagonal
     col_src_idx = row_src_idx
     print(f"row_src_idx {row_src_idx}")
     row_src = row_wires[row_src_idx]
@@ -74,7 +75,9 @@ def get_row_swap(matrix: List[List[int]], row_src_idx: int):
         row_oth = row_wires[row_oth_idx]
         print(f"row oth {row_oth}")
         # print(f"row oth idxs {[q.index for q in row_oth]}")
-        # Ancilla telling if the column must be swapped; since it's not reset to 0, I can't add it to the ancillae list
+
+        # Ancilla telling if the column must be swapped; since it's not reset
+        # to 0, I can't add it to the ancillae list
         anc = qfun.new_wires(1)
         # qfun.set_ancillae(anc)
         # print(f"ancillae {qfun.ancillae}")
