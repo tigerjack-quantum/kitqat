@@ -20,16 +20,28 @@ circuits."""
 
 @build_gate("CCNOT", [], arity=lambda : 3)
 def ccnot():
-    """ CCNOT implemented as 2 additional ancillae"""
+    """ CCNOT implemented with CNOT, H and T gates"""
     qfun = QRoutine()
     wires = qfun.new_wires(3)
-    anc = qfun.new_wires(2)
     qfun.set_ancillae(anc)
-    qfun.apply(CNOT, wires[0], anc[0])
-    qfun.apply(CNOT, wires[1], anc[1])
-    qfun.apply(CNOT, anc[1], wires[2])
-    qfun.apply(CNOT, wires[1], anc[1])
-    qfun.apply(CNOT, wires[0], anc[0])
+    qfun.apply(H, wires[2])
+    qfun.apply(CNOT, wires[1], wires[2])
+    qfun.apply(T.dag(), wires[2])
+    qfun.apply(CNOT, wires[0], wires[2])
+    qfun.apply(T, wires[2])
+
+    qfun.apply(CNOT, wires[1], wires[2])
+    qfun.apply(T.dag(), wires[2])
+    qfun.apply(CNOT, wires[0], wires[2])
+    qfun.apply(T, wires[1])
+    qfun.apply(T, wires[2])
+
+    qfun.apply(CNOT, wires[0], wires[1])
+    qfun.apply(H, wires[2])
+
+    qfun.apply(T, wires[0])
+    qfun.apply(T.dag(), wires[1])
+    qfun.apply(CNOT, wires[0], wires[1])
     return qfun
 
 @build_gate("MTCCNOT", [int, bool])
