@@ -52,9 +52,7 @@ def get_qreg_name_to_bitstring_from_sample(name_to_reg: Dict[str, 'QRegister'],
 
 def get_qregs_to_bitstring_from_sample(registers: List['QRegister'],
                                        sample: 'Sample') -> List[str]:
-    """Given a Sample object, returns the bitstring for each register. The
-    name_to_reg dictionary contains all the wanted qregs, together with their
-    names. To note that this dictionary should be prepared in advance.
+    """Given a Sample object, returns the bitstring for each register.
     """
     liss = []
     for reg in registers:
@@ -64,13 +62,25 @@ def get_qregs_to_bitstring_from_sample(registers: List['QRegister'],
 
 def get_qreg_to_bitstring_from_sample(register: 'QRegister',
                                       sample: 'Sample') -> str:
-    """Given a Sample object, returns the bitstring for each register. The
-    name_to_reg dictionary contains all the wanted qregs, together with their
-    names. To note that this dictionary should be prepared in advance.
+    """Given a Sample object, returns the bitstring for the register.
     """
+    # TODO maybe we can directly use the sample.state.qregs index object
     return sample.state.bitstring[register.start:register.start +
                                   register.length]
 
 
-def get_qreg_bitstring_from_sample(qreg: 'QRegister', sample: 'Sample') -> str:
-    return sample.state.bitstring[qreg.start:qreg.start + qreg.length]
+# TODO same as before, idk why it's here; check which program is using it
+# def get_qreg_bitstring_from_sample(qreg: 'QRegister', sample: 'Sample') -> str:
+#     """Given a Sample object, returns the bitstring for the register.
+#     """
+#     return sample.state.bitstring[qreg.start:qreg.start + qreg.length]
+
+
+
+def get_qbits_to_bitstring_from_sample(qbit_idxs: List[int], sample: 'Sample') -> str:
+    print(qbit_idxs)
+    interesting_vals = [
+        val for i, val in enumerate(sample.state.bitstring) if i in qbit_idxs
+    ]
+    print(interesting_vals)
+    return ''.join(interesting_vals)
