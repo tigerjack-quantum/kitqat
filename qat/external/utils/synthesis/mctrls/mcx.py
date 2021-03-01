@@ -6,6 +6,18 @@ from qat.lang.AQASM.misc import build_gate
 MCMTX = AbstractGate("MCMTX", [int, int, int], arity=lambda x, y, _: x + y)
 MTCCNOT = AbstractGate("MTCCNOT", [int, bool], arity=lambda x, _: x + 2)
 
+@build_gate("X", [], arity=lambda : 1)
+def x():
+    """Transform an X gate into HSSH. It can be used in stabilizer
+circuits."""
+    qfun = QRoutine()
+    wires = qfun.new_wires(1)
+    qfun.apply(H, wires[0])
+    qfun.apply(S, wires[0])
+    qfun.apply(S, wires[0])
+    qfun.apply(H, wires[0])
+    return qfun
+
 @build_gate("CCNOT", [], arity=lambda : 3)
 def ccnot():
     """ CCNOT implemented as 2 additional ancillae"""
