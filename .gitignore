@@ -1,6 +1,11 @@
 GPATH
 GTAGS
 GRTAGS
+*.circ
+*.aqasm
+*.chp
+tmp/
+experiments/measures
 #########
 ### PYTHON
 ##########
