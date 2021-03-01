@@ -16,7 +16,7 @@ from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
 from qat.lang.AQASM.misc import generate_gate_set
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import (Circuit, Gate, Variable, GateSet, Program)
+    from qat.lang.AQASM import (Circuit, Variable, GateSet, Program)
     from qat.comm.datamodel.ttypes import Op
 
 LOGGER = logging.getLogger(__name__)

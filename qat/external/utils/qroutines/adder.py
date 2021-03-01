@@ -219,7 +219,7 @@ def _majority(name):
 
 
 @build_gate("UMA", [str])
-def _unmajority_1(name):
+def _unmajority(name):
     """Unmajority gate."""
     qfun = QRoutine()
     c = qfun.new_wires(1)[0]

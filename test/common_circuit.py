@@ -18,31 +18,32 @@ class CircuitTestCase(BasicTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        print("using simulator: ", end="")
+        cls.logger.info("using simulator: ", end="")
         if cls.QLM_ON == '0':
-            print("PyLinalg")
+            cls.logger.info("PyLinalg")
             from qat.qpus import PyLinalg
             cls.qpu = PyLinalg()
         else:
             if cls.QLM_ON.lower() == 'stabs':
-                print("Stabs")
+                cls.logger.info("Stabs")
                 from qat.qpus import Stabs
-                from qat.external.utils.mcx import ccnot
+                from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
                 cls.qpu = Stabs()
-                cls.links = [ccnot]
+                cls.links = [ccnot, x]
             elif cls.QLM_ON.lower() == 'feynman':
-                print("Feynman")
+                cls.logger.info("Feynman")
                 from qat.qpus import Feynman
                 cls.qpu = Feynman()
                 cls.links = []
             elif cls.QLM_ON.lower() == 'mps':
-                print("MPS")
+                cls.logger.info("MPS")
                 from qat.qpus import MPS
                 cls.qpu = MPS(lnnize=True)
                 cls.links = []
             else:
                 # default to linalg
                 from qat.qpus import LinAlg
+                cls.logger.info("LinAlg")
                 cls.qpu = LinAlg()
                 cls.links = []
 

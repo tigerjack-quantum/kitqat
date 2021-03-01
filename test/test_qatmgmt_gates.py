@@ -7,6 +7,8 @@ from qat.lang.AQASM import H, Program, X, Y, RX, RY, RZ
 
 from .common_circuit import CircuitTestCase
 
+# TODO check the get_gate_from_circuit_operation functions and their variables_map parameter
+
 
 class TestQatmgmtGates(CircuitTestCase):
     def test_get_np_matrix_from_op(self):
@@ -19,7 +21,7 @@ class TestQatmgmtGates(CircuitTestCase):
         c = p.to_circ()
 
         for op in c:
-            matrix = get_np_matrix_from_circuit_operation(c, op)
+            matrix = get_np_matrix_from_circuit_operation(c, op, {})
             self.assertIsNotNone(matrix)
             nptesting.assert_array_equal(matrix, GATE_SET_QAT[op.gate][1])
 
@@ -43,7 +45,7 @@ class TestQatmgmtGates(CircuitTestCase):
             self.assertIsNotNone(matrix)
             matrix2 = get_np_matrix_from_circuit_operation(c2, op2)
             nptesting.assert_array_equal(matrix, matrix2)
-            gate, _ = get_gate_from_circuit_operation(c, op)
+            gate, _ = get_gate_from_circuit_operation(c, op, {})
             self.assertIsNotNone(gate)
             self.assertEqual(gate.subgate, expgate['subgate'])
             self.assertEqual(gate.nb_ctrls, expgate['nb_ctrls'])
@@ -60,7 +62,7 @@ class TestQatmgmtGates(CircuitTestCase):
         p2 = Program()
         q2 = p2.qalloc(2)
         for op in c.ops:
-            g, _ = get_gate_from_circuit_operation(c, op)
+            g, _ = get_gate_from_circuit_operation(c, op, {})
             p2.apply(g, [q2[i] for i in op.qbits])
 
 
