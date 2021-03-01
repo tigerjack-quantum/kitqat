@@ -1,17 +1,14 @@
-from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
-import numpy as np
-from qat.external.utils.qroutines import rref
-from qat.external.utils.qroutines import qregs_init
-from qat.lang.AQASM.program import Program
-from qat.lang.AQASM import QRoutine, CNOT
-
-from typing import List, Set, Tuple
-from qat.core.console import display
-from qat.lang.AQASM.misc import build_gate
-import operator
 import functools
+import operator
+import os
 
-import unittest
+import numpy as np
+from qat.external.utils.qasm.converters.chp import simulate_chp, to_chp
+from qat.external.utils.qroutines import qregs_init, rref
+from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
+from qat.lang.AQASM.program import Program
+
+
 def _prepare_circuit(matrix):
     pr = Program()
     n_rows, n_cols = matrix.shape
@@ -24,15 +21,13 @@ def _prepare_circuit(matrix):
         pr.apply(qrout, qreg)
         qregs_rows.append(qreg)
 
-    qbit_range = set(q.index for qreg in qregs_rows
-                            for q in qreg)
+    qbit_range = set(q.index for qreg in qregs_rows for q in qreg)
     return pr, qregs_rows, qbit_range
+
 
 def test_simple():
     matrix = np.array([[0, 1, 1], [1, 0, 1], [1, 0, 0]])
     matrix_list = matrix.tolist()
-    print("original matrix")
-    print(matrix)
     pr, qregs_rows, qbit_range = _prepare_circuit(matrix)
 
     nrows, ncols = matrix.shape
@@ -49,21 +44,29 @@ def test_simple():
         pr.apply(bgate, *qregs_rows, bout)
         print(f"Row {i} end")
 
-    print(qregs_rows)
-    measuring = functools.reduce(operator.concat, [i.qbits for i in qregs_rows])
+    measuring = functools.reduce(operator.concat,
+                                 [i.qbits for i in qregs_rows])
+    measuring_idxs = [qb.index for qb in measuring]
     pr.measure(qbits=measuring)
     # display(self.pr.to_circ(), max_depth=3)
-    print(pr.qbit_count)
     # res = self.qpu.submit(self.pr.to_circ(link=[get_ccnot]).to_job())
     cr = pr.to_circ(link=[ccnot, x], inline=True)
     cr.dump('./rref.circ')
-    jb = cr.to_job(nbshots=1)
-    jb.dump('./rref.job')
-
+    # jb = cr.to_job(nbshots=1)
+    # jb.dump('./rref.job')
+    os.system('circ2aqasm rref.circ')
+    to_chp('rref.circ.aqasm', 'rref.chp')
+    res = simulate_chp('rref.chp')
+    mat = rref.build_rref_matrix_from_result(res, measuring_idxs, matrix.shape)
+    print("original matrix")
+    print(matrix)
+    print("rref matrix")
+    print(mat)
 
 
 def main():
     test_simple()
+
 
 if __name__ == '__main__':
     main()

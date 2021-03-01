@@ -1,9 +1,34 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Set, Tuple
 from numpy.testing._private.utils import print_assert_equal
 
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
+
+from qat.external.utils.qatmgmt.results import get_qbits_to_bitstring_from_sample, get_qreg_to_bitstring_from_sample
+
+import numpy as np
+
+if TYPE_CHECKING:
+    import qat.core.wrappers.result.Result
+
+
+def build_rref_matrix_from_result(res: 'Result', qreg_range: Set[int],
+                                  shape: Tuple[int, int]):
+    sample = res.raw_data[0]
+    vals = get_qbits_to_bitstring_from_sample(qreg_range, sample)
+
+    matrix = np.zeros(shape, dtype=np.ubyte)
+    interesting_bits = [
+        val for i, val in enumerate(sample.state.bitstring) if i in qreg_range
+    ]
+    for i, val in enumerate(interesting_bits):
+        row = i // shape[1]
+        col = i % shape[0]
+        matrix[row][col] = val
+
+    return matrix
+
 
 # TODO: Ideas
 # 1. Use sum to first non 0 element instead of swap rows
@@ -42,19 +67,19 @@ def get_row_swap(matrix: List[List[int]], row_src_idx: int):
     print(f"row_src_idx {row_src_idx}")
     row_src = row_wires[row_src_idx]
     print(f"row src {row_src}")
-    print(f"row src idxs {[q.index for q in row_src]}")
+    # print(f"row src idxs {[q.index for q in row_src]}")
     for row_oth_idx in range(row_src_idx + 1, nrows):
         # All the possible rows after the source row
         print(f"row_oth_idx {row_oth_idx}")
         row_oth = row_wires[row_oth_idx]
         print(f"row oth {row_oth}")
-        print(f"row oth idxs {[q.index for q in row_oth]}")
+        # print(f"row oth idxs {[q.index for q in row_oth]}")
         # Ancilla telling if the column must be swapped; since it's not reset to 0, I can't add it to the ancillae list
         anc = qfun.new_wires(1)
         # qfun.set_ancillae(anc)
         # print(f"ancillae {qfun.ancillae}")
         print(f"current ancilla {anc}")
-        print(f"current ancilla idx {anc[0].index}")
+        # print(f"current ancilla idx {anc[0].index}")
         # CNOT where ctrl must be 0
         # row_src[col_idx] can be 1 in two cases:
         # - It has been set to 1 in the previous round following a swap
@@ -93,7 +118,7 @@ def get_row_addition(matrix: List[List[int]], row_src_idx: int):
     print(f"row_src_idx {row_src_idx}")
     row_src = row_wires[row_src_idx]
     print(f"row src {row_src}")
-    print(f"row src idxs {[q.index for q in row_src]}")
+    # print(f"row src idxs {[q.index for q in row_src]}")
     # WIP diff, range
     for row_oth_idx in range(nrows):
         if row_oth_idx == row_src_idx:
@@ -102,13 +127,13 @@ def get_row_addition(matrix: List[List[int]], row_src_idx: int):
         print(f"row_oth_idx {row_oth_idx}")
         row_oth = row_wires[row_oth_idx]
         print(f"row oth {row_oth}")
-        print(f"row oth idxs {[q.index for q in row_oth]}")
+        # print(f"row oth idxs {[q.index for q in row_oth]}")
         # Ancilla telling if the column must be swapped
         anc = qfun.new_wires(1)
         # qfun.set_ancillae(anc)
         # print(f"ancillae {qfun.ancillae}")
         print(f"current ancilla {anc}")
-        print(f"current ancilla idx {anc[0].index}")
+        # print(f"current ancilla idx {anc[0].index}")
         # CNOT where ctrl must be 0
         # row_src[col_idx] can be 1 in two cases:
         # - It has been set to 1 in the previous round following a swap
