@@ -1,24 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, List, Set, Tuple
+from typing import Set, Tuple
 
 import numpy as np
-from qat.external.utils.qatmgmt.results import (
-    get_qbits_to_bitstring_from_sample, get_qreg_to_bitstring_from_sample)
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
-if TYPE_CHECKING:
-    from qat.lang.AQASM import Result, QRegister
-
 LOGGER = logging.getLogger(__name__)
 
 
-def build_rref_matrix_from_result(res: 'Result', qreg_range: Set[int],
+def build_rref_matrix_from_sample(sample, qreg_range: Set[int],
                                   shape: Tuple[int, int]):
-    sample = res.raw_data[0]
-    # vals = get_qbits_to_bitstring_from_sample(qreg_range, sample)
-
     matrix = np.zeros(shape, dtype=np.ubyte)
     interesting_bits = [
         val for i, val in enumerate(sample.state.bitstring) if i in qreg_range
@@ -31,15 +23,78 @@ def build_rref_matrix_from_result(res: 'Result', qreg_range: Set[int],
     return matrix
 
 
-# TODO: Ideas
-# 2. Avoid additional ancillae
-#    - In the swap stage, do not take care of the pivot cell: it'll always be 1 at the end. We can just use Use additional `n` qubits initialized to 1. The pivot cell are still necessary as controllers for all the row operations.
-#    - In the same way, when adding the pivot row to all the other rows (in order to put all 0's above and below)
+def build_u_matrix_from_sample(sample, nsquare):
+    if len(sample.intermediate_measurements) != 2:
+        return
+    inter_meas_aout, inter_meas_bout = [
+        i.cbits for i in sample.intermediate_measurements
+    ]
+    swap_idx = 0
+    add_idx = 0
+    u = np.eye(nsquare, dtype=int)
+    for i in range(nsquare):
+        for j in range(i + 1, nsquare):
+            if inter_meas_aout[swap_idx]:
+                u[i, ] += u[j, ]
+            swap_idx += 1
+        for j in range(nsquare):
+            if j == i:
+                continue
+            if inter_meas_bout[add_idx]:
+                u[j, ] += u[i, ]
+            add_idx += 1
+    u = u % 2
+    return u
 
 
-# @build_gate("RowSwap", [int, int, int, List])
-@build_gate('ROWSWAP', [List, int])
-def get_row_swap(matrix: List[List[int]], row_src_idx: int):
+@build_gate('RREF', [int, int])
+def get_rref(nrows, ncols):
+    """
+    The gate takes as input, in this order:
+    - The matrix nrows * ncols
+    - The number of swap ancillae
+    - The number of add ancillae
+    """
+    qrout = QRoutine()
+
+    qregs_rows = []
+    for row_idx in range(nrows):
+        # qregs_rows.append(qregs_init.ini)
+        qreg = qrout.new_wires(ncols)
+        qregs_rows.append(qreg)
+
+    nsquare = min(nrows, ncols)
+    add_ancilla_n = nsquare * (nsquare - 1)
+    # Add ancilla is necessary an even number
+    swap_ancilla_n = int(add_ancilla_n / 2)
+    swap_ancillae = qrout.new_wires(swap_ancilla_n)
+    add_ancillae = qrout.new_wires(add_ancilla_n)
+    add_ancilla_idx = 0
+    swap_ancilla_idx = 0
+
+    for i in range(nsquare):
+        if i != nrows - 1:
+            # we don't apply swap gates for the last row
+            swap_gate = get_row_swap(nrows, ncols, i)
+            # swap_ancilla = qrout.new_wires(swap_ancillan)
+            swap_len = len(range(i + 1, nrows))
+            # print(f"Row {i}")
+            # print(f"qregs {[j for j in qregs_rows[i]]}")
+            qrout.apply(
+                swap_gate, *qregs_rows,
+                swap_ancillae[swap_ancilla_idx:swap_ancilla_idx + swap_len])
+            swap_ancilla_idx += swap_len
+
+        add_len = nrows - 1
+        bgate = get_row_addition(nrows, ncols, i)
+        qrout.apply(bgate, *qregs_rows,
+                    add_ancillae[add_ancilla_idx:add_ancilla_idx + add_len])
+        add_ancilla_idx += add_len
+        # print(f"Row {i} end")
+
+    return qrout
+
+
 @build_gate('ROWSWAP', [int, int, int])
 def get_row_swap(nrows, ncols, row_src_idx: int):
     """In reality just add to the source row the first row with non-zero element.
@@ -48,7 +103,8 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
     - rows = [[0, 1, 0], [1, 0, 0], [0, 1, 1]]
 
     If rows[row_src_idx][row_src_idx] == 0: # True
-    - then we search for the first row (row_oth_idx) having a non-zero element in the same row_src_idx # 1 in this case
+    - then we search for the first row (row_oth_idx) having a non-zero element
+      in the same row_src_idx # 1 in this case
     - and then do rows[row_src_idx] += rows[row_oth_idx]
 
     Note that the element of rows are qregister, each one representing a row.

@@ -1,12 +1,12 @@
-import numpy as np
+import functools
+import operator
 from test.common_circuit import CircuitTestCase
-from parameterized import parameterized
-from qat.external.utils.qroutines import rref
-from qat.external.utils.qroutines import qregs_init
-from qat.lang.AQASM.program import Program
 
-from typing import List, Set, Tuple
-from qat.core.console import display
+import numpy as np
+from parameterized import parameterized
+from qat.external.utils.qroutines import qregs_init, rref
+from qat.lang.AQASM.program import Program
+from sympy import Matrix
 
 
 class RrefTestCase(CircuitTestCase):
@@ -24,53 +24,42 @@ class RrefTestCase(CircuitTestCase):
 
         self.qbit_range = set(q.index for qreg in self.qregs_rows
                               for q in qreg)
+        self.nsquare = min(matrix.shape)
+        self.add_qregs = self.pr.qalloc(self.nsquare * (self.nsquare - 1))
+        self.swap_qregs = self.pr.qalloc(int(len(self.add_qregs) / 2))
 
-    @staticmethod
-    def _build_from_result(res, qreg_range: Set[int], shape: Tuple[int, int]):
-        # res = QPU.submit(prog.to_circ().to_job(qubits=rows_regs))
-        # for sample in res:
-        print(qreg_range)
-        sample = res.raw_data[0]
-        # print(sample.intermediate_measurements)
-        print(sample.state)
-        print(sample.state.bitstring)
-        print(sample.state.value)
-
-        matrix = np.zeros(shape, dtype=np.ubyte)
-        print(f"shape is {shape}")
-        interesting_bits = [
-            val for i, val in enumerate(sample.state.bitstring)
-            if i in qreg_range
-        ]
-        for i, val in enumerate(interesting_bits):
-            row = i // shape[1]
-            col = i % shape[0]
-            matrix[row][col] = val
-
-        print(matrix)
-
-    def test_simple(self):
-        matrix = np.array([[0, 1, 1], [1, 0, 1], [1, 0, 0]])
-        matrix_list = matrix.tolist()
-        print("original matrix")
-        print(matrix)
+    @parameterized.expand([
+        ("3x3", np.array([[0, 1, 1], [1, 0, 1], [0, 0, 1]]), False),
+        # Next one should fail since the first columns contains all 0's
+        ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]]), True),
+        ("4x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]]), False),
+    ])
+    def test_simple(self, name, matrix, should_fail):
         self._prepare_circuit(matrix)
 
         nrows, ncols = matrix.shape
-        for i in range(nrows):
-            agate = rref.get_row_swap(matrix_list, i)
-            aoutn = len(range(i + 1, nrows))
-            boutn = nrows - 1
-            aout = self.pr.qalloc(aoutn)
-            bout = self.pr.qalloc(boutn)
-            bgate = rref.get_row_addition(matrix_list, i)
-            print(f"Row {i}")
-            print(f"qregs {[j for j in self.qregs_rows[i]]}")
-            self.pr.apply(agate, *self.qregs_rows, aout)
-            self.pr.apply(bgate, *self.qregs_rows, bout)
-            print(f"Row {i} end")
+        rref_gate = rref.get_rref(nrows, ncols)
+        self.pr.apply(rref_gate, self.qregs_rows, self.swap_qregs,
+                      self.add_qregs)
 
-        # display(self.pr.to_circ(), max_depth=3)
-        print(self.pr.qbit_count)
-        res = self.qpu.submit(self.pr.to_circ().to_job())
-        self._build_from_result(res, self.qbit_range, matrix.shape)
+        measuring = functools.reduce(operator.concat,
+                                     [i.qbits for i in self.qregs_rows])
+        measuring_idxs = [qb.index for qb in measuring]
+        self.pr.measure(qbits=self.swap_qregs)
+        self.pr.measure(qbits=self.add_qregs)
+        cr = self.pr.to_circ()
+        res = self.qpu.submit(cr.to_job(qubits=self.qregs_rows))
+
+        sample = res.raw_data[0]
+        mat_rref = rref.build_rref_matrix_from_sample(sample, measuring_idxs,
+                                                      matrix.shape)
+
+        mat_rref_sim = Matrix(matrix).rref(pivots=False)
+        if should_fail:
+            with self.assertRaises(AssertionError):
+                np.testing.assert_array_equal(mat_rref, mat_rref_sim)
+        else:
+            np.testing.assert_array_equal(mat_rref, mat_rref_sim)
+
+        u = rref.build_u_matrix_from_sample(sample, self.nsquare)
+        np.testing.assert_array_equal(u @ matrix % 2, mat_rref)
