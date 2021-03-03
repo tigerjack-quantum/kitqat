@@ -63,7 +63,6 @@ def simulate_chp(chp_file: str):
         with os.fdopen(fd, 'r') as tmp:
             lines = tmp.readlines()[4:]
     finally:
-        print("removing")
         os.remove(path)
 
     # assume that the results are put in order

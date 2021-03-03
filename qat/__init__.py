@@ -1,2 +1,3 @@
 from pkgutil import extend_path
-__path__ = extend_path(__path__, __name__)
+from typing import Iterable
+__path__: Iterable[str] = extend_path(__path__, __name__)
