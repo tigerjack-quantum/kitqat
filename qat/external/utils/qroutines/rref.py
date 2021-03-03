@@ -1,22 +1,23 @@
+import logging
 from typing import TYPE_CHECKING, List, Set, Tuple
-from numpy.testing._private.utils import print_assert_equal
 
+import numpy as np
+from qat.external.utils.qatmgmt.results import (
+    get_qbits_to_bitstring_from_sample, get_qreg_to_bitstring_from_sample)
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
-from qat.external.utils.qatmgmt.results import get_qbits_to_bitstring_from_sample, get_qreg_to_bitstring_from_sample
-
-import numpy as np
-
 if TYPE_CHECKING:
-    import qat.core.wrappers.result.Result
+    from qat.lang.AQASM import Result, QRegister
+
+LOGGER = logging.getLogger(__name__)
 
 
 def build_rref_matrix_from_result(res: 'Result', qreg_range: Set[int],
                                   shape: Tuple[int, int]):
     sample = res.raw_data[0]
-    vals = get_qbits_to_bitstring_from_sample(qreg_range, sample)
+    # vals = get_qbits_to_bitstring_from_sample(qreg_range, sample)
 
     matrix = np.zeros(shape, dtype=np.ubyte)
     interesting_bits = [
