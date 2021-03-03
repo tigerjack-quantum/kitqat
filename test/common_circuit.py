@@ -49,9 +49,14 @@ class CircuitTestCase(BasicTestCase):
 
     @classmethod
     def simulate_program(cls, program, circ_args={}, job_args={}):
-        cr = program.to_circ(*circ_args)
-        jb = cr.to_job(*job_args)
+        print(circ_args)
+        if len(cls.links) > 0 and 'link' not in circ_args:
+            print("linking")
+            circ_args['link'] = cls.links
+        cr = program.to_circ(**circ_args)
+        jb = cr.to_job(**job_args)
         res = cls.qpu.submit(jb)
+        print("simulation over")
         return res
 
     @staticmethod
