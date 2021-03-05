@@ -9,6 +9,21 @@ from qat.lang.AQASM.routines import QRoutine
 LOGGER = logging.getLogger(__name__)
 
 
+def get_required_ancillae(nrows: int, ncols: int):
+    """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
+the RREF.
+
+    :param nrows: Rows of matrix
+    :param ncols: Cols of matrix
+    :returns: (swap_ancilla, add_ancilla)
+
+    """
+    nsquare = min(nrows, ncols)
+    add_ancilla_n = nsquare * (nsquare - 1)
+    # Add ancilla is necessary an even number
+    swap_ancilla_n = int(add_ancilla_n / 2)
+    return swap_ancilla_n, add_ancilla_n
+
 def build_rref_matrix_from_sample(sample, qreg_range: Set[int],
                                   shape: Tuple[int, int]):
     matrix = np.zeros(shape, dtype=np.ubyte)
@@ -19,7 +34,6 @@ def build_rref_matrix_from_sample(sample, qreg_range: Set[int],
         row = i // shape[1]
         col = i % shape[1]
         matrix[row][col] = val
-
     return matrix
 
 
@@ -46,14 +60,48 @@ def build_u_matrix_from_sample(sample, nsquare):
     u = u % 2
     return u
 
+@build_gate('RREF_OPS', [int, int])
+def gate_same_ops_for_vector(nrows: int, ncols: int):
+
+    """Apply the same operations applied to obtain the matrix RREF to a vector. The
+    idea is that if originally we had A*x = y, now we'll have A_rref * x =
+    y_rref.
+
+    :param nrows: The rows of the original matrix A
+    :param ncols: The cols of the original matrix A
+    :returns: A qrouting taking as input
+       - vec_qreg
+       - swap_qreg
+       - add_qreg
+    """
+    qfun = QRoutine()
+    vec_wires = qfun.new_wires(nrows)
+    swap_ancilla_n, add_ancilla_n = get_required_ancillae(nrows, ncols)
+    swap_wires = qfun.new_wires(swap_ancilla_n)
+    add_wires = qfun.new_wires(add_ancilla_n)
+
+    idx = 0
+    for i in range(nrows):
+        for j in range(i+1, nrows):
+            qfun.apply(X.ctrl(2), swap_wires[idx], vec_wires[j], vec_wires[i])
+            idx += 1
+
+    idx = 0
+    for i in range(nrows):
+        for j in range(nrows):
+            if i != j:
+                qfun.apply(X.ctrl(2), add_wires[idx], vec_wires[i], vec_wires[j])
+                idx += 1
+
+    return qfun
 
 @build_gate('RREF', [int, int])
 def get_rref(nrows, ncols):
     """
     The gate takes as input, in this order:
-    - The matrix nrows * ncols
-    - The number of swap ancillae
-    - The number of add ancillae
+    - The matrix (nrows x ncols) qreg
+    - The swap ancillae
+    - The add ancillae
     """
     qrout = QRoutine()
 
@@ -64,9 +112,7 @@ def get_rref(nrows, ncols):
         qregs_rows.append(qreg)
 
     nsquare = min(nrows, ncols)
-    add_ancilla_n = nsquare * (nsquare - 1)
-    # Add ancilla is necessary an even number
-    swap_ancilla_n = int(add_ancilla_n / 2)
+    swap_ancilla_n, add_ancilla_n = get_required_ancillae(nrows, ncols)
     swap_ancillae = qrout.new_wires(swap_ancilla_n)
     add_ancillae = qrout.new_wires(add_ancilla_n)
     add_ancilla_idx = 0
@@ -90,7 +136,6 @@ def get_rref(nrows, ncols):
         qrout.apply(bgate, *qregs_rows,
                     add_ancillae[add_ancilla_idx:add_ancilla_idx + add_len])
         add_ancilla_idx += add_len
-        # print(f"Row {i} end")
 
     return qrout
 
