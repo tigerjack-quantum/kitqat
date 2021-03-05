@@ -13,6 +13,7 @@ install_requirements = [
 
 tests_requirements = [
         "parameterized",
+        "sympy",
 ]
 
 setup(
