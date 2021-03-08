@@ -54,10 +54,10 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("overflow %s", overflow)
 
                 qfun = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun, self.a)
                 qfun = qregs.initialize_qureg_given_int(
-                    b_int, self.b, little_endian)
+                    b_int, len(self.b), little_endian)
                 self.qc.apply(qfun, self.b)
 
                 qfun = (~adder.adder)(len(self.a), len(self.b), overflow,
@@ -127,10 +127,10 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("b %d", len(self.b))
 
                 qfun1 = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun1, self.a)
                 qfun2 = qregs.initialize_qureg_given_int(
-                    b_int, self.b, little_endian)
+                    b_int, len(self.b), little_endian)
                 self.qc.apply(qfun2, self.b)
 
                 qfun3 = (~adder.adder)(len(self.a), len(self.b), overflow,
@@ -186,10 +186,10 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("little endian %s", little_endian)
                 self.logger.debug("overflow %s", overflow)
                 qfun = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun, self.a)
                 qfun = qregs.initialize_qureg_given_int(
-                    b_int, self.b, little_endian)
+                    b_int, len(self.b), little_endian)
                 self.qc.apply(qfun, self.b)
 
                 qfun = (~adder.adder)(len(self.a), len(self.b), overflow,
@@ -265,10 +265,10 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("little endian %s", little_endian)
                 self.logger.debug("overflow %s", overflow)
                 qfun = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun, self.a)
                 qfun = qregs.initialize_qureg_given_int(
-                    b_int, self.b, little_endian)
+                    b_int, len(self.b), little_endian)
                 self.qc.apply(qfun, self.b)
 
                 qfun = (~adder.adder)(len(self.a), len(self.b), overflow,
@@ -339,7 +339,7 @@ class AdderTestCase(CircuitTestCase):
 
                 # Initialize a to its value
                 qfun = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun, self.a)
                 qfun = (~adder.adder)(half_bits, bits - half_bits, overflow,
                                       little_endian)
@@ -424,10 +424,10 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("overflow %s", overflow)
 
                 qfun = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun, self.a)
                 qfun = qregs.initialize_qureg_given_int(
-                    b_int, self.b, little_endian)
+                    b_int, len(self.b), little_endian)
                 self.qc.apply(qfun, self.b)
 
                 qfun = (~adder.subtractor)(len(self.a), len(self.b), overflow,
@@ -498,11 +498,11 @@ class AdderTestCase(CircuitTestCase):
                 self._prepare_adder_circuit(bits, bits, True)
 
                 qfun = qregs.initialize_qureg_given_int(
-                    a_int, self.a, little_endian)
+                    a_int, len(self.a), little_endian)
                 self.qc.apply(qfun, self.a)
 
                 qfun = qregs.initialize_qureg_given_int(
-                    b_int, self.b, little_endian)
+                    b_int, len(self.b), little_endian)
                 self.qc.apply(qfun, self.b)
 
                 qfun = (~adder.comparator)(bits, bits, little_endian)

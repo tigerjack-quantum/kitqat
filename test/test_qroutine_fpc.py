@@ -42,7 +42,7 @@ class PopulationCountTestCase(CircuitTestCase):
         self.logger.debug("a %s", a)
         self.logger.debug("cout %s", cout)
 
-        qfun = qregs.initialize_qureg_given_bitstring(name, a, True)
+        qfun = qregs.initialize_qureg_given_bitstring(name, True)
         program.apply(qfun, a)
 
         qfun = fpc.get_qroutine_for_qubits_weight(len(a), len(cout), nwr_dict)

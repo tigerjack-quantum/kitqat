@@ -3,7 +3,7 @@ from test.common_circuit import CircuitTestCase
 from parameterized import parameterized
 from qat.external.utils.bits import conversion, misc
 from qat.external.utils.qroutines import qregs_init as qregs
-from qat.lang.AQASM import Program
+from qat.lang.AQASM.program import Program
 
 
 class QregInitTestCase(CircuitTestCase):
@@ -21,8 +21,9 @@ class QregInitTestCase(CircuitTestCase):
         prog = Program()
         bits = misc.get_required_bits(int_dec)
         qreg = prog.qalloc(bits)
-        qfun = qregs.initialize_qureg_given_int(int_dec, qreg, little_endian)
+        qfun = qregs.initialize_qureg_given_int(int_dec, bits, little_endian)
         prog.apply(qfun, qreg)
+        # self.draw_program(prog, circ_kwargs={'do_link': False})
         res = self.qpu.submit(prog.to_circ().to_job())
         state = res.raw_data[0].state.state
 

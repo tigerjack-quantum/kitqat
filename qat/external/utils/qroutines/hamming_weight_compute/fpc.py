@@ -162,7 +162,7 @@ def get_qroutine_for_qubits_weight_check(a_l, cout_l, weight_int,
     # We already have the string in little endian, so we don't have to reverse
     # it again
     qfun = qregs.initialize_qureg_to_complement_of_bitstring(
-        equal_str, result_qubits, False)
+        equal_str,  False)
     circuit.apply(qfun, result_qubits)
 
     if compute_eq:
