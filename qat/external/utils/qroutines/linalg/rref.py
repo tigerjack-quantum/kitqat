@@ -1,5 +1,4 @@
 import logging
-from typing import Set, Tuple
 
 import numpy as np
 from qat.lang.AQASM.gates import X
@@ -24,53 +23,60 @@ the RREF.
     swap_ancilla_n = int(add_ancilla_n / 2)
     return swap_ancilla_n, add_ancilla_n
 
-def build_rref_matrix_from_sample(sample, qreg_range: Set[int],
-                                  shape: Tuple[int, int]):
-    matrix = np.zeros(shape, dtype=np.ubyte)
-    interesting_bits = [
-        val for i, val in enumerate(sample.state.bitstring) if i in qreg_range
-    ]
-    for i, val in enumerate(interesting_bits):
-        row = i // shape[1]
-        col = i % shape[1]
-        matrix[row][col] = val
-    return matrix
-
 
 def build_u_matrix_from_sample(sample, nsquare):
+    """Build the matrix of transformations applied to obtain the RREF. I.e., if
+    original matrix was A and its RREF is B, we have U * B = A.
+
+    This function will return the U matrix by analyzing the ancilla qubits
+    produced by the RREF gate.
+
+    """
     if len(sample.intermediate_measurements) != 2:
         return
     inter_meas_aout, inter_meas_bout = [
         i.cbits for i in sample.intermediate_measurements
     ]
+    return build_u_matrix_from_bitstrings(inter_meas_aout, inter_meas_bout,
+                                          nsquare)
+
+
+def build_u_matrix_from_bitstrings(swaps: str, adds: str, nsquare):
+    """Build the matrix of transformations applied to obtain the RREF. I.e., if
+    original matrix was A and its RREF is B, we have U * B = A.
+
+    This function will return the U matrix by analyzing the ancilla qubits
+    produced by the RREF gate.
+
+    """
     swap_idx = 0
     add_idx = 0
     u = np.eye(nsquare, dtype=int)
     for i in range(nsquare):
         for j in range(i + 1, nsquare):
-            if inter_meas_aout[swap_idx]:
+            if swaps[swap_idx]:
                 u[i, ] += u[j, ]
             swap_idx += 1
         for j in range(nsquare):
             if j == i:
                 continue
-            if inter_meas_bout[add_idx]:
+            if adds[add_idx]:
                 u[j, ] += u[i, ]
             add_idx += 1
     u = u % 2
     return u
 
+
 @build_gate('RREF_OPS', [int, int])
 def gate_same_ops_for_vector(nrows: int, ncols: int):
-
     """Apply the same operations applied to obtain the matrix RREF to a vector. The
     idea is that if originally we had A*x = y, now we'll have A_rref * x =
     y_rref.
 
-    :param nrows: The rows of the original matrix A
-    :param ncols: The cols of the original matrix A
-    :returns: A qrouting taking as input
-       - vec_qreg
+    :param nrows: The number of rows of the original matrix A
+    :param ncols: The number of cols of the original matrix A
+    :returns: A qroutine taking as input (in this order)
+       - vector_qreg
        - swap_qreg
        - add_qreg
     """
@@ -82,7 +88,7 @@ def gate_same_ops_for_vector(nrows: int, ncols: int):
 
     idx = 0
     for i in range(nrows):
-        for j in range(i+1, nrows):
+        for j in range(i + 1, nrows):
             qfun.apply(X.ctrl(2), swap_wires[idx], vec_wires[j], vec_wires[i])
             idx += 1
 
@@ -90,18 +96,27 @@ def gate_same_ops_for_vector(nrows: int, ncols: int):
     for i in range(nrows):
         for j in range(nrows):
             if i != j:
-                qfun.apply(X.ctrl(2), add_wires[idx], vec_wires[i], vec_wires[j])
+                qfun.apply(X.ctrl(2), add_wires[idx], vec_wires[i],
+                           vec_wires[j])
                 idx += 1
 
     return qfun
 
+
 @build_gate('RREF', [int, int])
 def get_rref(nrows, ncols):
-    """
+    """Apply RREF to a matrix A.
+
+    :param nrows: The number of rows of the original matrix A
+    :param ncols: The number of cols of the original matrix A
     The gate takes as input, in this order:
-    - The matrix (nrows x ncols) qreg
+    - The matrix (nrows x ncols), represented as qreg
     - The swap ancillae
     - The add ancillae
+
+    The number of swap and add ancillae required can be obtained through the
+    get_ancillae function.
+
     """
     qrout = QRoutine()
 
