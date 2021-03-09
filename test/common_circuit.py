@@ -19,6 +19,7 @@ class CircuitTestCase(BasicTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.logger.info("using simulator: ", end="")
+        cls.links = []
         if cls.QLM_ON == '0':
             cls.logger.info("PyLinalg")
             from qat.qpus import PyLinalg
@@ -34,22 +35,18 @@ class CircuitTestCase(BasicTestCase):
                 cls.logger.info("Feynman")
                 from qat.qpus import Feynman
                 cls.qpu = Feynman()
-                cls.links = []
             elif cls.QLM_ON.lower() == 'mps':
                 cls.logger.info("MPS")
                 from qat.qpus import MPS
                 cls.qpu = MPS(lnnize=True)
-                cls.links = []
             else:
                 # default to linalg
                 from qat.qpus import LinAlg
                 cls.logger.info("LinAlg")
                 cls.qpu = LinAlg()
-                cls.links = []
 
     @classmethod
     def simulate_program(cls, program, circ_args={}, job_args={}):
-        print(circ_args)
         if len(cls.links) > 0 and 'link' not in circ_args:
             print("linking")
             circ_args['link'] = cls.links
@@ -60,11 +57,13 @@ class CircuitTestCase(BasicTestCase):
         return res
 
     @staticmethod
-    def draw_circuit(program: Union['Program', 'Circuit'], **kwargs):
-        try:
-            display(program)
-        except AttributeError:
-            display(program.to_circ(), **kwargs)
+    def draw_program(program: 'Program', circ_kwargs={}, display_kwargs={}):
+        cr = program.to_circ(**circ_kwargs)
+        CircuitTestCase.draw_circuit(cr, **display_kwargs)
+
+    @staticmethod
+    def draw_circuit(circuit: 'Circuit', **display_kwargs):
+        display(circuit, **display_kwargs)
 
     @staticmethod
     def print_result(result: 'Result'):

@@ -2,11 +2,10 @@ import functools
 import logging
 from typing import TYPE_CHECKING, Sequence
 
-from qat.lang.AQASM.gates import X
-from qat.lang.AQASM.routines import QRoutine
-from qat.lang.AQASM.misc import build_gate
-
 from qat.external.utils.bits import conversion
+from qat.lang.AQASM.gates import X
+from qat.lang.AQASM.misc import build_gate
+from qat.lang.AQASM.routines import QRoutine
 
 if TYPE_CHECKING:
     from qat.lang.AQASM.bits import QRegister
@@ -39,7 +38,8 @@ def _conditionally_initialize_qureg_given_bitarray(
         if aint == 1:
             part(qbit)
         elif aint != 0:
-            raise ValueError(f"string {aint} contains non-binary value(s)")
+            err_mes = "string %s contains non-binary value %s" % (a_arr, aint)
+            raise ValueError(err_mes)
     return qr
 
 

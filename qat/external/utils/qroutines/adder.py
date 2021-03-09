@@ -234,8 +234,13 @@ def _unmajority(name):
     qfun.apply(CNOT, a, b)
     return qfun
 
+# TODO
+@build_gate("HIGH_BIT", [])
+def high_bit_only():
+    pass
 
-@build_gate("2bCOMP", [])
+
+@build_gate("2BIT_COMP", [])
 def two_bit_comparator():
     """
     The out qubit should be initialized to 0.
