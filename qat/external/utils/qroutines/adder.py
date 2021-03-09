@@ -6,7 +6,8 @@ Ripple adder example based on Cuccaro et al., quant-ph/0410184.
 import itertools
 import logging
 
-from qat.lang.AQASM import CCNOT, CNOT, QRoutine, X
+from qat.lang.AQASM.gates import CCNOT, CNOT, X
+from qat.lang.AQASM.routines import QRoutine
 from qat.lang.AQASM.misc import build_gate
 
 # from .fake import fake
@@ -232,3 +233,27 @@ def _unmajority(name):
     qfun.apply(CNOT, a, c)
     qfun.apply(CNOT, a, b)
     return qfun
+
+
+@build_gate("2bCOMP", [])
+def two_bit_comparator():
+    """
+    The out qubit should be initialized to 0.
+    Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
+
+    """
+    qrout = QRoutine()
+    a = qrout.new_wires(1)
+    b = qrout.new_wires(1)
+    out = qrout.new_wires(1)
+    c = qrout.new_wires(1)
+    qrout.set_ancillae(c)
+
+    # b must be negated since we want to have a + (-b)
+    qrout.apply(X, b)
+    qrout.apply(_majority(""), c, b, a)
+    qrout.apply(CNOT, a, out)
+    qrout.apply(_majority("").dag(), c, b, a)
+    qrout.apply(X, b)
+
+    return qrout
