@@ -1,16 +1,16 @@
-from qat.external.utils.qroutines import qregs_init
-from qat.lang.AQASM.routines import QRoutine
-from qat.lang.AQASM.misc import build_gate
+from typing import TYPE_CHECKING, Set, Tuple
 
-from typing import Set, Tuple, TYPE_CHECKING
+import nptyping
+import numpy as np
+from qat.external.utils.qroutines import qregs_init
+from qat.lang.AQASM.misc import build_gate
+from qat.lang.AQASM.routines import QRoutine
 
 if TYPE_CHECKING:
     from qat.core.wrappers.result import Sample
 
-import numpy as np
 
-
-@build_gate("MATRIX_INIT", [list, bool])
+@build_gate("MATRIX_INIT", [nptyping.NDArray])
 def initialize_qureg_to_binary_matrix(matrix):
     """Initialize a set of quregs to the value of the binary matrix, row-wise. I.e.
        matrix [[1, 0], [1, 0]] will produce qreg [1, 0, 1, 0].
@@ -29,7 +29,14 @@ def initialize_qureg_to_binary_matrix(matrix):
             matrix[row_idx, :], False)
         qfun.apply(qrout, qreg)
 
-    return QRoutine
+    return qfun
+
+
+def get_rows_as_qbit_list(nrows, ncols, qreg):
+    rows_qbits = []
+    for row_idx in range(nrows):
+        rows_qbits.append(list(qreg[row_idx * ncols:row_idx * ncols + ncols]))
+    return rows_qbits
 
 
 def build_matrix_from_sample(sample: 'Sample', qreg_range: Set[int],

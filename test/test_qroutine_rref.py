@@ -2,7 +2,8 @@ from test.common_circuit import CircuitTestCase
 
 import numpy as np
 from parameterized import parameterized
-from qat.external.utils.qroutines import qregs_init, rref
+from qat.external.utils.qroutines.linalg import matrix as qmatrix
+from qat.external.utils.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 
@@ -10,21 +11,20 @@ from sympy import Matrix
 class RrefTestCase(CircuitTestCase):
     def _prepare_circuit(self, matrix):
         self.pr = Program()
-        n_rows, n_cols = matrix.shape
-        self.qregs_rows = []
-        for row_idx in range(n_rows):
-            # qregs_rows.append(qregs_init.ini)
-            qreg = self.pr.qalloc(n_cols)
-            qrout = qregs_init.initialize_qureg_given_bitarray(
-                matrix[row_idx, :], qreg, False)
-            self.pr.apply(qrout, qreg)
-            self.qregs_rows.append(qreg)
+        nrows, ncols = matrix.shape
+        self.nsquare = min(matrix.shape)
+        # qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix.tolist())
+        qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix)
+        qr_matrix = self.pr.qalloc(nrows * ncols)
+        self.pr.apply(qrout, qr_matrix)
+        self.qregs_rows = qmatrix.get_rows_as_qbit_list(
+            nrows, ncols, qr_matrix)
 
         self.qbit_range = set(q.index for qreg in self.qregs_rows
                               for q in qreg)
-        self.nsquare = min(matrix.shape)
-        self.add_qregs = self.pr.qalloc(self.nsquare * (self.nsquare - 1))
-        self.swap_qregs = self.pr.qalloc(int(len(self.add_qregs) / 2))
+        swap_anc_n, add_anc_n = rref.get_required_ancillae(nrows, ncols)
+        self.add_qregs = self.pr.qalloc(add_anc_n)
+        self.swap_qregs = self.pr.qalloc(swap_anc_n)
 
     def _common_test(self,
                      matrix,
@@ -38,21 +38,17 @@ class RrefTestCase(CircuitTestCase):
         self.pr.apply(rref_gate, self.qregs_rows, self.swap_qregs,
                       self.add_qregs)
 
-        # measuring = functools.reduce(operator.concat,
-        #                              [i.qbits for i in self.qregs_rows])
-        # measuring_idxs = [qb.index for qb in self.qregs_rows]
         if test_u:
             # It doesn't work on myqlm
             self.pr.measure(qbits=self.swap_qregs)
             self.pr.measure(qbits=self.add_qregs)
         cr = self.pr.to_circ()
-        res = self.qpu.submit(cr.to_job(qubits=self.qregs_rows))
+
+        res = self.qpu.submit(cr.to_job(qubits=self.qbit_range))
 
         sample = res.raw_data[0]
-        mat_rref = rref.build_rref_matrix_from_sample(sample, self.qbit_range,
-                                                      matrix.shape)
-        # input(mat_rref)
-
+        mat_rref = qmatrix.build_matrix_from_sample(sample, self.qbit_range,
+                                                    matrix.shape)
         mat_rref_sim = Matrix(matrix).rref(pivots=False)
         # The rrefs are expected to be different
         if should_fail:
