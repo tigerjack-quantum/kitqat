@@ -13,40 +13,6 @@ from qat.lang.AQASM.routines import QRoutine
 _LOGGER = logging.getLogger(__name__)
 
 
-@build_gate("SWAP_COLS", [int])
-def build_gate_swap_cols(nrows):
-    routine = QRoutine()
-    col1 = routine.new_wires(nrows)
-    col2 = routine.new_wires(nrows)
-
-    for wire1, wire2 in zip(col1, col2):
-        routine.apply(SWAP, wire1, wire2)
-
-    return routine
-
-
-@build_gate("SORTING_NETWORK_COLS", [int, dict])
-def build_gate_sorting_network_cols(
-        nrows: int, net_data: Dict[str, Any]) -> QRoutine:
-    ncols: int = net_data['n_lines']
-    comp_len: int = net_data['n_comps']
-
-    routine = QRoutine()
-    row_wires = []
-    for _ in range(nrows):
-        row_wires.append(routine.new_wires(ncols))
-    col_wires = []
-    for col_idx in range(ncols):
-        col_wires.append(list([qr[col_idx] for qr in row_wires]))
-    comp = routine.new_wires(comp_len)
-
-    qrout = build_gate_swap_cols(nrows)
-    for pattern in net_data['swaps_pattern']:
-        routine.apply(qrout.ctrl(), comp[pattern[0]], col_wires[pattern[1]],
-                      col_wires[pattern[2]])
-    return routine
-
-
 def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
     a_len: int = net_data['n_lines']
     comp_len: int = net_data['n_comps']
@@ -170,7 +136,6 @@ def build_gate_sorter(net_data):
 def get_pattern_sorter(n):
     net_data = {}
     lis = []
-    print("")
 
     _get_pattern_sorter_support(0, n, lis)
 
