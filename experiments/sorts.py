@@ -1,13 +1,14 @@
-import numpy as np
 import functools
-import operator
-from qat.pylinalg.service import PyLinalg
-from qat.lang.AQASM.program import Program
-from qat.external.utils.qroutines import sorting_network as sn, qregs_init
-from qat.external.utils.qroutines.linalg import rref, matrix as qmatrix
-from qat.core.console import display
 # from isdclassic.utils import rectangular_codes_hardcoded as rch
 import itertools
+import operator
+
+import numpy as np
+from qat.external.utils.qroutines import qregs_init
+from qat.external.utils.qroutines import sorting_network as sn
+from qat.external.utils.qroutines.linalg import matrix as qmatrix
+from qat.lang.AQASM.program import Program
+from qat.pylinalg.service import PyLinalg
 
 QPU = PyLinalg()
 
@@ -26,10 +27,12 @@ def _prepare_circuit(matrix):
     return pr, qreg_mat, qbit_range
     # return pr, qreg_mat, qregs_rows, qregs_cols, qbit_rows_idx, qbit_range
 
+
 def bla2(string):
     n = len(string)
     data = sn.get_pattern_sorter(n)
     print(data)
+
 
 def bla3(s):
     pr = Program()
@@ -48,6 +51,7 @@ def bla3(s):
 
     res = QPU.submit(cr.to_job())
     print(res.raw_data[0].state)
+
 
 def tada(h, s):
     # pr, qregs_rows, qregs_cols, qbit_rows_idx, qbit_range = _prepare_circuit(h)
