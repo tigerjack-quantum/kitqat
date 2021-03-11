@@ -17,7 +17,7 @@ class RrefTestCase(CircuitTestCase):
         qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix)
         qr_matrix = self.pr.qalloc(nrows * ncols)
         self.pr.apply(qrout, qr_matrix)
-        self.qregs_rows = qmatrix.get_rows_as_qbit_list(
+        self.qregs_rows = qmatrix.get_rows_as_qubit_list(
             nrows, ncols, qr_matrix)
 
         self.qbit_range = set(q.index for qreg in self.qregs_rows
@@ -86,7 +86,7 @@ class RrefTestCase(CircuitTestCase):
         the left
 
         """
-        self._common_test(matrix, False, True, False)
+        self._common_test(matrix, True, True, False)
 
     @parameterized.expand([
         ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]])),
@@ -96,7 +96,7 @@ class RrefTestCase(CircuitTestCase):
     def test_not_equals_not_iden(self, name, matrix):
         """They should give different w.r.t. a normal RREF, and also no identity
         """
-        self._common_test(matrix, False, True, True)
+        self._common_test(matrix, True, True, True)
 
     @parameterized.expand([
         ("3x4", np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0]])),
@@ -108,4 +108,4 @@ class RrefTestCase(CircuitTestCase):
         w.r.t. the normal RREF, but still no identity
 
         """
-        self._common_test(matrix, False, False, False)
+        self._common_test(matrix, True, False, False)
