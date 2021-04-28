@@ -517,3 +517,84 @@ class AdderTestCase(CircuitTestCase):
                 actual = res.raw_data[0].state.state
                 self.logger.debug("expected %s, actual %s", expected, actual)
                 self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+    ])
+    def test_two_bits_adder(self, a_int, b_int):
+        """
+        Add a_int and b_int and check their result.
+        The number of bits used to represent the ints is computed at runtime.
+        """
+        # bits = misc.get_required_bits(a_int, b_int)
+        self._prepare_adder_circuit(1, 1, True)
+        self.logger.debug("a %d", len(self.a))
+        self.logger.debug("b %d", len(self.b))
+
+        qfun = qregs.initialize_qureg_given_int(a_int, len(self.a), True)
+        self.qc.apply(qfun, self.a)
+        qfun = qregs.initialize_qureg_given_int(b_int, len(self.b), True)
+        self.qc.apply(qfun, self.b)
+
+        qfun = (~adder.two_bit_adder)()
+        self.qc.apply(qfun, self.a, self.b, self.cout)
+        to_measure_qbits = [self.cout[0].index]
+        # self.draw_circuit(self.qc)
+        to_measure_qbits = [self.cout[0].index, self.b[0].index]
+
+        self.logger.debug("a % s", [qbit.index for qbit in self.a])
+        self.logger.debug("b % s", [qbit.index for qbit in self.b])
+        self.logger.debug("to measure qubits %s", to_measure_qbits)
+        res = self.qpu.submit(
+            self.qc.to_circ().to_job(qubits=to_measure_qbits))
+        self.logger.debug("res %s", res)
+
+        counts = len(res.raw_data)
+        self.assertEqual(counts, 1)
+        expected = a_int + b_int
+        expected_str = conversion.get_bitstring_from_int(
+            expected, len(to_measure_qbits))
+        state = res.raw_data[0].state
+        self.logger.debug("expected %s, having %s", expected_str, state)
+        self.logger.debug("expected %d, having %d", expected, state.state)
+        self.assertEqual(state.state, expected)
+
+    @parameterized.expand([
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+    ])
+    def test_two_bits_comparator(self, a_int, b_int):
+        """
+        Add a_int and b_int and check their result.
+        The number of bits used to represent the ints is computed at runtime.
+        """
+        # bits = misc.get_required_bits(a_int, b_int)
+        self._prepare_adder_circuit(1, 1, True)
+        self.logger.debug("a %d", len(self.a))
+        self.logger.debug("b %d", len(self.b))
+
+        qfun = qregs.initialize_qureg_given_int(a_int, len(self.a), True)
+        self.qc.apply(qfun, self.a)
+        qfun = qregs.initialize_qureg_given_int(b_int, len(self.b), True)
+        self.qc.apply(qfun, self.b)
+
+        qfun = (~adder.two_bit_comparator)()
+        self.qc.apply(qfun, self.a, self.b, self.cout)
+
+        self.logger.debug("a % s", [qbit.index for qbit in self.a])
+        self.logger.debug("b % s", [qbit.index for qbit in self.b])
+        circ = self.qc.to_circ()
+        res = self.qpu.submit(circ.to_job(qubits=self.cout))
+        self.logger.debug("res %s", res)
+
+        counts = len(res.raw_data)
+        self.assertEqual(counts, 1)
+        expected = int(a_int > b_int)
+        state = res.raw_data[0].state
+        self.logger.debug("expected %d, having %d", expected, state.state)
+        self.assertEqual(state.state, expected)

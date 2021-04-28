@@ -240,8 +240,35 @@ def high_bit_only():
     pass
 
 
-@build_gate("2BIT_COMP", [])
-def two_bit_comparator():
+
+
+# @build_gate("2BIT_COMP", [])
+# def two_bit_comparator_cuccaro():
+#     """
+#     The out qubit should be initialized to 0.
+#     Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
+
+#     """
+#     qrout = QRoutine()
+#     a = qrout.new_wires(1)
+#     b = qrout.new_wires(1)
+#     if overflow_qbit:
+#         out = qfun.new_wires(1)
+#     # out = qrout.new_wires(1)
+#     c = qrout.new_wires(1)
+#     qrout.set_ancillae(c)
+
+#     # b must be negated since we want to have a + (-b)
+#     qrout.apply(X, b)
+#     qrout.apply(_majority(""), c, b, a)
+#     qrout.apply(CNOT, a, out)
+#     qrout.apply(_majority("").dag(), c, b, a)
+#     qrout.apply(X, b)
+
+#     return qrout
+
+@build_gate("2BIT_ADDER", [])
+def two_bit_adder() -> QRoutine:
     """
     The out qubit should be initialized to 0.
     Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
@@ -250,15 +277,31 @@ def two_bit_comparator():
     qrout = QRoutine()
     a = qrout.new_wires(1)
     b = qrout.new_wires(1)
-    out = qrout.new_wires(1)
     c = qrout.new_wires(1)
-    qrout.set_ancillae(c)
+
+    qrout.apply(CNOT, a, b)
+    qrout.apply(X, b)
+    qrout.apply(CCNOT, a, b, c)
+    qrout.apply(X, b)
+
+    return qrout
+
+@build_gate("2BIT_COMP", [])
+def two_bit_comparator() -> QRoutine:
+    """
+    The out qubit should be initialized to 0.
+    Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
+
+    """
+    qrout = QRoutine()
+    a = qrout.new_wires(1)
+    b = qrout.new_wires(1)
+    c = qrout.new_wires(1)
 
     # b must be negated since we want to have a + (-b)
     qrout.apply(X, b)
-    qrout.apply(_majority(""), c, b, a)
-    qrout.apply(CNOT, a, out)
-    qrout.apply(_majority("").dag(), c, b, a)
+    qrout.apply(two_bit_adder(), a, b, c)
+    qrout.apply(CNOT, a, b)
     qrout.apply(X, b)
 
     return qrout
