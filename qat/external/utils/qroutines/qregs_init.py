@@ -1,6 +1,7 @@
+import nptyping
 import functools
 import logging
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, Union, List
 
 from qat.external.utils.bits import conversion
 from qat.lang.AQASM.gates import X
@@ -19,8 +20,8 @@ LOGGER = logging.getLogger(__name__)
 # Atos qlm uses little endian for all other stuffs
 def _conditionally_initialize_qureg_given_bitarray(
     a_arr: Sequence[int],
-    ncontrols: 'QRegister',
-    little_endian,
+    ncontrols: int,
+    little_endian: bool,
 ) -> QRoutine:
     qr = QRoutine()
     bits = qr.new_wires(len(a_arr))
@@ -75,6 +76,7 @@ def conditionally_initialize_qureg_to_complement_of_bitarray(
         a_n_str, ncontrols, little_endian)
 
 
+@build_gate("QBIT_INIT_BITA", [List, bool])
 def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
     """Given a binary string, initialize the qreg to the proper value
     corresponding to it. Basically, if a_str is 1011, the function negate bits

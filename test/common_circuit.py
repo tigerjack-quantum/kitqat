@@ -53,7 +53,7 @@ class CircuitTestCase(BasicTestCase):
         cr = program.to_circ(**circ_args)
         jb = cr.to_job(**job_args)
         res = cls.qpu.submit(jb)
-        print("simulation over")
+        # print("simulation over")
         return res
 
     @staticmethod

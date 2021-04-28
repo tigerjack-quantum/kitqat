@@ -39,7 +39,6 @@ class RrefTestCase(CircuitTestCase):
                       self.add_qregs)
 
         if test_u:
-            # It doesn't work on myqlm
             self.pr.measure(qbits=self.swap_qregs)
             self.pr.measure(qbits=self.add_qregs)
         cr = self.pr.to_circ()
@@ -69,8 +68,7 @@ class RrefTestCase(CircuitTestCase):
                 np.testing.assert_array_equal(mat_rref, mat_rref_sim)
 
         # The matrix of transformations U can be reconstructed from the
-        # ancillae. However, it doesn't work properly on myqlm, while it works
-        # on QLM 1.0.
+        # ancillae. 
         if test_u:
             u = rref.build_u_matrix_from_sample(sample, self.nsquare)
             np.testing.assert_array_equal(u @ matrix % 2, mat_rref)

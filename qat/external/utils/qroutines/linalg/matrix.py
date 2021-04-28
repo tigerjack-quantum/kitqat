@@ -28,7 +28,8 @@ def initialize_qureg_to_binary_matrix(matrix):
     for row_idx in range(n_rows):
         qreg = qfun.new_wires(n_cols)
         qrout = qregs_init.initialize_qureg_given_bitarray(
-            matrix[row_idx, :], False)
+            # tolist just to avoid typing errors
+            matrix[row_idx, :].tolist(), False)
         qfun.apply(qrout, qreg)
 
     return qfun

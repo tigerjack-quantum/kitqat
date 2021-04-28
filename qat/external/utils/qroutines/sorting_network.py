@@ -1,5 +1,6 @@
 """
 See http://staff.ustc.edu.cn/~csli/graduate/algorithms/book6/chap28.htm
+and https://fileadmin.cs.lth.se/cs/Personal/Rolf_Karlsson/lect10.pdf
 """
 import logging
 from typing import Any, Dict
