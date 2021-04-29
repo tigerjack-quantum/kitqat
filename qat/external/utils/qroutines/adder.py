@@ -234,12 +234,11 @@ def _unmajority(name):
     qfun.apply(CNOT, a, b)
     return qfun
 
+
 # TODO
 @build_gate("HIGH_BIT", [])
 def high_bit_only():
     pass
-
-
 
 
 # @build_gate("2BIT_COMP", [])
@@ -267,6 +266,7 @@ def high_bit_only():
 
 #     return qrout
 
+
 @build_gate("2BIT_ADDER", [])
 def two_bit_adder() -> QRoutine:
     """
@@ -286,6 +286,7 @@ def two_bit_adder() -> QRoutine:
 
     return qrout
 
+
 @build_gate("2BIT_COMP", [])
 def two_bit_comparator() -> QRoutine:
     """
@@ -300,8 +301,7 @@ def two_bit_comparator() -> QRoutine:
 
     # b must be negated since we want to have a + (-b)
     qrout.apply(X, b)
-    qrout.apply(two_bit_adder(), a, b, c)
-    qrout.apply(CNOT, a, b)
+    qrout.apply(CCNOT, a, b, c)
     qrout.apply(X, b)
 
     return qrout
