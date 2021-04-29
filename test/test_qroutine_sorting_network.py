@@ -5,7 +5,7 @@ from qat.external.utils.qroutines import sorting_network as sn
 from qat.external.utils.qroutines import qregs_init as qregs
 from qat.lang.AQASM.program import Program
 
-# import unittest
+import unittest
 
 
 class SortingNetworkTestCase(CircuitTestCase):
@@ -47,7 +47,6 @@ class SortingNetworkTestCase(CircuitTestCase):
         "10010000",
         "11000011",
     ])
-    # @unittest.skip("WORKING")
     def test_bitonic_sorter(self, string):
         is_bitonic = self._check_bitonic(string)
         n = len(string)
@@ -79,7 +78,6 @@ class SortingNetworkTestCase(CircuitTestCase):
         "1101",
         "00110111",
     ])
-    # @unittest.skip("WORKING")
     def test_merger(self, string):
         are_sorted = self._check_halves_sorted(string)
         n = len(string)
@@ -101,6 +99,24 @@ class SortingNetworkTestCase(CircuitTestCase):
         if are_sorted:
             self.assertTrue(is_sorted)
             self.assertEqual(obtained, sorted_string_exp)
+    def _test_sorter_common(self, string):
+        n = len(string)
+        pattern = sn.get_pattern_sorter(n)
+
+        self._prepare_circuit(string, pattern)
+
+        qrout = sn.build_gate_sorter(pattern)
+        self.pr.apply(qrout, self.qr, self.comps)
+
+        res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
+        obtained = res.raw_data[0].state.bitstring
+
+        is_sorted = all(obtained[i] <= obtained[i + 1]
+                        for i in range(len(string) - 1))
+        sorted_string_exp = ''.join(list(sorted(string)))
+
+        self.assertTrue(is_sorted)
+        self.assertEqual(obtained, sorted_string_exp)
 
     @parameterized.expand([
         "01",
@@ -112,25 +128,14 @@ class SortingNetworkTestCase(CircuitTestCase):
         "0111",
         "1011",
         "1001",
-        # "10110111",
     ])
     def test_sorter(self, string):
-        n = len(string)
-        pattern = sn.get_pattern_sorter(n)
+        self._test_sorter_common(string)
 
-        self._prepare_circuit(string, pattern)
+    @parameterized.expand([
+        "10110111",
+    ])
+    @unittest.skipUnless(CircuitTestCase.QLM_ON, CircuitTestCase.QLM_ON_REASON)
+    def test_sorter_qlm(self, string):
+        self._test_sorter_common(string)
 
-        qrout = sn.build_gate_merger(pattern)
-        self.pr.apply(qrout, self.qr, self.comps)
-        # cr = self.pr.to_circ()
-        # print(self.pr.qbit_count)
-
-        res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
-        obtained = res.raw_data[0].state.bitstring
-
-        is_sorted = all(obtained[i] <= obtained[i + 1]
-                        for i in range(len(string) - 1))
-        sorted_string_exp = ''.join(list(sorted(string)))
-
-        self.assertTrue(is_sorted)
-        self.assertEqual(obtained, sorted_string_exp)

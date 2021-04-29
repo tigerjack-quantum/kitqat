@@ -1,6 +1,12 @@
 """
 See http://staff.ustc.edu.cn/~csli/graduate/algorithms/book6/chap28.htm
 and https://fileadmin.cs.lth.se/cs/Personal/Rolf_Karlsson/lect10.pdf
+for reference.
+
+The original work is in Chapter 27.3,4,5 of
+T. H. Cormen, C. E. Leiserson, R. L. Rivest, and C. Stein,
+Introduction to algorithms, second edition.
+The MIT Press and McGraw-Hill Book Company, 2001.
 """
 import logging
 from typing import Any, Dict
@@ -20,12 +26,14 @@ def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
     routine = QRoutine()
     a_wires = routine.new_wires(a_len)
     comp_wires = routine.new_wires(comp_len)
+
     for swap_pattern in net_data['swaps_pattern']:
+        a_qb = a_wires[swap_pattern[1]]
+        b_qb = a_wires[swap_pattern[2]]
+        ctrl_qb = comp_wires[swap_pattern[0]]
         # Compare qubits 1 and 2 and put the output in pattern 0
-        routine.apply(two_bit_comparator(), a_wires[swap_pattern[1]],
-                      a_wires[swap_pattern[2]], comp_wires[swap_pattern[0]])
-        routine.apply(SWAP.ctrl(), comp_wires[swap_pattern[0]],
-                      a_wires[swap_pattern[1]], a_wires[swap_pattern[2]])
+        routine.apply(two_bit_comparator(), a_qb, b_qb, ctrl_qb)
+        routine.apply(SWAP.ctrl(), ctrl_qb, a_qb, b_qb)
     return routine
 
 
@@ -128,6 +136,7 @@ def _get_pattern_merger_support(n, net_data, comp_q_idx, start_shift=0):
                                              start + swap_step * 3, swap_step,
                                              comp_q_idx, net_data)
     return comp_q_idx
+
 
 @build_gate("SORTER", [dict])
 def build_gate_sorter(net_data):
