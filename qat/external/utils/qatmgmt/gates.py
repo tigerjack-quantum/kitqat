@@ -10,9 +10,10 @@ from qat.external.utils.numpy.qstate_manipulation import (
     get_conjugate_from_matrix, get_ctrl_from_matrix, get_dagger_from_matrix,
     get_transpose_from_matrix)
 from qat.external.utils.qatmgmt import variables
-from qat.lang.AQASM import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                            SQRTSWAP, SWAP, AbstractGate, H, I, ParamGate,
-                            Gate, QRoutine, S, T, X, Y, Z)
+from qat.lang.AQASM.gates import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
+                                  SQRTSWAP, SWAP, AbstractGate, H, I,
+                                  ParamGate, Gate, S, T, X, Y, Z)
+from qat.lang.AQASM.routines import QRoutine
 from qat.lang.AQASM.misc import generate_gate_set
 
 if TYPE_CHECKING:
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-GATE_SET_QAT = {
+GATE_SET_QAT = default_gate_set().gate_signatures
+GATE_SET_TO_GATE = {
     'H': H,
     'X': X,
     'Y': Y,
@@ -155,7 +157,8 @@ def get_gate_from_gate_name(
             # In other words, no need to check subgate
             if syntax.name in GATE_SET_QAT:
                 # b. +  parametrized gate
-                gate = GATE_SET_QAT[syntax.name]
+                # gate = GATE_SET_QAT[syntax.name]
+                gate = GATE_SET_TO_GATE[syntax.name]
                 for parameter in syntax.parameters:
                     if parameter.is_abstract:
                         if parameter.string_p in variables_map:

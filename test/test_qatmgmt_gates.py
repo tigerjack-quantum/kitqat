@@ -23,7 +23,7 @@ class TestQatmgmtGates(CircuitTestCase):
         for op in c:
             matrix = get_np_matrix_from_circuit_operation(c, op, {})
             self.assertIsNotNone(matrix)
-            nptesting.assert_array_equal(matrix, GATE_SET_QAT[op.gate][1])
+            nptesting.assert_array_equal(matrix, GATE_SET_QAT[op.gate].matrix_generator())
 
     def test_get_np_matrix_from_op_submatrices_only(self):
         p = Program()
@@ -41,9 +41,9 @@ class TestQatmgmtGates(CircuitTestCase):
         }]
 
         for op, op2, expgate in zip(c, c2, expected):
-            matrix = get_np_matrix_from_circuit_operation(c, op)
+            matrix = get_np_matrix_from_circuit_operation(c, op, {})
             self.assertIsNotNone(matrix)
-            matrix2 = get_np_matrix_from_circuit_operation(c2, op2)
+            matrix2 = get_np_matrix_from_circuit_operation(c2, op2, {})
             nptesting.assert_array_equal(matrix, matrix2)
             gate, _ = get_gate_from_circuit_operation(c, op, {})
             self.assertIsNotNone(gate)
@@ -70,6 +70,4 @@ class TestQatmgmtGates(CircuitTestCase):
 
         res = self.qpu.submit(c.to_job())
         res2 = self.qpu.submit(c2.to_job())
-        print(res)
-        print(res2)
 
