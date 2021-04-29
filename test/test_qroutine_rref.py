@@ -1,3 +1,4 @@
+import unittest
 from test.common_circuit import CircuitTestCase
 
 import numpy as np
@@ -68,7 +69,7 @@ class RrefTestCase(CircuitTestCase):
                 np.testing.assert_array_equal(mat_rref, mat_rref_sim)
 
         # The matrix of transformations U can be reconstructed from the
-        # ancillae. 
+        # ancillae.
         if test_u:
             u = rref.build_u_matrix_from_sample(sample, self.nsquare)
             np.testing.assert_array_equal(u @ matrix % 2, mat_rref)
@@ -77,7 +78,6 @@ class RrefTestCase(CircuitTestCase):
         ("3x3", np.array([[0, 1, 1], [1, 0, 1], [0, 0, 1]])),
         ("3x4", np.array([[1, 1, 0, 0], [1, 0, 0, 0], [0, 1, 1, 1]])),
         ("3x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]])),
-        ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
     ])
     def test_equals_iden(self, name, matrix):
         """They should give the same results of a normal RREF and an identity matrix on
@@ -87,23 +87,45 @@ class RrefTestCase(CircuitTestCase):
         self._common_test(matrix, True, True, False)
 
     @parameterized.expand([
+        ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
+    ])
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
+                         CircuitTestCase.SLOW_TEST_ON_REASON)
+    def test_equals_iden_slow(self, name, matrix):
+        self._common_test(matrix, True, True, False)
+
+    @parameterized.expand([
         ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]])),
         ("3x4", np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 0, 1]])),
-        ("3x5", np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0], [0, 1, 1, 0, 1]]))
     ])
     def test_not_equals_not_iden(self, name, matrix):
         """They should give different w.r.t. a normal RREF, and also no identity
         """
         self._common_test(matrix, True, True, True)
 
+    @parameterized.expand([("3x5",
+                            np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0],
+                                      [0, 1, 1, 0, 1]]))])
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
+                         CircuitTestCase.SLOW_TEST_ON_REASON)
+    def test_not_equals_not_iden_slow(self, name, matrix):
+        self._common_test(matrix, True, True, True)
+
     @parameterized.expand([
         ("3x4", np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0]])),
         ("3x4", np.array([[0, 0, 0, 1], [1, 1, 1, 0], [1, 0, 0, 1]])),
-        ("3x5", np.array([[1, 0, 0, 1, 0], [0, 0, 0, 0, 0], [1, 1, 0, 1, 1]])),
     ])
     def test_equals_not_iden(self, name, matrix):
         """They should give the same results using the reversible circuit
         w.r.t. the normal RREF, but still no identity
 
         """
+        self._common_test(matrix, True, False, False)
+
+    @parameterized.expand([
+        ("3x5", np.array([[1, 0, 0, 1, 0], [0, 0, 0, 0, 0], [1, 1, 0, 1, 1]])),
+    ])
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
+                         CircuitTestCase.SLOW_TEST_ON_REASON)
+    def test_equals_not_iden_slow(self, name, matrix):
         self._common_test(matrix, True, False, False)
