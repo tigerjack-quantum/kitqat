@@ -123,7 +123,7 @@ class SortingNetworkTestCase(CircuitTestCase):
         qrout = sn.build_gate_merger(pattern)
         self.pr.apply(qrout, self.qr, self.comps)
         # cr = self.pr.to_circ()
-        print(self.pr.qbit_count)
+        # print(self.pr.qbit_count)
 
         res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
         obtained = res.raw_data[0].state.bitstring
