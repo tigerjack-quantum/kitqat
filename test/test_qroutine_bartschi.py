@@ -4,9 +4,8 @@ import unittest
 from math import factorial
 from test.common_circuit import CircuitTestCase
 
-from qat.lang.AQASM import Program
-
 from qat.external.utils.qroutines.hamming_weight_generate import bartschi
+from qat.lang.AQASM import Program
 
 
 class BartschiTestCase(CircuitTestCase):
@@ -67,11 +66,11 @@ class BartschiTestCase(CircuitTestCase):
                 self.assertEqual(state, 0)
 
     # TODO quite useless, just bigger
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON, CircuitTestCase.SLOW_TEST_ON_REASON)
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
+                         CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_bigger(self):
         for n in range(10, 20):
             for k in range(0, int(n / 2)):
-                print(n, k)
                 with self.subTest(n=n, k=k):
                     self._generate_program(n, k)
                     self._analyse_res_quick(n, k)
