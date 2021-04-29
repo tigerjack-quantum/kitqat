@@ -12,38 +12,43 @@ if TYPE_CHECKING:
 class CircuitTestCase(BasicTestCase):
     SLOW_TEST_ON = os.getenv('SLOW_ON') is not None
     SLOW_TEST_ON_REASON = "slow test"
-    QLM_ON = os.getenv('QLM_ON', '0')
+    QLM_ON = os.getenv('QLM_ON') is not None
     QLM_ON_REASON = "using qlm"
+    if QLM_ON:
+        SIMULATOR = os.getenv('SIMULATOR', 'linalg')
+    else:
+        SIMULATOR = os.getenv('SIMULATOR', 'pylinalg')
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.logger.info("using simulator: ", end="")
         cls.links = []
-        if cls.QLM_ON == '0':
+        if cls.SIMULATOR.lower() == 'pylinalg':
             cls.logger.info("PyLinalg")
             from qat.qpus import PyLinalg
             cls.qpu = PyLinalg()
+        elif cls.SIMULATOR.lower() == 'linalg':
+            # default to linalg
+            from qat.qpus import LinAlg
+            cls.logger.info("LinAlg")
+            cls.qpu = LinAlg()
+        elif cls.SIMULATOR.lower() == 'stabs':
+            cls.logger.info("Stabs")
+            from qat.qpus import Stabs
+            from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
+            cls.qpu = Stabs()
+            cls.links = [ccnot, x]
+        elif cls.SIMULATOR.lower() == 'feynman':
+            cls.logger.info("Feynman")
+            from qat.qpus import Feynman
+            cls.qpu = Feynman()
+        elif cls.SIMULATOR.lower() == 'mps':
+            cls.logger.info("MPS")
+            from qat.qpus import MPS
+            cls.qpu = MPS(lnnize=True)
         else:
-            if cls.QLM_ON.lower() == 'stabs':
-                cls.logger.info("Stabs")
-                from qat.qpus import Stabs
-                from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
-                cls.qpu = Stabs()
-                cls.links = [ccnot, x]
-            elif cls.QLM_ON.lower() == 'feynman':
-                cls.logger.info("Feynman")
-                from qat.qpus import Feynman
-                cls.qpu = Feynman()
-            elif cls.QLM_ON.lower() == 'mps':
-                cls.logger.info("MPS")
-                from qat.qpus import MPS
-                cls.qpu = MPS(lnnize=True)
-            else:
-                # default to linalg
-                from qat.qpus import LinAlg
-                cls.logger.info("LinAlg")
-                cls.qpu = LinAlg()
+            raise Exception(f"Simulator choice {cls.SIMULATOR} not correct")
 
     @classmethod
     def simulate_program(cls, program, circ_args={}, job_args={}):
