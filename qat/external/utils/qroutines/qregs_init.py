@@ -76,6 +76,7 @@ def conditionally_initialize_qureg_to_complement_of_bitarray(
         a_n_str, ncontrols, little_endian)
 
 
+# @build_gate("QBIT_INIT_BITA", [Union[List, nptyping.NDArray], bool])
 @build_gate("QBIT_INIT_BITA", [List, bool])
 def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
     """Given a binary string, initialize the qreg to the proper value

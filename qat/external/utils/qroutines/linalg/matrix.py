@@ -1,4 +1,4 @@
-from typing import List, Set, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, List, Set, Tuple
 
 import nptyping
 import numpy as np
@@ -10,7 +10,7 @@ from qat.lang.AQASM.routines import QRoutine
 
 if TYPE_CHECKING:
     from qat.core.wrappers.result import Sample
-    from qat.lang.AQASM.bits import QRegister, Qbit
+    from qat.lang.AQASM.bits import Qbit, QRegister
 
 
 @build_gate("MATRIX_INIT", [nptyping.NDArray])
@@ -28,8 +28,9 @@ def initialize_qureg_to_binary_matrix(matrix):
     for row_idx in range(n_rows):
         qreg = qfun.new_wires(n_cols)
         qrout = qregs_init.initialize_qureg_given_bitarray(
-            # tolist just to avoid typing errors
-            matrix[row_idx, :].tolist(), False)
+            # tolist to avoid typing errors
+            matrix[row_idx, :].tolist(),
+            False)
         qfun.apply(qrout, qreg)
 
     return qfun

@@ -1,5 +1,4 @@
 import functools
-# from isdclassic.utils import rectangular_codes_hardcoded as rch
 import itertools
 import operator
 
