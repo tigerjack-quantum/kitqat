@@ -51,7 +51,7 @@ def build_u_matrix_from_bitstrings(swaps: str, adds: str, nsquare):
     """
     swap_idx = 0
     add_idx = 0
-    u = np.eye(nsquare, dtype=int)
+    u = np.eye(nsquare, dtype=np.uint8)
     for i in range(nsquare):
         for j in range(i + 1, nsquare):
             if swaps[swap_idx]:
@@ -121,7 +121,7 @@ def get_rref(nrows, ncols):
     qrout = QRoutine()
 
     qregs_rows = []
-    for row_idx in range(nrows):
+    for _ in range(nrows):
         # qregs_rows.append(qregs_init.ini)
         qreg = qrout.new_wires(ncols)
         qregs_rows.append(qreg)
@@ -185,6 +185,8 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
     row_src = row_wires[row_src_idx]
     LOGGER.debug(f"row src {row_src}")
     # LOGGER.debug(f"row src idxs {[q.index for q in row_src]}")
+    LOGGER.debug(f"X src {row_src[row_src_idx]} ")
+    qfun.apply(X, row_src[col_src_idx])
     for row_oth_idx in range(row_src_idx + 1, nrows):
         # All the possible rows after the source row
         LOGGER.debug(f"row_oth_idx {row_oth_idx}")
@@ -203,12 +205,8 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
         # row_src[col_idx] can be 1 in two cases:
         # - It has been set to 1 in the previous round following a swap
         # - It was already 1 to start with
-        LOGGER.debug(f"X src {row_src[row_src_idx]} ")
-        qfun.apply(X, row_src[col_src_idx])
         LOGGER.debug(f"CNOT {row_src[col_src_idx]} -> {anc} ")
         qfun.apply(X.ctrl(), row_src[col_src_idx], anc)
-        LOGGER.debug(f"X src {row_src[col_src_idx]} ")
-        qfun.apply(X, row_src[col_src_idx])
 
         # sum if ancilla is set, but only the col_idxs after the given one. The
         # idea is that all previous idx are already at 0 bcz of previous row
@@ -218,6 +216,8 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
                 f"CCNOT {anc}, {row_oth[col_idx]} -> {row_src[col_idx]} ")
             qfun.apply(X.ctrl(2), anc, row_oth[col_idx], row_src[col_idx])
 
+    LOGGER.debug(f"X src {row_src[col_src_idx]} ")
+    qfun.apply(X, row_src[col_src_idx])
     return qfun
 
 
