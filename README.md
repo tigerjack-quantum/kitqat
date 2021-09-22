@@ -32,7 +32,7 @@ Then, you can install myQLM inside the environment by launching
 ```
 pyenv activate myqlm_env
 pip install myqlm
-pip install unittest paramaterized
+pip install paramaterized
 ```
 
 The last line is required if you want to launch the unittests, the main way to
