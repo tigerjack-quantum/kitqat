@@ -17,11 +17,11 @@ The best way to install the code would be through
 guides on how to install them. After both of them are installed, you can run.
 
 ```
-pyenv install 3.8.7
-pyenv virtualenv 3.8.7 myqlm_env
+pyenv install 3.9.7
+pyenv virtualenv 3.9.7 myqlm_env
 ```
 
-where `3.8.7` is the python version used for this code and `myqlm_env` is the
+where `3.9.7` is the python version used for this code and `myqlm_env` is the
 name of the virtual environment (you can change whatever name you like). You can
 also try for different python version, but the code has not been tested with
 them. You can check the python versions available for myQLM on their
@@ -32,11 +32,13 @@ Then, you can install myQLM inside the environment by launching
 ```
 pyenv activate myqlm_env
 pip install myqlm
+pip install nptyping sympy
 pip install paramaterized
 ```
 
-The last line is required if you want to launch the unittests, the main way to
-test our code and check the usability.
+`nptyping` is used to get dynamic hints for numpy. `sympy`, up to now, is only
+used to automatically compute the RREF of a matrix. `parameterized` is required
+by most of the unit tests in order to have a great refactoring of code.
 
 Then, you can clone this repository and activate the environment.
 
@@ -67,6 +69,12 @@ utilities. E.g. `LOG_LEVEL=DEBUG python -m unittest test.test_qroutine_rref`.
   * `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
     simulator is actually available. For QLM, there are a variety of available
     simulators depending on the version.
+
+# Experiments #
+The experiments directory contain some experiments that have been made.
+
+# Code #
+All the code is below `qat.external.utils`.
 
 # Contribution Guidelines #
 If you would like to contribute to the code, please open a [GitHub
