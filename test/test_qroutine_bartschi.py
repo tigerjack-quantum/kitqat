@@ -25,6 +25,7 @@ class BartschiTestCase(CircuitTestCase):
 
     def _analyse_res_extensive(self, n, k):
         circ = self.pr.to_circ()
+        # self.draw_circuit(circ, max_depth=2)
         res = self.qpu.submit(circ.to_job())
         ress = []
         amps = []
@@ -50,7 +51,6 @@ class BartschiTestCase(CircuitTestCase):
         for (n, k) in itertools.product(range(4, 10), range(1, 4)):
             with self.subTest(n=n, k=k):
                 self._generate_program(n, k)
-                # self._analyse_res_extensive(n, k)
                 self._analyse_res_extensive(n, k)
 
     def test_small_dagger(self):

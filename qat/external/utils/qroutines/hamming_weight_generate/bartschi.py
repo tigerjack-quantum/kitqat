@@ -1,7 +1,8 @@
 import logging
 
 import numpy as np
-from qat.lang.AQASM import CNOT, RY, QRoutine, X
+from qat.lang.AQASM.gates import CNOT, RY, X
+from qat.lang.AQASM.routines import QRoutine
 from qat.lang.AQASM.misc import build_gate
 
 logger = logging.getLogger(__name__)
