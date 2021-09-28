@@ -7,7 +7,7 @@ simulator](https://atos.net/en/solutions/quantum-learning-machine), both
 provided by Atos.
 
 # Installation #
-If you would like to test the code and you don not have access to a QLM, you can
+If you would like to test the code and you do not have access to a QLM, you can
 install the open source
 [myQLM](https://myqlm.github.io/myqlm_specific/install.html).
 
@@ -34,11 +34,13 @@ pyenv activate myqlm_env
 pip install myqlm
 pip install nptyping sympy
 pip install paramaterized
+pip install jupyter
 ```
 
 `nptyping` is used to get dynamic hints for numpy. `sympy`, up to now, is only
-used to automatically compute the RREF of a matrix. `parameterized` is required
-by most of the unit tests in order to have a great refactoring of code.
+used in testing to automatically compute the RREF of a matrix and compare the
+results against our implementation. `parameterized` is used in order to have
+parameterized testing. `jupyter` is required to launch notebooks.
 
 Then, you can clone this repository and activate the environment.
 
@@ -52,6 +54,14 @@ pyenv activate myqlm_env
 where `<SOME_DIR>` can be whatever directory you want this repository to be
 contained in.
 
+
+# Structure #
+
+  * The actual code is below `qat.external.utils`.
+  * `experiments` directory contains some experiments that have been made. 
+  * The `notebooks` directory contains some jupyter notebooks explaining usage
+  of most commonly used routines.
+  * `tests` directory contains all the tests for all the implemented routines.
 
 # Tests #
 The tests can be run using `python -m unittest` (all tests) or `python -m
@@ -69,12 +79,6 @@ utilities. E.g. `LOG_LEVEL=DEBUG python -m unittest test.test_qroutine_rref`.
   * `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
     simulator is actually available. For QLM, there are a variety of available
     simulators depending on the version.
-
-# Experiments #
-The experiments directory contain some experiments that have been made.
-
-# Code #
-All the code is below `qat.external.utils`.
 
 # Contribution Guidelines #
 If you would like to contribute to the code, please open a [GitHub
