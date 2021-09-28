@@ -71,3 +71,7 @@ class TestQatmgmtGates(CircuitTestCase):
         res = self.qpu.submit(c.to_job())
         res2 = self.qpu.submit(c2.to_job())
 
+        self.assertEqual([(sample.state.state, sample._amplitude) for sample in
+                          res.raw_data], [(sample.state.state,
+                                           sample._amplitude) for sample in res2.raw_data])
+
