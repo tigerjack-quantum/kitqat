@@ -3,7 +3,8 @@ from math import factorial
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.lang.AQASM import H, Program
+from qat.lang.AQASM.gates import H
+from qat.lang.AQASM.program import Program
 
 from qat.external.utils.qroutines import qregs_init as qregs
 from qat.external.utils.qroutines.hamming_weight_compute import fpc

@@ -2,7 +2,8 @@ import logging
 from math import ceil, log
 from typing import TYPE_CHECKING
 
-from qat.lang.AQASM import QRoutine, X
+from qat.lang.AQASM.routines import QRoutine
+from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.misc import build_gate
 
 from qat.external.utils.bits import conversion
@@ -152,6 +153,8 @@ def get_qroutine_for_qubits_weight_check(a_l, cout_l, weight_int,
     cout_qs = circuit.new_wires(cout_l)
     if compute_eq:
         eq_q = circuit.new_wires(1)
+    else:
+        eq_q = None
     equal_str = conversion.get_bitstring_from_int(
         weight_int, len(patterns_dict['results']), True)
     LOGGER.debug("equal_str %s", equal_str)

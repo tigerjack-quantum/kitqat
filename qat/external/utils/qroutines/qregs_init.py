@@ -25,15 +25,17 @@ def _conditionally_initialize_qureg_given_bitarray(
 ) -> QRoutine:
     qr = QRoutine()
     bits = qr.new_wires(len(a_arr))
-    cbits = qr.new_wires(ncontrols) if ncontrols > 0 else None
-
     gate = X
+
     if ncontrols > 0:
         # for _ in range(len(qcontrols)):
         gate = gate.ctrl(ncontrols)
     part = functools.partial(qr.apply, gate)
+
     if ncontrols > 0:
+        cbits = qr.new_wires(ncontrols) 
         part = functools.partial(part, *cbits)
+
     mrange = zip(bits, reversed(a_arr)) if little_endian else zip(bits, a_arr)
     for qbit, aint in mrange:
         if aint == 1:
