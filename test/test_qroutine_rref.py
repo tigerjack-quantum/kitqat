@@ -45,11 +45,11 @@ class RrefTestCase(CircuitTestCase):
             self.pr.measure(qbits=self.swap_qregs)
             self.pr.measure(qbits=self.add_qregs)
         cr = self.pr.to_circ()
-        print(statistics(cr))
+        # print(statistics(cr))
 
         res = self.qpu.submit(cr.to_job(qubits=self.qbit_range))
 
-        sample = res.raw_data[0]
+        sample = res[0]
         mat_rref = qmatrix.build_matrix_from_sample(sample, self.qbit_range,
                                                     matrix.shape)
         mat_rref_sim = Matrix(matrix).rref(pivots=False)
