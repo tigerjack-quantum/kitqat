@@ -8,6 +8,8 @@ from qat.external.utils.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 
+from qat.core.util import statistics
+
 
 class RrefTestCase(CircuitTestCase):
     def _prepare_circuit(self, matrix):
@@ -43,6 +45,7 @@ class RrefTestCase(CircuitTestCase):
             self.pr.measure(qbits=self.swap_qregs)
             self.pr.measure(qbits=self.add_qregs)
         cr = self.pr.to_circ()
+        print(statistics(cr))
 
         res = self.qpu.submit(cr.to_job(qubits=self.qbit_range))
 

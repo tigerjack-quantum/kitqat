@@ -20,16 +20,23 @@ class QregInitTestCase(CircuitTestCase):
     def test_adder(self, int_dec, little_endian):
         prog = Program()
         bits = misc.get_required_bits(int_dec)
+        if little_endian:
+            tmp = conversion.get_bitstring_from_int(int_dec, bits)
+            int_dec_new = conversion.get_int_from_bitstring(tmp, littleEndian=True)
+        else:
+            int_dec_new = int_dec
         qreg = prog.qalloc(bits)
         qfun = qregs.initialize_qureg_given_int(int_dec, bits, little_endian)
         prog.apply(qfun, qreg)
-        # self.draw_program(prog, circ_kwargs={'do_link': False})
         res = self.qpu.submit(prog.to_circ().to_job())
-        state = res.raw_data[0].state.state
 
-        if not little_endian:
-            self.assertEqual(state, int_dec)
-        else:
-            tmp = conversion.get_bitstring_from_int(state, bits)
-            tmp = conversion.get_int_from_bitstring(tmp, littleEndian=True)
-            self.assertEqual(tmp, int_dec)
+        if self.SIMULATOR == 'linalg':
+            # For QLM
+            for sample in res:
+                if sample.state.lsb_int == int_dec_new:
+                    self.assertEqual(sample.probability, 1)
+                    break
+        elif self.SIMULATOR == 'pylinalg':
+            # myQLM
+            state = res[0].state.state
+            self.assertEqual(state, int_dec_new)

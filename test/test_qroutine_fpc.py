@@ -3,8 +3,7 @@ from math import factorial
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.lang.AQASM.gates import H
-from qat.lang.AQASM.program import Program
+from qat.lang.AQASM import H, Program
 
 from qat.external.utils.qroutines import qregs_init as qregs
 from qat.external.utils.qroutines.hamming_weight_compute import fpc
@@ -55,11 +54,19 @@ class PopulationCountTestCase(CircuitTestCase):
             qubits=[qb.index for qb in to_measure_qubits]))
         self.logger.debug("res %s", res)
 
-        counts = len(res.raw_data)
+        counts = len(res)
         self.assertEqual(counts, 1)
         exp_w = name.count("1")
-        state = res.raw_data[0].state
-        self.assertEqual(state.lsb_int, exp_w)
+        if self.SIMULATOR == 'linalg':
+            # For QLM
+            for sample in res:
+                if sample.state.lsb_int == exp_w:
+                    self.assertEqual(sample.probability, 1)
+                    break
+        elif self.SIMULATOR == 'pylinalg':
+            # in myQLM, we get only one state
+            state = res[0].state
+            self.assertEqual(state.lsb_int, exp_w)
 
     @parameterized.expand([
         ("0on2", 0, 2),
@@ -97,7 +104,7 @@ class PopulationCountTestCase(CircuitTestCase):
         res = self.qpu.submit(program.to_circ().to_job(qubits=[a, eq]))
         self.logger.debug("res %s", res)
 
-        counts = len(res.raw_data)
+        counts = len(res)
         self.assertEqual(counts, 2**len(a))
         total_actives = 0
         for sample in res:

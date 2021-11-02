@@ -44,7 +44,7 @@ class BartschiTestCase(CircuitTestCase):
     def _analyse_res_quick(self, n, k):
         circ = self.pr.to_circ()
         res = self.qpu.submit(circ.to_job())
-        self.assertEqual(len(res.raw_data),
+        self.assertEqual(len(res),
                          factorial(n) // factorial(k) // factorial(n - k))
 
     def test_small(self):
@@ -61,8 +61,8 @@ class BartschiTestCase(CircuitTestCase):
                     bartschi.generate(n, k).dag(), self.pr.registers[0])
                 circ = self.pr.to_circ()
                 res = self.qpu.submit(circ.to_job())
-                self.assertEqual(len(res.raw_data), 1)
-                state = res.raw_data[0].state.state
+                self.assertEqual(len(res), 1)
+                state = res[0].state.state
                 self.assertEqual(state, 0)
 
     # TODO quite useless, just bigger

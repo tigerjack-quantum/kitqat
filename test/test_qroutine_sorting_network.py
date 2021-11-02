@@ -59,15 +59,24 @@ class SortingNetworkTestCase(CircuitTestCase):
         cr = self.pr.to_circ()
 
         res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
-        obtained = res.raw_data[0].state.bitstring
-
-        is_sorted = all(obtained[i] <= obtained[i + 1]
-                        for i in range(len(string) - 1))
         sorted_string_exp = ''.join(list(sorted(string)))
+        if self.SIMULATOR == 'linalg':
+            # For QLM
+            if is_bitonic:
+                for sample in res:
+                    if sample.state.bitstring == sorted_string_exp:
+                        self.assertEqual(sample.probability, 1)
+                        break
+        elif self.SIMULATOR == 'pylinalg':
+            # myQLM
+            state = res[0].state
+            obtained = state.bitstring
+            is_sorted = all(obtained[i] <= obtained[i + 1]
+                        for i in range(len(string) - 1))
 
-        if is_bitonic:
-            self.assertTrue(is_sorted)
-            self.assertEqual(obtained, sorted_string_exp)
+            if is_bitonic:
+                self.assertTrue(is_sorted)
+                self.assertEqual(obtained, sorted_string_exp)
 
     @parameterized.expand([
         "01",
@@ -90,15 +99,24 @@ class SortingNetworkTestCase(CircuitTestCase):
         # self.draw_circuit(cr, max_depth=2)
 
         res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
-        obtained = res.raw_data[0].state.bitstring
-
-        is_sorted = all(obtained[i] <= obtained[i + 1]
-                        for i in range(len(string) - 1))
         sorted_string_exp = ''.join(list(sorted(string)))
+        if self.SIMULATOR == 'linalg':
+            # For QLM
+            if are_sorted:
+                for sample in res:
+                    if sample.state.bitstring == sorted_string_exp:
+                        self.assertEqual(sample.probability, 1)
+                        break
+        elif self.SIMULATOR == 'pylinalg':
+            # myQLM
+            obtained = res[0].state.bitstring
+            is_sorted = all(obtained[i] <= obtained[i + 1]
+                        for i in range(len(string) - 1))
 
-        if are_sorted:
-            self.assertTrue(is_sorted)
-            self.assertEqual(obtained, sorted_string_exp)
+            if are_sorted:
+                self.assertTrue(is_sorted)
+                self.assertEqual(obtained, sorted_string_exp)
+
     def _test_sorter_common(self, string):
         n = len(string)
         pattern = sn.get_pattern_sorter(n)
@@ -109,14 +127,20 @@ class SortingNetworkTestCase(CircuitTestCase):
         self.pr.apply(qrout, self.qr, self.comps)
 
         res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
-        obtained = res.raw_data[0].state.bitstring
-
-        is_sorted = all(obtained[i] <= obtained[i + 1]
-                        for i in range(len(string) - 1))
         sorted_string_exp = ''.join(list(sorted(string)))
-
-        self.assertTrue(is_sorted)
-        self.assertEqual(obtained, sorted_string_exp)
+        if self.SIMULATOR == 'linalg':
+            # For QLM
+            for sample in res:
+                if sample.state.bitstring == sorted_string_exp:
+                    self.assertEqual(sample.probability, 1)
+                    break
+        elif self.SIMULATOR == 'pylinalg':
+            # myQLM
+            obtained = res[0].state.bitstring
+            is_sorted = all(obtained[i] <= obtained[i + 1]
+                            for i in range(len(string) - 1))
+            self.assertTrue(is_sorted)
+            self.assertEqual(obtained, sorted_string_exp)
 
     @parameterized.expand([
         "01",
