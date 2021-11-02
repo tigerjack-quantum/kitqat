@@ -97,6 +97,7 @@ class MctrlsTest(CircuitTestCase):
     def test_1tgt(self, mode):
         pr = self._common_mcmtx_1tft()
         res = self.qpu.submit(pr.to_circ(link=[mode]).to_job())
-        self.assertEqual(len(res.raw_data), 1)
-        self.assertEqual(res.raw_data[0].state.bitstring, '1111100')
-        self.assertEqual(res.raw_data[0].probability, 1)
+        self.assertEqual(len(res), 1)
+        for sample in res:
+            if sample.state.bitstring == '1111100':
+                self.assertEqual(sample.probability, 1)

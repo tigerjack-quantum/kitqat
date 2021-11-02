@@ -156,10 +156,10 @@ class SortingNetworkTestCase(CircuitTestCase):
     def test_sorter(self, string):
         self._test_sorter_common(string)
 
-    @parameterized.expand([
-        "10110111",
-    ])
-    @unittest.skipUnless(CircuitTestCase.QLM_ON, CircuitTestCase.QLM_ON_REASON)
-    def test_sorter_qlm(self, string):
-        self._test_sorter_common(string)
+    # @parameterized.expand([
+    #     "10110111",
+    # ])
+    # @unittest.skipUnless(CircuitTestCase.QLM_ON, CircuitTestCase.QLM_ON_REASON)
+    # def test_sorter_qlm(self, string):
+    #     self._test_sorter_common(string)
 

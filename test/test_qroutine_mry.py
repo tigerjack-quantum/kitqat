@@ -35,7 +35,7 @@ class MCRyTest(CircuitTestCase):
         # display(circ2, max_depth=1)
         res = self.qpu.submit(circ.to_job())
         res2 = self.qpu.submit(circ2.to_job())
-        self.assertEqual(len(res2.raw_data), len(res.raw_data))
+        self.assertEqual(len(res2), len(res))
         for sample, sample2 in zip(sorted(res, key=lambda x: x.state.state),
                                    sorted(res2, key=lambda x: x.state.state)):
             self.assertEqual(sample2.state.state, sample.state.state)
@@ -63,7 +63,7 @@ class MCRyTest(CircuitTestCase):
         # print(statistics(circ2))
         res = self.qpu.submit(circ.to_job())
         res2 = self.qpu.submit(circ2.to_job())
-        self.assertEqual(len(res2.raw_data), len(res.raw_data))
+        self.assertEqual(len(res2), len(res))
         for sample, sample2 in zip(sorted(res, key=lambda x: x.state.state),
                                    sorted(res2, key=lambda x: x.state.state)):
             self.assertEqual(sample2.state.state, sample.state.state)
@@ -90,7 +90,7 @@ class MCRyTest(CircuitTestCase):
         # print(statistics(circ2))
         res = self.qpu.submit(circ.to_job())
         res2 = self.qpu.submit(circ2.to_job())
-        self.assertEqual(len(res2.raw_data), len(res.raw_data))
+        self.assertEqual(len(res2), len(res))
         for sample, sample2 in zip(sorted(res, key=lambda x: x.state.state),
                                    sorted(res2, key=lambda x: x.state.state)):
             self.assertEqual(sample2.state.state, sample.state.state)

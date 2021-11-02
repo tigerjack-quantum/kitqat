@@ -16,12 +16,15 @@ class NrootxTest(CircuitTestCase):
                 for i in range(n):
                     pr.apply(gate, qr)
                 res = self.qpu.submit(pr.to_circ().to_job())
-                self.assertEqual(len(res.raw_data), 1)
-                self.assertEqual(res.raw_data[0].state.int, 1)
-                if not global_phase:
-                    self.assertAlmostEqual(res.raw_data[0].probability, 1)
-                else:
-                    self.assertAlmostEqual(res.raw_data[0].amplitude, 1)
+                self.assertEqual(len(res), 1)
+                for sample in res:
+                    if sample.state.int == 1:
+                        self.assertAlmostEqual(sample.probability, 1)
+                    if not global_phase:
+                        self.assertAlmostEqual(sample.probability, 1)
+                    else:
+                        self.assertAlmostEqual(sample.amplitude, 1)
+                    break
 
     @parameterized.expand([(1, ), (2, ), (3, ), (4, ), (5, )])
     def test_yequivalence(self, n):
@@ -34,12 +37,16 @@ class NrootxTest(CircuitTestCase):
                 for i in range(n):
                     pr.apply(gate, qr)
                 res = self.qpu.submit(pr.to_circ().to_job())
-                self.assertEqual(len(res.raw_data), 1)
-                self.assertEqual(res.raw_data[0].state.int, 0)
-                if not global_phase:
-                    self.assertAlmostEqual(res.raw_data[0].probability, 1)
-                else:
-                    self.assertAlmostEqual(res.raw_data[0].amplitude, -1j)
+
+                for sample in res:
+                    if sample.state.int == 0:
+                        self.assertAlmostEqual(sample.probability, 1)
+                    if not global_phase:
+                        self.assertAlmostEqual(sample.probability, 1)
+                    else:
+                        self.assertAlmostEqual(sample.amplitude, -1j)
+                    break
+
 
     @parameterized.expand([(1, ), (2, ), (3, ), (4, ), (5, )])
     def test_zequivalence(self, n):
@@ -52,9 +59,12 @@ class NrootxTest(CircuitTestCase):
                 for i in range(n):
                     pr.apply(gate, qr)
                 res = self.qpu.submit(pr.to_circ().to_job())
-                self.assertEqual(len(res.raw_data), 1)
-                self.assertEqual(res.raw_data[0].state.int, 1)
-                if not global_phase:
-                    self.assertAlmostEqual(res.raw_data[0].probability, 1)
-                else:
-                    self.assertAlmostEqual(res.raw_data[0].amplitude, -1)
+
+                for sample in res:
+                    if sample.state.int == 1:
+                        self.assertAlmostEqual(sample.probability, 1)
+                    if not global_phase:
+                        self.assertAlmostEqual(sample.probability, 1)
+                    else:
+                        self.assertAlmostEqual(sample.amplitude, -1)
+                    break
