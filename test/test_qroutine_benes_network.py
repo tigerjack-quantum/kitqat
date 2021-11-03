@@ -9,8 +9,7 @@ from qat.external.utils.qroutines.hamming_weight_generate import benes_network
 import unittest
 
 
-@unittest.skip("Not used anymore")
-# Causes problems with python3.6 multithread (pickle error)
+# @unittest.skip("Not used anymore")
 class BenesTestCase(CircuitTestCase):
     @classmethod
     def setUpClass(cls):

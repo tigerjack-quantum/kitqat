@@ -28,9 +28,10 @@ def _common_checks(a_qs, flip_qs, benes_pattern_dict):
 
 
 # TODO switch to simple a_len and flip_len as input
+# Using a special Dict[str, Any] as type for benes_pattern_dict causes problems with python3.6 multithread (pickle error)
 @build_gate("BENES", [QRegister, QRegister, dict])
 def generate(a_qs: 'QRegister', flip_qs: 'QRegister',
-             benes_pattern_dict: Dict[str, Any]) -> QRoutine:
+             benes_pattern_dict: Dict) -> QRoutine:
     a_len = len(a_qs)
     flip_len = len(flip_qs)
     routine = QRoutine(arity=a_len + flip_len)
