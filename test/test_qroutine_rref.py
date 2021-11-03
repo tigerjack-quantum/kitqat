@@ -8,7 +8,7 @@ from qat.external.utils.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 
-from qat.core.util import statistics
+# from qat.core.util import statistics
 
 
 class RrefTestCase(CircuitTestCase):
@@ -87,6 +87,7 @@ class RrefTestCase(CircuitTestCase):
         the left
 
         """
+        self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True, False)
 
     @parameterized.expand([
@@ -95,6 +96,7 @@ class RrefTestCase(CircuitTestCase):
     @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_equals_iden_slow(self, name, matrix):
+        self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True, False)
 
     @parameterized.expand([
@@ -104,6 +106,7 @@ class RrefTestCase(CircuitTestCase):
     def test_not_equals_not_iden(self, name, matrix):
         """They should give different w.r.t. a normal RREF, and also no identity
         """
+        self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True, True)
 
     @parameterized.expand([("3x5",
@@ -112,6 +115,7 @@ class RrefTestCase(CircuitTestCase):
     @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_not_equals_not_iden_slow(self, name, matrix):
+        self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True, True)
 
     @parameterized.expand([
@@ -123,6 +127,7 @@ class RrefTestCase(CircuitTestCase):
         w.r.t. the normal RREF, but still no identity
 
         """
+        self.logger.debug("test with %s", name)
         self._common_test(matrix, True, False, False)
 
     @parameterized.expand([
@@ -131,4 +136,5 @@ class RrefTestCase(CircuitTestCase):
     @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_equals_not_iden_slow(self, name, matrix):
+        self.logger.debug("test with %s", name)
         self._common_test(matrix, True, False, False)

@@ -1,11 +1,10 @@
+import unittest
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.utils.qroutines import sorting_network as sn
 from qat.external.utils.qroutines import qregs_init as qregs
+from qat.external.utils.qroutines import sorting_network as sn
 from qat.lang.AQASM.program import Program
-
-import unittest
 
 
 class SortingNetworkTestCase(CircuitTestCase):
@@ -72,7 +71,7 @@ class SortingNetworkTestCase(CircuitTestCase):
             state = res[0].state
             obtained = state.bitstring
             is_sorted = all(obtained[i] <= obtained[i + 1]
-                        for i in range(len(string) - 1))
+                            for i in range(len(string) - 1))
 
             if is_bitonic:
                 self.assertTrue(is_sorted)
@@ -111,7 +110,7 @@ class SortingNetworkTestCase(CircuitTestCase):
             # myQLM
             obtained = res[0].state.bitstring
             is_sorted = all(obtained[i] <= obtained[i + 1]
-                        for i in range(len(string) - 1))
+                            for i in range(len(string) - 1))
 
             if are_sorted:
                 self.assertTrue(is_sorted)
@@ -159,7 +158,9 @@ class SortingNetworkTestCase(CircuitTestCase):
     @parameterized.expand([
         "10110111",
     ])
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON and CircuitTestCase.QLM_ON, f"Either {CircuitTestCase.SLOW_TEST_ON_REASON} or {CircuitTestCase.QLM_ON_REASON}")
+    @unittest.skipUnless(
+        CircuitTestCase.SLOW_TEST_ON and CircuitTestCase.QLM_ON,
+        f"Either {CircuitTestCase.SLOW_TEST_ON_REASON} or {CircuitTestCase.QLM_ON_REASON}"
+    )
     def test_sorter_qlm(self, string):
         self._test_sorter_common(string)
-

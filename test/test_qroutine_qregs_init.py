@@ -22,7 +22,8 @@ class QregInitTestCase(CircuitTestCase):
         bits = misc.get_required_bits(int_dec)
         if little_endian:
             tmp = conversion.get_bitstring_from_int(int_dec, bits)
-            int_dec_new = conversion.get_int_from_bitstring(tmp, littleEndian=True)
+            int_dec_new = conversion.get_int_from_bitstring(tmp,
+                                                            littleEndian=True)
         else:
             int_dec_new = int_dec
         qreg = prog.qalloc(bits)

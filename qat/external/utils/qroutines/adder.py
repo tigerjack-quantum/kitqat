@@ -7,8 +7,8 @@ import itertools
 import logging
 
 from qat.lang.AQASM.gates import CCNOT, CNOT, X
-from qat.lang.AQASM.routines import QRoutine
 from qat.lang.AQASM.misc import build_gate
+from qat.lang.AQASM.routines import QRoutine
 
 # from .fake import fake
 
@@ -51,8 +51,7 @@ def _common_init(a_l, b_l, overflow_qbit, little_endian):
     return qfun, a, b, cin, cout, bits, b_is_bigger
 
 
-def _common(qfun, a, b, cin, cout, b_is_bigger, bits, overflow_qbit,
-            little_endian):
+def _common(qfun, a, b, cout, bits, overflow_qbit):
     a_l = len(a)
     b_l = len(b)
     if b_l == 1:
@@ -94,8 +93,7 @@ def _maj_chain_dag(qfun, a, b, cin, mrange):
     qfun.apply(_majority(f"cin, b{0}, a{0}").dag(), cin[0], b[0], a[0])
 
 
-def _middle_logic(qfun, a, b, cin, cout, end, ends, little_endian,
-                  overflow_qbit, b_is_bigger):
+def _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger):
     a_l = len(a)
     b_l = len(b)
     # MIDDLE LOGIC ###
@@ -154,12 +152,10 @@ def comparator(a_l: int, b_l: int, little_endian=True):
     for qb in a:
         qfun.apply(X, qb)
 
-    mrange, end, ends = _common(qfun, a, b, cin, cout, b_is_bigger, bits,
-                                overflow_qbit, little_endian)
+    mrange, end, ends = _common(qfun, a, b, cout, bits, overflow_qbit)
     if mrange is not None:
         _maj_chain(qfun, a, b, cin, mrange)
-        _middle_logic(qfun, a, b, cin, cout, end, ends, little_endian,
-                      overflow_qbit, b_is_bigger)
+        _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger)
         _maj_chain_dag(qfun, a, b, cin, mrange)
 
     for qb in a:
@@ -175,12 +171,10 @@ def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
     for qb in a:
         qfun.apply(X, qb)
 
-    mrange, end, ends = _common(qfun, a, b, cin, cout, b_is_bigger, bits,
-                                overflow_qbit, little_endian)
+    mrange, end, ends = _common(qfun, a, b, cout, bits, overflow_qbit)
     if mrange is not None:
         _maj_chain(qfun, a, b, cin, mrange)
-        _middle_logic(qfun, a, b, cin, cout, end, ends, little_endian,
-                      overflow_qbit, b_is_bigger)
+        _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger)
         _unmaj_chain(qfun, a, b, cin, mrange)
     # out = (b, cout) if cout is not None else (b, )
     # for qb in itertools.chain(a, *out):
@@ -191,16 +185,17 @@ def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
 
 
 @build_gate("MADD", [int, int, bool, bool])
-def adder(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
+def adder(a_l: int,
+          b_l: int,
+          overflow_qbit=False,
+          little_endian=True) -> QRoutine:
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
         a_l, b_l, overflow_qbit, little_endian)
-    mrange, end, ends = _common(qfun, a, b, cin, cout, b_is_bigger, bits,
-                                overflow_qbit, little_endian)
+    mrange, end, ends = _common(qfun, a, b, cout, bits, overflow_qbit)
     if mrange is None:
         return qfun
     _maj_chain(qfun, a, b, cin, mrange)
-    _middle_logic(qfun, a, b, cin, cout, end, ends, little_endian,
-                  overflow_qbit, b_is_bigger)
+    _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger)
     _unmaj_chain(qfun, a, b, cin, mrange)
 
     return qfun
@@ -209,6 +204,7 @@ def adder(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
 @build_gate("MAJ", [str])
 def _majority(name):
     """Majority gate."""
+    LOGGER.debug("name %s", name)
     qfun = QRoutine()
     c = qfun.new_wires(1)[0]
     b = qfun.new_wires(1)[0]
@@ -222,6 +218,7 @@ def _majority(name):
 @build_gate("UMA", [str])
 def _unmajority(name):
     """Unmajority gate."""
+    LOGGER.debug("name %s", name)
     qfun = QRoutine()
     c = qfun.new_wires(1)[0]
     b = qfun.new_wires(1)[0]
@@ -245,7 +242,8 @@ def high_bit_only():
 # def two_bit_comparator_cuccaro():
 #     """
 #     The out qubit should be initialized to 0.
-#     Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
+#     Given two 1-qubit registers a and b, it returns 1 on the output qubit if
+#     a > b.
 
 #     """
 #     qrout = QRoutine()
@@ -271,7 +269,8 @@ def high_bit_only():
 def two_bit_adder() -> QRoutine:
     """
     The out qubit should be initialized to 0.
-    Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
+    Given two 1-qubit registers a and b, it returns 1 on the output qubit if
+    a > b.
 
     """
     qrout = QRoutine()
@@ -291,7 +290,8 @@ def two_bit_adder() -> QRoutine:
 def two_bit_comparator() -> QRoutine:
     """
     The out qubit should be initialized to 0.
-    Given two 1-qubit registers a and b, it returns 1 on the output qubit if a > b.
+    Given two 1-qubit registers a and b, it returns 1 on the output qubit if
+    a > b.
 
     """
     qrout = QRoutine()

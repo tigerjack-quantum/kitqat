@@ -1,11 +1,12 @@
 import functools
 import operator
 from typing import TYPE_CHECKING, Dict, List
+
 from qat.external.utils.qroutines.fake import fake_gate
+
 if TYPE_CHECKING:
     from qat.lang.AQASM import Circuit, Program
-    from qat.lang.AQASM.bits import QRegister, Qbit
-
+    from qat.lang.AQASM.bits import Qbit, QRegister
 
 def get_qbits_to_int_mapping_from_qregs(
         qregs: List['QRegister']) -> Dict[int, 'Qbit']:

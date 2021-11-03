@@ -38,4 +38,4 @@ def get_int_from_bitstring(a_str: str, littleEndian=False) -> int:
 
 
 def get_int_from_bitarray(a_arr: List[int], littleEndian=False) -> int:
-    return get_int_from_bitstring(''.join(str(e) for e in a_arr))
+    return get_int_from_bitstring(''.join(str(e) for e in a_arr), littleEndian)

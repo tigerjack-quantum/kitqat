@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING, Dict, List
 
-from qat.lang.AQASM import X, Y, Z
+from qat.lang.AQASM.gates import X, Y, Z
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import (Term, Gate)
+    from qat.core.wrappers.observable import Term
+    from qat.lang.AQASM.gates import Gate
 
 
 def produce_term_gates(term: 'Term') -> Dict[int, List['Gate']]:

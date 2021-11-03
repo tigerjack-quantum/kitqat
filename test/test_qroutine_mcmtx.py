@@ -4,7 +4,8 @@ from parameterized import parameterized
 from qat.external.utils.qatmgmt.qbits import \
     add_name_to_qbits_following_pattern
 from qat.external.utils.synthesis.mctrls import mcx
-from qat.lang.AQASM import CCNOT, H, Program, X
+from qat.lang.AQASM.gates import CCNOT, H, X
+from qat.lang.AQASM.program import Program
 
 from .common_circuit import CircuitTestCase
 

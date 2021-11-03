@@ -5,7 +5,7 @@ from parameterized import parameterized
 from qat.external.utils.bits import conversion, misc
 from qat.external.utils.qroutines import adder
 from qat.external.utils.qroutines import qregs_init as qregs
-from qat.lang.AQASM import Program
+from qat.lang.AQASM.program import Program
 
 
 class AdderTestCase(CircuitTestCase):
@@ -313,13 +313,13 @@ class AdderTestCase(CircuitTestCase):
                     self.assertEqual(state.state, expected)
 
     @parameterized.expand([
-        ("3_on_2bits", 3, 2),
-        ("5_on_4bits", 5, 4),
-        ("5_on_3bits", 5, 3),
-        ("7_on_3bits", 7, 3),
-        ("7_on_5bits", 7, 5),
+        (3, 2),
+        (5, 4),
+        (5, 3),
+        (7, 3),
+        (7, 5),
     ])
-    def test_halves_sum(self, name, a_int, bits):
+    def test_halves_sum(self, a_int, bits):
         """
         Add two halves of a register on a given number of bits
         """

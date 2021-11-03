@@ -3,10 +3,10 @@ from math import factorial
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.lang.AQASM import H, Program
-
 from qat.external.utils.qroutines import qregs_init as qregs
 from qat.external.utils.qroutines.hamming_weight_compute import fpc
+from qat.lang.AQASM.gates import H
+from qat.lang.AQASM.program import Program
 
 DEBUG = False
 
@@ -69,19 +69,19 @@ class PopulationCountTestCase(CircuitTestCase):
             self.assertEqual(state.lsb_int, exp_w)
 
     @parameterized.expand([
-        ("0on2", 0, 2),
-        ("1on2", 1, 2),
-        ("2on2", 2, 2),
-        ("0on4", 0, 4),
-        ("2on4", 2, 4),
-        ("3on4", 3, 4),
-        ("3on8", 1, 8),
-        ("3on8", 2, 8),
-        ("3on8", 3, 8),
-        ("3on8", 4, 8),
+        (0, 2),
+        (1, 2),
+        (2, 2),
+        (0, 4),
+        (2, 4),
+        (3, 4),
+        (1, 8),
+        (2, 8),
+        (3, 8),
+        (4, 8),
     ])
     @unittest.skipIf(DEBUG, "already working")
-    def test_fpc_hadamards_weight_check(self, name, weight_int, n_bits):
+    def test_fpc_hadamards_weight_check(self, weight_int, n_bits):
         nwr_dict = fpc.get_qroutine_for_qubits_weight_get_pattern(n_bits)
 
         program = Program()
