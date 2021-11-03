@@ -13,7 +13,7 @@ class CircuitTestCase(BasicTestCase):
     SLOW_TEST_ON = os.getenv('SLOW_ON') is not None
     SLOW_TEST_ON_REASON = "slow test"
     QLM_ON = os.getenv('QLM_ON') is not None
-    QLM_ON_REASON = "using qlm"
+    QLM_ON_REASON = "not using qlm"
     if QLM_ON:
         SIMULATOR = os.getenv('SIMULATOR', 'linalg')
     else:
