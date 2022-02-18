@@ -55,13 +55,17 @@ def get_rref(r, n, skip_rightmost=True):
     add_ancilla_idx = 0
     swap_ancilla_idx = 0
 
+    skip_cols = set()
+    if skip_rightmost:
+        skip_cols = set(range(r, n))
+
     for x in range(r):
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
             qrout.apply(X, qregs_rows[x][x])
             for i in range(x + 1, r):
-                rowswap = get_row_swap(n, x)
+                rowswap = get_row_swap(n, x, skip_cols)
                 qrout.apply(rowswap, qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
                 swap_ancilla_idx += 1
@@ -71,7 +75,7 @@ def get_rref(r, n, skip_rightmost=True):
         for i in range(r):
             if i == x:
                 continue
-            rowadd = get_row_addition(n, x)
+            rowadd = get_row_addition(n, x, skip_cols)
             qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
                         add_ancillae[add_ancilla_idx])
             add_ancilla_idx += 1
@@ -79,8 +83,8 @@ def get_rref(r, n, skip_rightmost=True):
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int])
-def get_row_swap(n, pivot_idx: int, skip_cols={}):
+@build_gate('ROWSWAP', [int, int, set])
+def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
     """WARN: the pivot element is checked agains state 1 (improvement 3)
     """
     qrout = QRoutine()
@@ -95,8 +99,8 @@ def get_row_swap(n, pivot_idx: int, skip_cols={}):
     return qrout
 
 
-@build_gate('ROWADD', [int, int])
-def get_row_addition(n, pivot_idx: int, skip_cols={}):
+@build_gate('ROWADD', [int, int, set])
+def get_row_addition(n, pivot_idx: int, skip_cols:set):
     qrout = QRoutine()
     other_row = qrout.new_wires(n)
     pivot_row = qrout.new_wires(n)
