@@ -60,13 +60,11 @@ def get_rref(r, n, skip_rightmost=True):
     skip_cols = set()
     if skip_rightmost:
         skip_cols = set(range(r, n))
-        print(skip_cols)
 
     for x in range(r):
         # impr. 1
         if x > 0:
             skip_cols.add(x-1)
-            print(skip_cols)
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
