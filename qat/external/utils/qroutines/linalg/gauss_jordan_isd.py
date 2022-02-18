@@ -79,13 +79,13 @@ def get_rref(r, n, skip_rightmost=True):
             # improvement 3, X after finishing all phases 1
             qrout.apply(X, qregs_rows[x][x])
 
-        # for i in range(r):
-        #     if i == x:
-        #         continue
-        #     rowadd = get_row_addition(n, x, skip_cols)
-        #     qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
-        #                 add_ancillae[add_ancilla_idx])
-        #     add_ancilla_idx += 1
+        for i in range(r):
+            if i == x:
+                continue
+            rowadd = get_row_addition(n, x, skip_cols)
+            qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
+                        add_ancillae[add_ancilla_idx])
+            add_ancilla_idx += 1
 
     return qrout
 
@@ -100,7 +100,10 @@ def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
     anc = qrout.new_wires(1)
     qrout.apply(X.ctrl(), pivot_row[pivot_idx], anc)
     for c in range(n):
-        if c not in skip_cols:
+        if c == pivot_idx:
+            # impr. 2
+            qrout.apply(X.ctrl(1), anc, other_row[c])
+        elif c not in skip_cols:
             qrout.apply(X.ctrl(2), anc, other_row[c], pivot_row[c])
         else:
             qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
@@ -115,7 +118,11 @@ def get_row_addition(n, pivot_idx: int, skip_cols:set):
     anc = qrout.new_wires(1)
     qrout.apply(X.ctrl(), other_row[pivot_idx], anc)
     for c in range(n):
-        if c not in skip_cols:
+        if c == pivot_idx:
+            # impr. 2
+            qrout.apply(X.ctrl(1), anc, other_row[c])
+
+        elif c not in skip_cols:
             qrout.apply(X.ctrl(2), anc, pivot_row[c], other_row[c])
         else:
             qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
