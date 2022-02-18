@@ -2,6 +2,8 @@
 from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
+from qat.core.util import statistics
+from numpy import argmax
 
 
 def _prepare_circuit(r, n):
@@ -17,13 +19,10 @@ def _build_gje_circuit(r, n):
     add_ancillae_n, swap_ancillae_n = gji.get_required_ancillae(r)
     swap_ancillae = pr.qalloc(swap_ancillae_n)
     add_ancillae = pr.qalloc(add_ancillae_n)
-    # add_name_to_qbits_following_pattern(pr, {
-    #     'cadd': add_ancillae,
-    #     'swap': swap_ancillae
-    # })
     rref_gate = gji.get_rref(r, n)
     pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
     return pr
+
 
 def _get_max_depth_qbits(vec, qblist):
     maxd = 0
@@ -33,25 +32,28 @@ def _get_max_depth_qbits(vec, qblist):
             maxd = curr
     return maxd
 
-def _compute_depth(pr):
-    vec = [0] * pr.qbit_count
-    cr = pr.to_circ()
+
+def _compute_depth(cr):
+    vec = [0] * cr.nbqbits
     # for op in pr.op_list:
     for op in cr:
-        print(op)
-        print(vec)
         maxd = _get_max_depth_qbits(vec, op.qbits)
-        print(maxd)
+        # print(maxd)
         for qb in op.qbits:
             vec[qb] = maxd + 1
-    return max(vec)
-
+    return max(vec), argmax(vec), vec
 
 
 def main():
-    pr = _build_gje_circuit(3, 4)
-    print(_compute_depth(pr))
+    for r in range(3, 20):
+        pr = _build_gje_circuit(r, r)
+        cr = pr.to_circ()
+        sts = statistics(cr)
+        depth, depth_i, vec = _compute_depth(cr)
 
+        print(f"r: {r}, CCNOT: {sts['gates']['C-C-X']}, depth: {depth}, max depth qbit: {depth_i}/{cr.nbqbits}")
+        if r == 3:
+            print(vec)
 
 
 if __name__ == '__main__':
