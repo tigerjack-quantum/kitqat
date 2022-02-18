@@ -3,11 +3,13 @@
 import logging
 
 import numpy as np
-from qat.lang.AQASM.gates import X
+from qat.lang.AQASM.gates import X, H
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
 LOGGER = logging.getLogger(__name__)
+# Just a fake swap for pictorial representation
+FAKE = H
 
 
 def get_required_ancillae(r: int):
@@ -58,27 +60,32 @@ def get_rref(r, n, skip_rightmost=True):
     skip_cols = set()
     if skip_rightmost:
         skip_cols = set(range(r, n))
+        print(skip_cols)
 
     for x in range(r):
+        # impr. 1
+        if x > 0:
+            skip_cols.add(x-1)
+            print(skip_cols)
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
             qrout.apply(X, qregs_rows[x][x])
             for i in range(x + 1, r):
-                rowswap = get_row_swap(n, x, skip_cols)
+                rowswap = get_row_swap(n, x, skip_cols.copy())
                 qrout.apply(rowswap, qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
                 swap_ancilla_idx += 1
             # improvement 3, X after finishing all phases 1
             qrout.apply(X, qregs_rows[x][x])
 
-        for i in range(r):
-            if i == x:
-                continue
-            rowadd = get_row_addition(n, x, skip_cols)
-            qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
-                        add_ancillae[add_ancilla_idx])
-            add_ancilla_idx += 1
+        # for i in range(r):
+        #     if i == x:
+        #         continue
+        #     rowadd = get_row_addition(n, x, skip_cols)
+        #     qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
+        #                 add_ancillae[add_ancilla_idx])
+        #     add_ancilla_idx += 1
 
     return qrout
 
@@ -93,9 +100,10 @@ def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
     anc = qrout.new_wires(1)
     qrout.apply(X.ctrl(), pivot_row[pivot_idx], anc)
     for c in range(n):
-        if c in skip_cols:
-            continue
-        qrout.apply(X.ctrl(2), anc, other_row[c], pivot_row[c])
+        if c not in skip_cols:
+            qrout.apply(X.ctrl(2), anc, other_row[c], pivot_row[c])
+        else:
+            qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
     return qrout
 
 
@@ -107,9 +115,10 @@ def get_row_addition(n, pivot_idx: int, skip_cols:set):
     anc = qrout.new_wires(1)
     qrout.apply(X.ctrl(), other_row[pivot_idx], anc)
     for c in range(n):
-        if c in skip_cols:
-            continue
-        qrout.apply(X.ctrl(2), anc, pivot_row[c], other_row[c])
+        if c not in skip_cols:
+            qrout.apply(X.ctrl(2), anc, pivot_row[c], other_row[c])
+        else:
+            qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
     return qrout
 
 
