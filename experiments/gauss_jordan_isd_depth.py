@@ -3,7 +3,8 @@ from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
 from qat.core.util import statistics
-from numpy import argmax
+# from numpy import argmax
+# from qat.core.console import display
 
 
 def _prepare_circuit(r, n):
@@ -37,23 +38,52 @@ def _compute_depth(cr):
     vec = [0] * cr.nbqbits
     # for op in pr.op_list:
     for op in cr:
+        # print(vec)
         maxd = _get_max_depth_qbits(vec, op.qbits)
         # print(maxd)
         for qb in op.qbits:
             vec[qb] = maxd + 1
-    return max(vec), argmax(vec), vec
+    # print(vec)
+    m = max(vec)
+    argmaxs = [i for i, j in enumerate(vec) if j == m]
+    return m, argmaxs
+
+def _trans_qbit_to_txt(r, qbits):
+    add_ancillae_n, swap_ancillae_n = gji.get_required_ancillae(r)
+    last = r * r - 1
+    txts = []
+
+    for qb in qbits:
+        if qb > last:
+            # ancilla
+            if qb > last + swap_ancillae_n:
+                idx = qb - last - swap_ancillae_n
+                txt = f"B[{idx}]"
+                pass
+            else:
+                idx = qb - last
+                # swap ancilla
+                txt = f"C[{idx}]"
+                pass
+        else:
+            row = qb // r
+            col = qb % r
+            txt = f"H[{row},{col}]"
+        txts.append(txt)
+    return txts
 
 
 def main():
-    for r in range(3, 20):
+    for r in range(3, 31):
+    # for r in range(3, 4):
         pr = _build_gje_circuit(r, r)
-        cr = pr.to_circ()
+        cr = pr.to_circ(include_matrices=False)
+        # display(cr, max_depth=2)
         sts = statistics(cr)
-        depth, depth_i, vec = _compute_depth(cr)
+        depth, depth_i = _compute_depth(cr)
+        trans = _trans_qbit_to_txt(r, depth_i)
 
-        print(f"r: {r}, CCNOT: {sts['gates']['C-C-X']}, depth: {depth}, max depth qbit: {depth_i}/{cr.nbqbits}")
-        if r == 3:
-            print(vec)
+        print(f"r: {r}, CCNOT: {sts['gates']['C-C-X']}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}")
 
 
 if __name__ == '__main__':
