@@ -2,8 +2,7 @@
 """
 import logging
 
-import numpy as np
-from qat.lang.AQASM.gates import X, H
+from qat.lang.AQASM.gates import H, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
@@ -64,15 +63,15 @@ def get_rref(r, n, skip_rightmost=True):
     for x in range(r):
         # impr. 1
         if x > 0:
-            skip_cols.add(x-1)
+            skip_cols.add(x - 1)
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
             qrout.apply(X, qregs_rows[x][x])
             for i in range(x + 1, r):
                 rowswap = get_row_swap(n, x, skip_cols.copy())
-                qrout.apply(rowswap, qregs_rows[x], qregs_rows[i],
-                            swap_ancillae[swap_ancilla_idx])
+                ctrl = swap_ancillae[swap_ancilla_idx]
+                qrout.apply(rowswap, qregs_rows[x], qregs_rows[i], ctrl)
                 swap_ancilla_idx += 1
             # improvement 3, X after finishing all phases 1
             qrout.apply(X, qregs_rows[x][x])
@@ -80,11 +79,20 @@ def get_rref(r, n, skip_rightmost=True):
         for i in range(r):
             if i == x:
                 continue
+            ctrl = add_ancillae[add_ancilla_idx]
             rowadd = get_row_addition(n, x, skip_cols.copy())
-            qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
-                        add_ancillae[add_ancilla_idx])
+            qrout.apply(rowadd, qregs_rows[i], qregs_rows[x], ctrl)
             add_ancilla_idx += 1
 
+    return qrout
+
+
+@build_gate('CELLXOR', [int])
+def get_cell_xor(nctrls: int):
+    qrout = QRoutine()
+    ctrls = qrout.new_wires(nctrls)
+    dst = qrout.new_wires(1)
+    qrout.apply(X.ctrl(nctrls), ctrls, dst)
     return qrout
 
 
@@ -97,28 +105,31 @@ def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
     other_row = qrout.new_wires(n)
     anc = qrout.new_wires(1)
     qrout.apply(X.ctrl(), pivot_row[pivot_idx], anc)
+    qrout_xor = get_cell_xor(2)
     for c in range(n):
         if c not in skip_cols:
-            qrout.apply(X.ctrl(2), anc, other_row[c], pivot_row[c])
+            # qrout.apply(X.ctrl(2), anc, other_row[c], pivot_row[c])
+            qrout.apply(qrout_xor, anc, other_row[c], pivot_row[c])
         # else:
         #     qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
     return qrout
 
 
 @build_gate('ROWADD', [int, int, set])
-def get_row_addition(n, pivot_idx: int, skip_cols:set):
+def get_row_addition(n, pivot_idx: int, skip_cols: set):
     qrout = QRoutine()
     other_row = qrout.new_wires(n)
     pivot_row = qrout.new_wires(n)
     anc = qrout.new_wires(1)
     qrout.apply(X.ctrl(), other_row[pivot_idx], anc)
+    qrout_xor1 = get_cell_xor(1)
+    qrout_xor2 = get_cell_xor(2)
     for c in range(n):
         if c == pivot_idx:
             # impr. 2
-            qrout.apply(X.ctrl(1), anc, other_row[c])
-
+            qrout.apply(qrout_xor1, anc, other_row[c])
         elif c not in skip_cols:
-            qrout.apply(X.ctrl(2), anc, pivot_row[c], other_row[c])
+            qrout.apply(qrout_xor2, anc, pivot_row[c], other_row[c])
         # else:
         #     qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
     return qrout
