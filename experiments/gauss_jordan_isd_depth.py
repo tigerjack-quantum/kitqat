@@ -1,9 +1,9 @@
 # from qat.external.utils.qroutines.fake import fake_gate
-from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
+from qat.core.util import statistics
 from qat.external.utils.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
-from qat.core.util import statistics
+
 # from numpy import argmax
 # from qat.core.console import display
 
@@ -35,37 +35,41 @@ def _get_max_depth_qbits(vec, qblist):
     return maxd
 
 
-def _compute_depth(cr):
+def _compute_depth(cr, include_intermediate=False):
     vec = [0] * cr.nbqbits
     # for op in pr.op_list:
     for op in cr:
-        # print(vec)
+        if include_intermediate:
+            print(vec)
         maxd = _get_max_depth_qbits(vec, op.qbits)
         # print(maxd)
         for qb in op.qbits:
             vec[qb] = maxd + 1
-    # print(vec)
+    if include_intermediate:
+        print(vec)
     m = max(vec)
     argmaxs = [i for i, j in enumerate(vec) if j == m]
     return m, argmaxs
 
+
 def _trans_qbit_to_txt(r, qbits, gjmod):
-    add_ancillae_n, swap_ancillae_n = gjmod.get_required_ancillae(r)
-    last = r * r - 1
     txts = []
+
+    swap_ancillae_n, add_ancillae_n = gjmod.get_required_ancillae(r)
+    # last element of matrix
+    last = r * r - 1
 
     for qb in qbits:
         if qb > last:
             # ancilla
             if qb > last + swap_ancillae_n:
+                # add_ancillae [last + swap_ancillae_n: +add_ancillae_n]
                 idx = qb - last - swap_ancillae_n
-                txt = f"B[{idx}]"
-                pass
-            else:
-                idx = qb - last
-                # swap ancilla
                 txt = f"C[{idx}]"
-                pass
+            else:
+                # swap_ancillae [last: last + swap_ancillae_n]
+                idx = qb - last
+                txt = f"B[{idx}]"
         else:
             row = qb // r
             col = qb % r
@@ -83,10 +87,12 @@ def main():
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
-        depth, depth_i = _compute_depth(cr)
+        depth, depth_i = _compute_depth(cr, include_intermediate=True)
         trans = _trans_qbit_to_txt(r, depth_i, gjmod)
 
-        print(f"r: {r}, CCNOT: {sts['gates']['C-C-X']}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}")
+        print(
+            f"r: {r}, CCNOT: {sts['gates']['C-C-X']}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
+        )
 
 
 if __name__ == '__main__':
