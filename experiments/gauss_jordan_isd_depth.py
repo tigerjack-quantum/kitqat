@@ -1,5 +1,6 @@
 # from qat.external.utils.qroutines.fake import fake_gate
 from qat.core.util import statistics
+# from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
 from qat.external.utils.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
@@ -64,11 +65,11 @@ def _trans_qbit_to_txt(r, qbits, gjmod):
             # ancilla
             if qb > last + swap_ancillae_n:
                 # add_ancillae [last + swap_ancillae_n: +add_ancillae_n]
-                idx = qb - last - swap_ancillae_n
+                idx = qb - last - swap_ancillae_n - 1
                 txt = f"C[{idx}]"
             else:
                 # swap_ancillae [last: last + swap_ancillae_n]
-                idx = qb - last
+                idx = qb - last - 1
                 txt = f"B[{idx}]"
         else:
             row = qb // r
@@ -81,13 +82,13 @@ def _trans_qbit_to_txt(r, qbits, gjmod):
 def main():
     gjmod = gji5
     for r in range(3, 35):
-    # for r in range(3, 4):
+        # for r in range(3, 4):
         pr = _build_gje_circuit(r, r, gjmod)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
-        depth, depth_i = _compute_depth(cr, include_intermediate=True)
+        depth, depth_i = _compute_depth(cr, include_intermediate=False)
         trans = _trans_qbit_to_txt(r, depth_i, gjmod)
 
         print(
