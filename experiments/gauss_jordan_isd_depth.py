@@ -88,11 +88,12 @@ def main():
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
+        ccnot_n = sts['gates'].get('C-C-X', 0) + sts['gates'].get('CCNOT', 0)
         depth, depth_i = _compute_depth(cr, include_intermediate=False)
         trans = _trans_qbit_to_txt(r, depth_i, gjmod)
 
         print(
-            f"r: {r}, CCNOT: {sts['gates']['C-C-X']}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
+            f"r: {r}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
         )
 
 
