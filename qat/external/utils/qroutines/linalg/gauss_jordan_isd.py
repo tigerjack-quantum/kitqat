@@ -64,13 +64,20 @@ def get_rref(r, n, skip_rightmost=True):
         # impr. 1
         if x > 0:
             skip_cols.add(x - 1)
-        rowswap = get_row_swap(n, x, skip_cols.copy())
         rowadd = get_row_addition(n, x, skip_cols.copy())
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
             qrout.apply(X, qregs_rows[x][x])
             for i in range(x + 1, r):
+                if i == r - 1:
+                    # before_cols = {x+2}
+                    last_cols = {x}
+                else:
+                    # before_cols = set()
+                    last_cols = set()
+                rowswap = get_row_swap(n, x, skip_cols.copy(), last_cols)
+
                 qrout.apply(rowswap, qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
                 swap_ancilla_idx += 1
@@ -87,8 +94,8 @@ def get_rref(r, n, skip_rightmost=True):
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int, set])
-def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
+@build_gate('ROWSWAP', [int, int, set, set])
+def get_row_swap(n: int, pivot_idx: int, skip_cols: set, last_cols: set):
     """WARN: the pivot element is checked agains state 1 (improvement 3)
     """
     qrout = QRoutine()
@@ -96,11 +103,13 @@ def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
     other_row = qrout.new_wires(n)
     anc = qrout.new_wires(1)
     qrout.apply(CNOT, pivot_row[pivot_idx], anc)
+
     for c in range(n):
-        if c not in skip_cols:
+        if c not in skip_cols and c not in last_cols:
             qrout.apply(CCNOT, anc, other_row[c], pivot_row[c])
-        # else:
-        #     qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
+    # impr. 6
+    for c in last_cols:
+        qrout.apply(CCNOT, anc, other_row[c], pivot_row[c])
     return qrout
 
 
@@ -113,11 +122,12 @@ def get_row_addition(n, pivot_idx: int, skip_cols: set):
     qrout.apply(CNOT, other_row[pivot_idx], anc)
     for c in range(n):
         if c == pivot_idx:
-            # impr. 2
-            qrout.apply(CNOT, anc, other_row[c])
+            # impr. 6
+            continue
 
         elif c not in skip_cols:
             qrout.apply(CCNOT, anc, pivot_row[c], other_row[c])
-        # else:
-        #     qrout.apply(FAKE.ctrl(2), anc, other_row[c], pivot_row[c])
+    
+    # impr. 6 + 2
+    qrout.apply(CNOT, anc, other_row[pivot_idx])
     return qrout
