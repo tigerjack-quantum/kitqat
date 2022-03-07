@@ -1,0 +1,21 @@
+* TODO Parametrized circuits
+* TODO Check qat.core.circuit_builder.matrix_util
+  - arg_ph(np matrix) to get the argument of a gate from its matrix
+  - gen_ph(angle) generate gate from an angle
+  - is_ph: check if a matrix is a phase gate
+  - get_param_generator: returns the parameterized gates dict {name: npmatrix}
+  - get_predef_generator: returns the predef gates {name: generator}
+  - print_aqasm_matrix
+  -
+* TODO Set some parameters of to_circ()
+  - submatrices_only = True of generated circuits
+    Pro: speedup in generation time. Usable only with LinAlg
+  - include_matrices = False
+
+* TODO Use State Prepartion
+  LinAlg way is to use module `from qat.qpus.oracles import StatePreparation`
+
+  PyLinalg
+
+* TODO Gauss-Jordan for ISD: add some meaningful tests
+  - State "TODO"       from              [2022-03-07 Mon 17:56]
