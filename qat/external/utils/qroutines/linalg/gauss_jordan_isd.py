@@ -1,8 +1,9 @@
 """This gauss-jordan procedure is specifically tailored for ISD
 """
 import logging
+from functools import partial
 
-from qat.lang.AQASM.gates import X, CNOT, CCNOT
+from qat.lang.AQASM.gates import CCNOT, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
@@ -65,22 +66,16 @@ def get_rref(r, n, skip_rightmost):
         # impr. 1
         if x > 0:
             skip_cols.add(x - 1)
+
+        rowswap = partial(get_row_swap, r, n, x, skip_cols.copy())
+        rowadd = partial(get_row_addition, r, n, x, skip_cols.copy())
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
             qrout.apply(X, qregs_rows[x][x])
             for i in range(x + 1, r):
-                if i == r - 1:
-                    # before_cols = {x+2}
-                    # last_cols = {x}
-                    pivot_last = True
-                else:
-                    # before_cols = set()
-                    # last_cols = set()
-                    pivot_last = False
-                rowswap = get_row_swap(r, n, x, skip_cols.copy(), pivot_last)
-
-                qrout.apply(rowswap, qregs_rows[x], qregs_rows[i],
+                pivot_last = i == r - 1
+                qrout.apply(rowswap(pivot_last), qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
                 swap_ancilla_idx += 1
             # improvement 3, X after finishing all phases 1
@@ -89,11 +84,8 @@ def get_rref(r, n, skip_rightmost):
         for i in range(r):
             if i == x:
                 continue
-            if x == r-2:
-                rowadd = get_row_addition(r, n, x, skip_cols.copy(), False)
-            else:
-                rowadd = get_row_addition(r, n, x, skip_cols.copy(), True)
-            qrout.apply(rowadd, qregs_rows[i], qregs_rows[x],
+            pivot_last = x == r - 2
+            qrout.apply(rowadd(pivot_last), qregs_rows[i], qregs_rows[x],
                         add_ancillae[add_ancilla_idx])
             add_ancilla_idx += 1
 
@@ -101,12 +93,13 @@ def get_rref(r, n, skip_rightmost):
 
 
 @build_gate('ROWSWAP', [int, int, int, set, bool])
-def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set, pivot_last: bool):
-    """WARN: the pivot element is checked agains state 1 (improvement 3)
+def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set,
+                 pivot_last: bool):
+    """WARN: the pivot element is checked against state 1 (improvement 4)
     r, n: ISD params
     pivot_idx: index of pivot under analysis (in the matrix, it has position M_{pivot_idx, pivot_idx})
-    skip_cols: indexes of columns to skip
-    pivot_last: if true, pivot element swap will be performed after the other r elements of the matrix, but before the last ks
+    skip_cols: indexes of columns to skip. Used f.e. in improvement 1
+    pivot_last: if true, pivot element swap will be performed after the other r elements of the matrix, but before the last ks (improvement 5)
     """
     qrout = QRoutine()
     pivot_row = qrout.new_wires(n)
@@ -114,13 +107,13 @@ def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set, pivot_last: boo
     anc = qrout.new_wires(1)
     qrout.apply(CNOT, pivot_row[pivot_idx], anc)
 
-    # we do the first rs, then (if pivot last) we do pivot, then last ks
+    # we do the first rs, then (if pivot last as per impr. 5) we do pivot, then last ks
     for c in range(r):
         if c not in skip_cols:
             if c == pivot_idx and pivot_last:
                 continue
             qrout.apply(CCNOT, anc, other_row[c], pivot_row[c])
-    # impr. 6
+    # impr. 5
     if pivot_last:
         qrout.apply(CCNOT, anc, other_row[pivot_idx], pivot_row[pivot_idx])
     for c in range(r, n):
@@ -130,12 +123,13 @@ def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set, pivot_last: boo
 
 
 @build_gate('ROWADD', [int, int, int, set, bool])
-def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set, pivot_last: bool):
+def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set,
+                     pivot_last: bool):
     """
     r, n: ISD params
     pivot_idx: index of pivot under analysis (in the matrix, it has position M_{pivot_idx, pivot_idx})
     skip_cols: indexes of columns to skip
-    pivot_last: if true, pivot element swap will be performed after the other r elements of the matrix, but before the last ks
+    pivot_last: if true, pivot element swap will be performed after the other r elements of the matrix, but before the last ks (improvement 6)
     """
 
     qrout = QRoutine()
@@ -146,9 +140,10 @@ def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set, pivot_last:
     for c in range(r):
         if c == pivot_idx:
             if pivot_last:
-                # pivot_last. 6
+                # impr. 6
                 continue
             else:
+                # impr. 2
                 qrout.apply(CNOT, anc, other_row[pivot_idx])
         elif c not in skip_cols:
             qrout.apply(CCNOT, anc, pivot_row[c], other_row[c])
