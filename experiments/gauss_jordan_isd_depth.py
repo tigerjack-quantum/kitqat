@@ -1,12 +1,12 @@
 # from qat.external.utils.qroutines.fake import fake_gate
 from qat.core.util import statistics
-# from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
-from qat.external.utils.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
+from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
+# from qat.external.utils.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
 
 # from numpy import argmax
-# from qat.core.console import display
+from qat.core.console import display
 
 
 def _prepare_circuit(r, n):
@@ -39,19 +39,21 @@ def _get_max_depth_qbits(vec, qblist):
 
 def _compute_depth(cr, include_intermediate=False):
     vec = [0] * cr.nbqbits
-    # for op in pr.op_list:
-    for op in cr:
+    dic = {}
+    # for op in pr.op_list
+    for idx, op in enumerate(cr):
         if include_intermediate:
-            print(vec)
+            print(op)
         maxd = _get_max_depth_qbits(vec, op.qbits)
         # print(maxd)
         for qb in op.qbits:
             vec[qb] = maxd + 1
-    if include_intermediate:
-        print(vec)
+        dic[f"{idx}_{op.gate}_{op.qbits}"] = maxd + 1
+        if include_intermediate:
+            print(vec)
     m = max(vec)
     argmaxs = [i for i, j in enumerate(vec) if j == m]
-    return m, argmaxs
+    return m, argmaxs, dic
 
 
 def _trans_qbit_to_txt(r, n, qbits, gjmod):
@@ -86,20 +88,25 @@ def main():
     # for r in range(4, 5):
     # for r in range(20, 21):
     for r in range(25, 26):
-        # pr = _build_gje_circuit(r, r, gjmod)
-        pr = _build_gje_circuit(r, r+40, gjmod, alg='lee-brickell')
+        # n = r
+        n = r + 40
+        # alg = 'prange'
+        alg = 'lee'
+        pr = _build_gje_circuit(r, n, gjmod, alg)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
         ccnot_n = sts['gates'].get('C-C-X', 0) + sts['gates'].get('CCNOT', 0)
-        depth, depth_i = _compute_depth(cr, include_intermediate=False)
-        trans = _trans_qbit_to_txt(r, depth_i, gjmod)
+        # depth, depth_i, dic = _compute_depth(cr, include_intermediate=True)
+        depth, depth_i, dic = _compute_depth(cr, include_intermediate=False)
+        trans = _trans_qbit_to_txt(r, n, depth_i, gjmod)
+
+        # for op, dep in dic.items():
+        #     print(op, dep)
 
         print(
-            f"r: {r}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
+            f"r: {r}, n: {n}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
         )
-
-
 if __name__ == '__main__':
     main()
