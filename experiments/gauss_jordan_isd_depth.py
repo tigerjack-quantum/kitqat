@@ -54,12 +54,12 @@ def _compute_depth(cr, include_intermediate=False):
     return m, argmaxs
 
 
-def _trans_qbit_to_txt(r, qbits, gjmod):
+def _trans_qbit_to_txt(r, n, qbits, gjmod):
     txts = []
 
     swap_ancillae_n, add_ancillae_n = gjmod.get_required_ancillae(r)
     # last element of matrix
-    last = r * r - 1
+    last = r * n - 1
 
     for qb in qbits:
         if qb > last:
