@@ -16,13 +16,14 @@ def _prepare_circuit(r, n):
     return pr, qr_rows
 
 
-def _build_gje_circuit(r, n, gjmod):
+def _build_gje_circuit(r, n, gjmod, alg='prange'):
     pr, qregs_rows = _prepare_circuit(r, n)
 
     add_ancillae_n, swap_ancillae_n = gjmod.get_required_ancillae(r)
     swap_ancillae = pr.qalloc(swap_ancillae_n)
     add_ancillae = pr.qalloc(add_ancillae_n)
-    rref_gate = gjmod.get_rref(r, n)
+    skip_rightmost = alg=='prange'
+    rref_gate = gjmod.get_rref(r, n, skip_rightmost)
     pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
     return pr
 
@@ -80,10 +81,13 @@ def _trans_qbit_to_txt(r, qbits, gjmod):
 
 
 def main():
-    gjmod = gji5
-    for r in range(3, 35):
-        # for r in range(3, 4):
-        pr = _build_gje_circuit(r, r, gjmod)
+    gjmod = gji
+    # for r in range(3, 4):
+    # for r in range(4, 5):
+    # for r in range(20, 21):
+    for r in range(25, 26):
+        # pr = _build_gje_circuit(r, r, gjmod)
+        pr = _build_gje_circuit(r, r+40, gjmod, alg='lee-brickell')
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
         sts = statistics(cr)
