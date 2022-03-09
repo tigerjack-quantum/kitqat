@@ -81,11 +81,11 @@ def get_rref(r, n, skip_rightmost):
             # improvement 3, X after finishing all phases 1
             qrout.apply(X, qregs_rows[x][x])
 
+        # phase 2, put 0 in pivot column for each row below and above pivot one
         for i in range(r):
             if i == x:
                 continue
-            pivot_last = x == r - 2
-            qrout.apply(rowadd(pivot_last), qregs_rows[i], qregs_rows[x],
+            qrout.apply(rowadd(), qregs_rows[i], qregs_rows[x],
                         add_ancillae[add_ancilla_idx])
             add_ancilla_idx += 1
 
@@ -122,9 +122,8 @@ def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set,
     return qrout
 
 
-@build_gate('ROWADD', [int, int, int, set, bool])
-def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set,
-                     pivot_last: bool):
+@build_gate('ROWADD', [int, int, int, set])
+def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set):
     """
     r, n: ISD params
     pivot_idx: index of pivot under analysis (in the matrix, it has position M_{pivot_idx, pivot_idx})
@@ -138,18 +137,13 @@ def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set,
     anc = qrout.new_wires(1)
     qrout.apply(CNOT, other_row[pivot_idx], anc)
     for c in range(r):
+        # pivot_last. 6
         if c == pivot_idx:
-            if pivot_last:
-                # impr. 6
-                continue
-            else:
-                # impr. 2
-                qrout.apply(CNOT, anc, other_row[pivot_idx])
+            continue
         elif c not in skip_cols:
             qrout.apply(CCNOT, anc, pivot_row[c], other_row[c])
     # pivot_last. 6 + 2
-    if pivot_last:
-        qrout.apply(CNOT, anc, other_row[pivot_idx])
+    qrout.apply(CNOT, anc, other_row[pivot_idx])
     for c in range(r, n):
         if c not in skip_cols:
             qrout.apply(CCNOT, anc, pivot_row[c], other_row[c])
