@@ -17,7 +17,6 @@ def get_required_ancillae(r: int):
 the RREF.
 
     :param nrows: Rows of matrix
-    :param ncols: Cols of matrix
     :returns: (swap_ancilla, add_ancilla)
 
     """
@@ -27,13 +26,14 @@ the RREF.
     return swap_ancilla_n, add_ancilla_n
 
 
-@build_gate('GJISD', [int, int, bool])
-def get_rref(r, n, skip_rightmost):
+@build_gate('GJISD', [int, int, bool, int])
+def get_rref(r, n, skip_rightmost, norig):
     """Apply RREF to a matrix H.
 
     :param r: The number of rows of the original matrix H
     :param n: The number of cols of the original matrix H
     :param skip_rightmost: Skip the operations on the rightmost r*k submatrix (used in Prange)
+    :param norig is the number of columns of original matrix. In theory, param n can be composed by the original matrix plus the syndrome columns.
     The gate takes as input, in this order:
     - The matrix (r * n), represented as qreg
     - The swap ancillae
@@ -42,38 +42,51 @@ def get_rref(r, n, skip_rightmost):
     The number of swap and add ancillae required can be obtained through the
     get_ancillae function.
 
+    WARN: if you pass the syndrome(s) as well as columns of the matrix, you
+    should put them at the end of the original matrix (i.e., after column n-1)
+
     """
     qrout = QRoutine()
+    if norig < 0:
+        norig = n
 
     qregs_rows = []
     for _ in range(r):
         qreg = qrout.new_wires(n)
         qregs_rows.append(qreg)
 
-    r = min(r, n)
     swap_ancilla_n, add_ancilla_n = get_required_ancillae(r)
     swap_ancillae = qrout.new_wires(swap_ancilla_n)
     add_ancillae = qrout.new_wires(add_ancilla_n)
     add_ancilla_idx = 0
     swap_ancilla_idx = 0
 
-    skip_cols = set()
     if skip_rightmost:
         # in Prange we skip the rightmost columns
-        skip_cols = set(range(r, n))
+        skip_cols = set(range(r, norig))
+    else:
+        skip_cols = set()
+    # impr. 7, we skip the first r columns, but only for the rows above pivot
+    # skip_cols_add = set(range(1, r))
 
     for x in range(r):
         # impr. 1
         if x > 0:
             skip_cols.add(x - 1)
 
-        rowswap = partial(get_row_swap, r, n, x, skip_cols.copy())
-        rowadd = partial(get_row_addition, r, n, x, skip_cols.copy())
+        _skip_cols = skip_cols.copy()
+        rowswap = partial(get_row_swap, r, n, x, _skip_cols)
+        rowadd = partial(get_row_addition, r, n, x, _skip_cols)
         # we don't apply swap gates for the last row
         if x != r - 1:
             # improvement 3, X before starting all phases 1
+            # phase 1, look for a pivot in rows below
             qrout.apply(X, qregs_rows[x][x])
             for i in range(x + 1, r):
+                # if skip_rightmost and x > r - 2:
+                #     pivot_last = False
+                # else:
+                #     pivot_last = i == r - 1
                 pivot_last = i == r - 1
                 qrout.apply(rowswap(pivot_last), qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
@@ -83,6 +96,7 @@ def get_rref(r, n, skip_rightmost):
 
         # phase 2, put 0 in pivot column for each row below and above pivot one
         for i in range(r):
+            # obv, we skip the row under analysis
             if i == x:
                 continue
             qrout.apply(rowadd(), qregs_rows[i], qregs_rows[x],

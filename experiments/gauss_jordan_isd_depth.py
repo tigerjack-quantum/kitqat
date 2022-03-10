@@ -19,11 +19,11 @@ def _prepare_circuit(r, n):
 def _build_gje_circuit(r, n, gjmod, alg='prange'):
     pr, qregs_rows = _prepare_circuit(r, n)
 
+    skip_rightmost = alg == 'prange'
     add_ancillae_n, swap_ancillae_n = gjmod.get_required_ancillae(r)
     swap_ancillae = pr.qalloc(swap_ancillae_n)
     add_ancillae = pr.qalloc(add_ancillae_n)
-    skip_rightmost = alg=='prange'
-    rref_gate = gjmod.get_rref(r, n, skip_rightmost)
+    rref_gate = gjmod.get_rref(r, n, skip_rightmost, -1)
     pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
     return pr
 
