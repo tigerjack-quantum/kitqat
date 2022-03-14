@@ -79,7 +79,8 @@ class GjiTestCase(CircuitTestCase):
                     if not skip_rightmost:
                         # if we didn't skip anything, the results should be identical
                         np.testing.assert_array_equal(mat_gji, mat_gji_sim)
-                    # check as well that we can reconstruct the matrix U s.t. U @ matrix
+                        np.testing.assert_array_equal(mat_gji, np.eye(r))
+                    # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
                     if test_u:
                         u = rref.build_u_matrix_from_sample(sample, r)
                         if not skip_rightmost:
@@ -97,7 +98,8 @@ class GjiTestCase(CircuitTestCase):
                                                       check_against)
                 else:
                     # in this case, we just check that at least one element on
-                    # the diagonal is 0
+                    # the diagonal is 0. This is enough to make the algorithm
+                    # fail in our isd circuits
                     self.assertFalse(all(mat_gji_diag))
                     self.assertFalse(all(mat_gji_sim_diag))
 
