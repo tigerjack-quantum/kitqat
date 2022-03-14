@@ -142,4 +142,4 @@ class GjiTestCase(CircuitTestCase):
                          CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_no_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, True)
+        self._common_test(matrix, True, False)
