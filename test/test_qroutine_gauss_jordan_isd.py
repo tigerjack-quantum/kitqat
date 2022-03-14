@@ -30,12 +30,11 @@ class GjiTestCase(CircuitTestCase):
     def _common_test(
         self,
         matrix,
-        test_u=False,
-        should_iden=False,
+        test_u,
+        should_iden,
     ):
         """:param test_u: build u from ancillae and check it's correct
-        :param should_iden: we are only checking the diagonal elements
-        :param should_equal: we are checking all the elements (gje with skip_rightmost=False)
+        :param should_iden: we are checking that the procedure gives an identity matrix. Note that, if skip_rightmost is true, we do not have exactly an identity matrix, but still the diagonal elements are all 1 and the bottom-left submatrix below the diagonal is all zero
         """
         r, n = matrix.shape
         nrows = r
