@@ -4,139 +4,142 @@ from test.common_circuit import CircuitTestCase
 import numpy as np
 from parameterized import parameterized
 from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
-from qat.external.utils.qroutines.linalg import rref
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
+from qat.external.utils.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
-
-# from qat.core.util import statistics
 
 
 class GjiTestCase(CircuitTestCase):
 
     def _prepare_circuit(self, matrix):
-        self.pr = Program()
+        pr = Program()
         nrows, ncols = matrix.shape
-        self.nsquare = min(matrix.shape)
-        # qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix.tolist())
+
         qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix)
-        qr_matrix = self.pr.qalloc(nrows * ncols)
-        self.pr.apply(qrout, qr_matrix)
-        self.qregs_rows = qmatrix.get_rows_as_qubit_list(
-            nrows, ncols, qr_matrix)
+        qr_matrix = pr.qalloc(nrows * ncols)
+        pr.apply(qrout, qr_matrix)
+        qregs_rows = qmatrix.get_rows_as_qubit_list(nrows, ncols, qr_matrix)
 
-        self.qbit_range = set(q.index for qreg in self.qregs_rows
-                              for q in qreg)
+        qbit_range = set(q.index for qreg in qregs_rows for q in qreg)
         swap_anc_n, add_anc_n = gji.get_required_ancillae(nrows)
-        self.add_qregs = self.pr.qalloc(add_anc_n)
-        self.swap_qregs = self.pr.qalloc(swap_anc_n)
+        add_qregs = pr.qalloc(add_anc_n)
+        swap_qregs = pr.qalloc(swap_anc_n)
+        return pr, qregs_rows, add_qregs, swap_qregs, qbit_range
 
-    def _common_test(self,
-                     matrix,
-                     test_u=False,
-                     test_iden=False,
-                     should_fail=False):
-        self._prepare_circuit(matrix)
+    def _common_test(
+        self,
+        matrix,
+        test_u=False,
+        should_iden=False,
+    ):
+        """:param test_u: build u from ancillae and check it's correct
+        :param should_iden: we are only checking the diagonal elements
+        :param should_equal: we are checking all the elements (gje with skip_rightmost=False)
+        """
+        r, n = matrix.shape
+        nrows = r
+        syndrome = np.random.randint(0, 2, size=(nrows, 1))
+        ncols = n + 1
+        # concatenate the syndrome to the original matrix
+        matrix_ext = np.hstack((matrix, syndrome))
 
-        nrows, ncols = matrix.shape
-        gji_gate = gji.get_rref(nrows, ncols, False)
-        self.pr.apply(gji_gate, self.qregs_rows, self.swap_qregs,
-                      self.add_qregs)
+        for skip_rightmost in (False, ):
+            with self.subTest(skip_rightmost=skip_rightmost):
+                pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
+                    matrix_ext)
+                gji_gate = gji.get_rref(nrows, ncols, skip_rightmost,
+                                        ncols - 1)
+                pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
 
-        if test_u:
-            self.pr.measure(qbits=self.swap_qregs)
-            self.pr.measure(qbits=self.add_qregs)
-        cr = self.pr.to_circ()
-        # print(statistics(cr))
+                if test_u:
+                    pr.measure(qbits=swap_qregs)
+                    pr.measure(qbits=add_qregs)
+                cr = pr.to_circ()
+                res = self.qpu.submit(cr.to_job(qubits=qbit_range))
 
-        res = self.qpu.submit(cr.to_job(qubits=self.qbit_range))
-
-        sample = res[0]
-        mat_gji = qmatrix.build_matrix_from_sample(sample, self.qbit_range,
-                                                    matrix.shape)
-        mat_gji_sim = Matrix(matrix).rref(pivots=False)
-        # The gjis are expected to be different
-        if should_fail:
-            with self.assertRaises(AssertionError):
-                np.testing.assert_array_equal(mat_gji, mat_gji_sim)
-        else:
-            np.testing.assert_array_equal(mat_gji, mat_gji_sim)
-
-        # The gjis are not necessarily different, but for sure the obtained
-        # gji has not an IDENTITY matrix in the left part
-        if test_iden:
-            if should_fail:
-                with self.assertRaises(AssertionError):
-                    np.testing.assert_array_equal(
-                        mat_gji[:self.nsquare, :self.nsquare],
-                        np.eye(self.nsquare))
-            else:
-                np.testing.assert_array_equal(mat_gji, mat_gji_sim)
-
-        # The matrix of transformations U can be reconstructed from the
-        # ancillae.
-        if test_u:
-            u = rref.build_u_matrix_from_sample(sample, self.nsquare)
-            np.testing.assert_array_equal(u @ matrix % 2, mat_gji)
+                self.assertEqual(len(res), 1)
+                sample = res[0]
+                mat_gji = qmatrix.build_matrix_from_sample(
+                    sample, qbit_range, (nrows, ncols))
+                mat_gji_diag = mat_gji.diagonal()
+                mat_gji_sim = Matrix(matrix_ext).rref(pivots=False) % 2
+                mat_gji_sim_diag = mat_gji_sim.diagonal()
+                self.logger.debug(f"skip {skip_rightmost}")
+                self.logger.debug("original matrix (last column is syndrome)")
+                self.logger.debug(f"\n{matrix_ext}")
+                self.logger.debug("reduced matrix from qcircuit")
+                self.logger.debug(f"\n{mat_gji}")
+                if should_iden:
+                    # check we have all ones on the diagonal
+                    self.assertTrue(all(mat_gji_diag))
+                    self.assertTrue(all(mat_gji_sim_diag))
+                    # check the syndrome calculation is correct
+                    syn = mat_gji[:, n].reshape(r, 1)
+                    np.testing.assert_array_equal(syn, mat_gji_sim[:, n])
+                    if not skip_rightmost:
+                        # if we didn't skip anything, the results should be identical
+                        np.testing.assert_array_equal(mat_gji, mat_gji_sim)
+                    # check as well that we can reconstruct the matrix U s.t. U @ matrix
+                    if test_u:
+                        u = rref.build_u_matrix_from_sample(sample, r)
+                        if not skip_rightmost:
+                            check_matrix = matrix_ext
+                            check_against = mat_gji
+                        else:
+                            # if we skipped the righmost rxn matrix, we should
+                            # check only the leftmost one AND the syndrome
+                            range_cols = list(range(r))
+                            # append syndrome
+                            range_cols.append(n)
+                            check_matrix = matrix_ext[:, range_cols]
+                            check_against = mat_gji[:, range_cols]
+                        np.testing.assert_array_equal(u @ check_matrix % 2,
+                                                      check_against)
+                else:
+                    # in this case, we just check that at least one element on
+                    # the diagonal is 0
+                    self.assertFalse(all(mat_gji_diag))
+                    self.assertFalse(all(mat_gji_sim_diag))
 
     @parameterized.expand([
         ("3x3", np.array([[0, 1, 1], [1, 0, 1], [0, 0, 1]])),
         ("3x4", np.array([[1, 1, 0, 0], [1, 0, 0, 0], [0, 1, 1, 1]])),
         ("3x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]])),
     ])
-    def test_equals_iden(self, name, matrix):
+    def test_iden(self, name, matrix):
         """They should give the same results of a normal GJI and an identity matrix on
         the left
 
         """
         self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, True, False)
+        self._common_test(matrix, True, True)
+
+    @parameterized.expand([
+        ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]])),
+        ("3x4", np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 0, 1]])),
+        ("3x4", np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0]])),
+        ("3x4", np.array([[0, 0, 0, 1], [1, 1, 1, 0], [1, 0, 0, 1]])),
+    ])
+    def test_no_iden(self, name, matrix):
+        self.logger.debug("test with %s", name)
+        self._common_test(matrix, True, False)
 
     @parameterized.expand([
         ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
     ])
     @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
-    def test_equals_iden_slow(self, name, matrix):
+    def test_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, True, False)
+        self._common_test(matrix, True, True)
 
     @parameterized.expand([
-        ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]])),
-        ("3x4", np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 0, 1]])),
-    ])
-    def test_not_equals_not_iden(self, name, matrix):
-        """They should give different w.r.t. a normal GJI, and also no identity
-        """
-        self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, True, True)
-
-    @parameterized.expand([("3x5",
-                            np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0],
-                                      [0, 1, 1, 0, 1]]))])
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
-                         CircuitTestCase.SLOW_TEST_ON_REASON)
-    def test_not_equals_not_iden_slow(self, name, matrix):
-        self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, True, True)
-
-    @parameterized.expand([
-        ("3x4", np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0]])),
-        ("3x4", np.array([[0, 0, 0, 1], [1, 1, 1, 0], [1, 0, 0, 1]])),
-    ])
-    def test_equals_not_iden(self, name, matrix):
-        """They do not necessarily give the same results of the reversible circuit
-        w.r.t. the normal RREF. For sure they do not produce identities.
-
-        """
-        self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, True, True)
-
-    @parameterized.expand([
+        ("3x5", np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0], [0, 1, 1, 0, 1]])),
         ("3x5", np.array([[1, 0, 0, 1, 0], [0, 0, 0, 0, 0], [1, 1, 0, 1, 1]])),
     ])
     @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
-    def test_equals_not_iden_slow(self, name, matrix):
+    def test_no_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
-        self._common_test(matrix, True, False, False)
+        self._common_test(matrix, True, True)
