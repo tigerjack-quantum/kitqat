@@ -14,6 +14,7 @@ class BasicTestCase(unittest.TestCase):
         cls.draw = False
         level = getenv('LOG_LEVEL')
         if level:
+            print(f"Got level {level}")
             logging_level = logging._nameToLevel.get(level, 'ERROR')
             print(f"log level is {logging_level}")
             handler = logging.StreamHandler()

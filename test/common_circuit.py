@@ -22,7 +22,7 @@ class CircuitTestCase(BasicTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.logger.info("using simulator: ", end="")
+        cls.logger.info("using simulator: ")
         cls.links = []
         if cls.SIMULATOR.lower() == 'pylinalg':
             cls.logger.info("PyLinalg")
