@@ -42,21 +42,21 @@ def _compute_depth(cr, include_intermediate=False):
     dic = {}
     # for op in pr.op_list
     for idx, op in enumerate(cr):
-        if include_intermediate:
-            print(op)
+        # if include_intermediate:
+        #     print(op)
         maxd = _get_max_depth_qbits(vec, op.qbits)
         # print(maxd)
         for qb in op.qbits:
             vec[qb] = maxd + 1
-        dic[f"{idx}_{op.gate}_{op.qbits}"] = maxd + 1
         if include_intermediate:
-            print(vec)
+            dic[f"{idx}_{op.gate}_{op.qbits}"] = maxd + 1
+        #     print(vec)
     m = max(vec)
     argmaxs = [i for i, j in enumerate(vec) if j == m]
     return m, argmaxs, dic
 
 
-def _trans_qbit_to_txt(r, n, qbits, gjmod):
+def _trans_qbit_to_txt(r, n, qbits, gjmod, skip_rightmost):
     txts = []
 
     swap_ancillae_n, add_ancillae_n = gjmod.get_required_ancillae(r)
@@ -75,8 +75,8 @@ def _trans_qbit_to_txt(r, n, qbits, gjmod):
                 idx = qb - last - 1
                 txt = f"B[{idx}]"
         else:
-            row = qb // r
-            col = qb % r
+            row = qb // n
+            col = qb % n
             txt = f"H[{row},{col}]"
         txts.append(txt)
     return txts
@@ -86,27 +86,55 @@ def main():
     gjmod = gji
     # for r in range(3, 4):
     # for r in range(4, 5):
-    # for r in range(20, 21):
-    for r in range(25, 26):
-        # n = r
-        n = r + 40
-        # alg = 'prange'
-        alg = 'lee'
+    # for r in range(5, 6):
+    # for r in range(7, 8):
+    # for r in range(15, 16):
+    for r in range(20, 21):
+    # for r in range(25, 26):
+    # for r in range(35, 36):
+        n = r
+        n = 2 * r
+        # n = r + 40
+        alg = 'prange'
+        # alg = 'lee'
         pr = _build_gje_circuit(r, n, gjmod, alg)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
         ccnot_n = sts['gates'].get('C-C-X', 0) + sts['gates'].get('CCNOT', 0)
-        # depth, depth_i, dic = _compute_depth(cr, include_intermediate=True)
-        depth, depth_i, dic = _compute_depth(cr, include_intermediate=False)
-        trans = _trans_qbit_to_txt(r, n, depth_i, gjmod)
+        cnot_n = sts['gates'].get('C-X', 0) + sts['gates'].get('CNOT', 0)
+        depth, depth_i, dic = _compute_depth(cr, include_intermediate=True)
+        # depth, depth_i, dic = _compute_depth(cr, include_intermediate=False)
+        trans = _trans_qbit_to_txt(r, n, depth_i, gjmod, alg == 'prange')
 
-        # for op, dep in dic.items():
-        #     print(op, dep)
+        for op, dep in dic.items():
+            print(op, dep)
 
         print(
-            f"r: {r}, n: {n}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
+            f"r: {r}, n: {n}, CNOT: {cnot_n}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
         )
+
+        #################################
+        # QLM only
+        # from qat.nnize.metrics import DurationMetric
+        # from qat.plugins import Graphopt
+        # from qat.core.simutil import optimize_circuit
+ 
+        # metric = DurationMetric()
+        # metric.set_gate_time({"-DEFAULT-": 1})
+        # print(f"Depth of circuit: {-metric(cr)}")
+        # metric.minimize_overall_time()
+        # print(f"Depth of circuit: {-metric(cr)}")
+
+        # cr_opt = optimize_circuit(cr, Graphopt(verbose=True))
+        # print(statistics(cr_opt))
+        # display(cr_opt)
+        # depth, depth_i = _compute_depth(cr_opt, include_intermediate=False)
+        # print(depth, depth_i)
+
+ 
+
+
 if __name__ == '__main__':
     main()

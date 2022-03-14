@@ -44,7 +44,7 @@ def test_simple(mat):
         'cadd': add_ancillae,
         'swap': swap_ancillae
     })
-    rref_gate = gji.get_rref(r, n)
+    rref_gate = gji.get_rref(r, n, False, -1)
     pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
 
     cr = pr.to_circ()
