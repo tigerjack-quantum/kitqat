@@ -78,8 +78,8 @@ class GjiTestCase(CircuitTestCase):
                     np.testing.assert_array_equal(syn, mat_gji_sim[:, n])
                     if not skip_rightmost:
                         # if we didn't skip anything, the results should be identical
+                        np.testing.assert_array_equal(mat_gji[:,:r], np.eye(r))
                         np.testing.assert_array_equal(mat_gji, mat_gji_sim)
-                        np.testing.assert_array_equal(mat_gji, np.eye(r))
                     # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
                     if test_u:
                         u = rref.build_u_matrix_from_sample(sample, r)
