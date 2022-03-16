@@ -6,6 +6,7 @@ from parameterized import parameterized
 from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.external.utils.qroutines.linalg import rref
+from qat.external.utils.qatmgmt import results
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 
@@ -43,7 +44,7 @@ class GjiTestCase(CircuitTestCase):
         # concatenate the syndrome to the original matrix
         matrix_ext = np.hstack((matrix, syndrome))
 
-        for skip_rightmost in (False, True ):
+        for skip_rightmost in (False, True):
             with self.subTest(skip_rightmost=skip_rightmost):
                 pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
                     matrix_ext)
@@ -51,14 +52,17 @@ class GjiTestCase(CircuitTestCase):
                                         ncols - 1)
                 pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
 
-                if test_u:
-                    pr.measure(qbits=swap_qregs)
-                    pr.measure(qbits=add_qregs)
                 cr = pr.to_circ()
-                res = self.qpu.submit(cr.to_job(qubits=qbit_range))
+                if test_u:
+                    # we measure all the qubits
+                    res = self.qpu.submit(cr.to_job())
+                else:
+                    # ... otw only the qubits containing the matrix
+                    res = self.qpu.submit(cr.to_job(qubits=qbit_range))
 
                 self.assertEqual(len(res), 1)
                 sample = res[0]
+
                 mat_gji = qmatrix.build_matrix_from_sample(
                     sample, qbit_range, (nrows, ncols))
                 mat_gji_diag = mat_gji.diagonal()
@@ -78,11 +82,15 @@ class GjiTestCase(CircuitTestCase):
                     np.testing.assert_array_equal(syn, mat_gji_sim[:, n])
                     if not skip_rightmost:
                         # if we didn't skip anything, the results should be identical
-                        np.testing.assert_array_equal(mat_gji[:,:r], np.eye(r))
+                        np.testing.assert_array_equal(mat_gji[:, :r],
+                                                      np.eye(r))
                         np.testing.assert_array_equal(mat_gji, mat_gji_sim)
                     # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
                     if test_u:
-                        u = rref.build_u_matrix_from_sample(sample, r)
+                        add_bitstring, swap_bitstring = results.get_qregs_to_bitstring_from_sample(
+                            [add_qregs, swap_qregs], sample)
+                        u = rref.build_u_matrix_from_bitstrings(
+                            swap_bitstring, add_bitstring, r)
                         if not skip_rightmost:
                             check_matrix = matrix_ext
                             check_against = mat_gji

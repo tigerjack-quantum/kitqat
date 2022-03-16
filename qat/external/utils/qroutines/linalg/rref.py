@@ -56,8 +56,6 @@ def build_u_matrix_from_bitlists(swaps: list, adds: list, nsquare):
     produced by the RREF gate.
 
     """
-    print(swaps)
-    print(adds)
     swap_idx = 0
     add_idx = 0
     u = np.eye(nsquare, dtype=np.uint8)

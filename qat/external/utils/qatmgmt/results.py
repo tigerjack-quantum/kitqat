@@ -78,9 +78,7 @@ def get_qreg_to_bitstring_from_sample(register: 'QRegister',
 
 
 def get_qbits_to_bitstring_from_sample(qbit_idxs: List[int], sample: 'Sample') -> str:
-    print(qbit_idxs)
     interesting_vals = [
         val for i, val in enumerate(sample.state.bitstring) if i in qbit_idxs
     ]
-    print(interesting_vals)
     return ''.join(interesting_vals)
