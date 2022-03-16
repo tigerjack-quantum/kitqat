@@ -61,7 +61,12 @@ class GjiTestCase(CircuitTestCase):
                     res = self.qpu.submit(cr.to_job(qubits=qbit_range))
 
                 self.assertEqual(len(res), 1)
-                sample = res[0]
+
+                # This is equivalent to sample = res[0], but on
+                # QLM only through iteration the sample result will be
+                # initialized
+                for sample in res:
+                    pass
 
                 mat_gji = qmatrix.build_matrix_from_sample(
                     sample, qbit_range, (nrows, ncols))
