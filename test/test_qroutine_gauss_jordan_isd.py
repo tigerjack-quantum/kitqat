@@ -43,7 +43,7 @@ class GjiTestCase(CircuitTestCase):
         # concatenate the syndrome to the original matrix
         matrix_ext = np.hstack((matrix, syndrome))
 
-        for skip_rightmost in (False, ):
+        for skip_rightmost in (False, True ):
             with self.subTest(skip_rightmost=skip_rightmost):
                 pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
                     matrix_ext)
