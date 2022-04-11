@@ -95,14 +95,17 @@ def _trans_qbit_to_txt(r, n, n_syns, qbits, gjmod):
 
 def main():
     circulant = False
+    alg = 'prange'
+    # alg = 'lee'
+
     # for r in range(3, 4):
     # for r in range(4, 5):
     # for r in range(5, 6):
     # for r in range(7, 8):
     # for r in range(15, 16):
     # for r in range(20, 21):
+    # for r in range(6, 101):
     for r in range(25, 26):
-        # for r in range(35, 36):
         if circulant:
             if alg == 'prange':
                 n = r
@@ -117,8 +120,6 @@ def main():
                 # just a random value, more or less reasonable for McE
                 n = r * 3
         # n = r + 40
-        alg = 'prange'
-        # alg = 'lee'
         pr = _build_gje_circuit(r, n, n_syns, gji, alg)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
