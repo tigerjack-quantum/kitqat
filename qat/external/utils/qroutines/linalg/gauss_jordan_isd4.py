@@ -3,7 +3,7 @@
 import logging
 from functools import partial
 
-from qat.lang.AQASM.gates import CCNOT, CNOT, X, SWAP
+from qat.lang.AQASM.gates import CCNOT, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
@@ -20,10 +20,10 @@ the RREF.
     :returns: (swap_ancilla, add_ancilla)
 
     """
-    add_ancilla_n = r * (r - 1)
+    # add_ancilla_n = r * (r - 1)
     # Add ancilla is necessary an even number, so there is no actual rounding here
-    swap_ancilla_n = add_ancilla_n // 2
-    return swap_ancilla_n, add_ancilla_n
+    swap_ancilla_n = (r * (r - 1)) // 2
+    return swap_ancilla_n, 0
 
 
 @build_gate('GJISD', [int, int, bool, int])
@@ -47,8 +47,6 @@ def get_rref(r, n, skip_rightmost, norig):
 
     """
     qrout = QRoutine()
-    # it's the basic algorithm, we need measures for depth
-    skip_rightmost = False
     if norig < 0:
         norig = n
 
@@ -57,43 +55,71 @@ def get_rref(r, n, skip_rightmost, norig):
         qreg = qrout.new_wires(n)
         qregs_rows.append(qreg)
 
-    swap_ancilla_n, add_ancilla_n = get_required_ancillae(r)
+    swap_ancilla_n, _ = get_required_ancillae(r)
     swap_ancillae = qrout.new_wires(swap_ancilla_n)
-    add_ancillae = qrout.new_wires(add_ancilla_n)
-    add_ancilla_idx = 0
+    # add_ancillae = qrout.new_wires(add_ancilla_n)
+    # add_ancilla_idx = 0
     swap_ancilla_idx = 0
 
+    if skip_rightmost:
+        # in Prange we skip the rightmost columns
+        skip_cols = set(range(r, norig))
+    else:
+        skip_cols = set()
     # impr. 7, we skip the first r columns, but only for the rows above pivot
     # skip_cols_add = set(range(1, r))
 
     for x in range(r):
-        rowswap = partial(get_row_swap, r, n, x)
-        rowadd = partial(get_row_addition, r, n, x)
+        qrout.apply(X, qregs_rows[x][x])
+    for x in range(r):
+        # impr. 1
+        if x > 0:
+            skip_cols.add(x - 1)
+
+        _skip_cols = skip_cols.copy()
+        rowswap = partial(get_row_swap, r, n, x, _skip_cols)
+        rowadd = partial(get_row_addition, r, n, x, _skip_cols)
         # we don't apply swap gates for the last row
         if x != r - 1:
+            # improvement 3, X before starting all phases 1
+            # phase 1, look for a pivot in rows below
             for i in range(x + 1, r):
-                qrout.apply(X, qregs_rows[x][x])
-                qrout.apply(rowswap(), qregs_rows[x], qregs_rows[i],
+                # if skip_rightmost and x > r - 2:
+                #     pivot_last = False
+                # else:
+                #     pivot_last = i == r - 1
+                pivot_last = i == r - 1
+                qrout.apply(rowswap(pivot_last), qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
-                qrout.apply(X, qregs_rows[x][x])
                 swap_ancilla_idx += 1
+            # improvement 3, X after finishing all phases 1
 
         # phase 2, put 0 in pivot column for each row below and above pivot one
         for i in range(r):
             # obv, we skip the row under analysis
             if i == x:
                 continue
-            qrout.apply(rowadd(), qregs_rows[i], qregs_rows[x],
-                        add_ancillae[add_ancilla_idx])
-            add_ancilla_idx += 1
+            qrout.apply(
+                rowadd(),
+                qregs_rows[i],
+                qregs_rows[x],
+            )
+            # add_ancillae[add_ancilla_idx])
+            # add_ancilla_idx += 1
+    for x in range(r):
+        qrout.apply(X, qregs_rows[x][x])
+
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int, int])
-def get_row_swap(r: int, n: int, pivot_idx: int):
+@build_gate('ROWSWAP', [int, int, int, set, bool])
+def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set,
+                 pivot_last: bool):
     """WARN: the pivot element is checked against state 1 (improvement 4)
     r, n: ISD params
     pivot_idx: index of pivot under analysis (in the matrix, it has position M_{pivot_idx, pivot_idx})
+    skip_cols: indexes of columns to skip. Used f.e. in improvement 1
+    pivot_last: if true, pivot element swap will be performed after the other r elements of the matrix, but before the last ks (improvement 5)
     """
     qrout = QRoutine()
     pivot_row = qrout.new_wires(n)
@@ -102,13 +128,22 @@ def get_row_swap(r: int, n: int, pivot_idx: int):
     qrout.apply(CNOT, pivot_row[pivot_idx], anc)
 
     # we do the first rs, then (if pivot last as per impr. 5) we do pivot, then last ks
-    for c in range(n):
-        qrout.apply(SWAP.ctrl(), anc, other_row[c], pivot_row[c])
+    for c in range(r):
+        if c not in skip_cols:
+            if c == pivot_idx and pivot_last:
+                continue
+            qrout.apply(CCNOT, anc, other_row[c], pivot_row[c])
+    # impr. 5
+    if pivot_last:
+        qrout.apply(CCNOT, anc, other_row[pivot_idx], pivot_row[pivot_idx])
+    for c in range(r, n):
+        if c not in skip_cols:
+            qrout.apply(CCNOT, anc, other_row[c], pivot_row[c])
     return qrout
 
 
-@build_gate('ROWADD', [int, int, int])
-def get_row_addition(r: int, n: int, pivot_idx: int):
+@build_gate('ROWADD', [int, int, int, set])
+def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set):
     """
     r, n: ISD params
     pivot_idx: index of pivot under analysis (in the matrix, it has position M_{pivot_idx, pivot_idx})
@@ -119,8 +154,19 @@ def get_row_addition(r: int, n: int, pivot_idx: int):
     qrout = QRoutine()
     other_row = qrout.new_wires(n)
     pivot_row = qrout.new_wires(n)
-    anc = qrout.new_wires(1)
-    qrout.apply(CNOT, other_row[pivot_idx], anc)
-    for c in range(n):
-        qrout.apply(CCNOT, anc, pivot_row[c], other_row[c])
+    # anc = qrout.new_wires(1)
+    # qrout.apply(CNOT, other_row[pivot_idx], anc)
+    for c in range(r):
+        # pivot_last. 6
+        if c == pivot_idx:
+            continue
+        elif c not in skip_cols:
+            qrout.apply(CCNOT, other_row[pivot_idx], pivot_row[c],
+                        other_row[c])
+    # pivot_last. 6 + 2
+    # qrout.apply(CNOT, anc, other_row[pivot_idx])
+    for c in range(r, n):
+        if c not in skip_cols:
+            qrout.apply(CCNOT, other_row[pivot_idx], pivot_row[c],
+                        other_row[c])
     return qrout

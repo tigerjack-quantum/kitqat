@@ -3,7 +3,7 @@ from test.common_circuit import CircuitTestCase
 
 import numpy as np
 from parameterized import parameterized
-from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
+from qat.external.utils.qroutines.linalg import gauss_jordan_isd4 as gji
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.external.utils.qroutines.linalg import rref
 from qat.external.utils.qatmgmt import results
@@ -24,8 +24,11 @@ class GjiTestCase(CircuitTestCase):
 
         qbit_range = set(q.index for qreg in qregs_rows for q in qreg)
         swap_anc_n, add_anc_n = gji.get_required_ancillae(nrows)
-        add_qregs = pr.qalloc(add_anc_n)
         swap_qregs = pr.qalloc(swap_anc_n)
+        if add_anc_n > 0:
+            add_qregs = pr.qalloc(add_anc_n)
+        else:
+            add_qregs = None
         return pr, qregs_rows, add_qregs, swap_qregs, qbit_range
 
     def _common_test(
@@ -40,6 +43,7 @@ class GjiTestCase(CircuitTestCase):
         r, n = matrix.shape
         nrows = r
         syndrome = np.random.randint(0, 2, size=(nrows, 1))
+        # 1 syndrome
         ncols = n + 1
         # concatenate the syndrome to the original matrix
         matrix_ext = np.hstack((matrix, syndrome))
@@ -49,8 +53,13 @@ class GjiTestCase(CircuitTestCase):
                 pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
                     matrix_ext)
                 gji_gate = gji.get_rref(nrows, ncols, skip_rightmost,
-                                        ncols - 1)
-                pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
+                                        n)
+                if add_qregs:
+                    pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
+                else:
+                    pr.apply(gji_gate, qregs_rows, swap_qregs)
+                print(pr.qbit_count)
+                return
 
                 cr = pr.to_circ()
                 if test_u:
@@ -91,7 +100,7 @@ class GjiTestCase(CircuitTestCase):
                                                       np.eye(r))
                         np.testing.assert_array_equal(mat_gji, mat_gji_sim)
                     # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
-                    if test_u:
+                    if add_qregs and test_u:
                         add_bitstring, swap_bitstring = results.get_qregs_to_bitstring_from_sample(
                             [add_qregs, swap_qregs], sample)
                         u = rref.build_u_matrix_from_bitstrings(

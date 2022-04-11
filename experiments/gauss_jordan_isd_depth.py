@@ -1,6 +1,8 @@
 # from qat.external.utils.qroutines.fake import fake_gate
 from qat.core.util import statistics
-from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
+# from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
+# from qat.external.utils.qroutines.linalg import gauss_jordan_isd2 as gji
+from qat.external.utils.qroutines.linalg import gauss_jordan_isd4 as gji
 # from qat.external.utils.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
@@ -16,15 +18,21 @@ def _prepare_circuit(r, n):
     return pr, qr_rows
 
 
-def _build_gje_circuit(r, n, gjmod, alg='prange'):
-    pr, qregs_rows = _prepare_circuit(r, n)
+def _build_gje_circuit(r, n, n_syns, gjmod, alg='prange'):
+    pr, qregs_rows = _prepare_circuit(r, n + n_syns)
 
     skip_rightmost = alg == 'prange'
-    add_ancillae_n, swap_ancillae_n = gjmod.get_required_ancillae(r)
+    rref_gate = gjmod.get_rref(r, n + n_syns, skip_rightmost, n)
+
+    swap_ancillae_n, add_ancillae_n = gjmod.get_required_ancillae(r)
     swap_ancillae = pr.qalloc(swap_ancillae_n)
-    add_ancillae = pr.qalloc(add_ancillae_n)
-    rref_gate = gjmod.get_rref(r, n, skip_rightmost, -1)
-    pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
+    if add_ancillae_n > 0:
+        add_ancillae = pr.qalloc(add_ancillae_n)
+        pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
+    else:
+        pr.apply(rref_gate, qregs_rows, swap_ancillae)
+
+    # print(pr.qbit_count)
     return pr
 
 
@@ -56,63 +64,72 @@ def _compute_depth(cr, include_intermediate=False):
     return m, argmaxs, dic
 
 
-def _trans_qbit_to_txt(r, n, qbits, gjmod, skip_rightmost):
+def _trans_qbit_to_txt(r, n, n_syns, qbits, gjmod):
     txts = []
 
     swap_ancillae_n, add_ancillae_n = gjmod.get_required_ancillae(r)
     # last element of matrix
-    last = r * n - 1
+    last_mat = r * (n + n_syns) - 1
 
     for qb in qbits:
-        if qb > last:
+        if qb > last_mat:
             # ancilla
-            if qb > last + swap_ancillae_n:
-                # add_ancillae [last + swap_ancillae_n: +add_ancillae_n]
-                idx = qb - last - swap_ancillae_n - 1
+            if qb > last_mat + swap_ancillae_n:
+                # add_ancillae [last_mat + swap_ancillae_n: +add_ancillae_n]
+                idx = qb - last_mat - swap_ancillae_n - 1
                 txt = f"C[{idx}]"
             else:
-                # swap_ancillae [last: last + swap_ancillae_n]
-                idx = qb - last - 1
+                # swap_ancillae [last_mat: last_mat + swap_ancillae_n]
+                idx = qb - last_mat - 1
                 txt = f"B[{idx}]"
         else:
-            row = qb // n
-            col = qb % n
-            txt = f"H[{row},{col}]"
+            row = qb // (n + n_syns)
+            col = qb % (n + n_syns)
+            if col < n:
+                txt = f"L[{row},{col}(H)]"
+            else:
+                txt = f"L[{row},{col}(s)]"
         txts.append(txt)
     return txts
 
 
 def main():
-    gjmod = gji
+    circulant = False
     # for r in range(3, 4):
     # for r in range(4, 5):
     # for r in range(5, 6):
     # for r in range(7, 8):
     # for r in range(15, 16):
-    for r in range(20, 21):
-    # for r in range(25, 26):
-    # for r in range(35, 36):
-        n = r
-        n = 2 * r
+    # for r in range(20, 21):
+    for r in range(25, 26):
+        # for r in range(35, 36):
+        if circulant:
+            n = 2 * r
+            n_syns = r
+        else:
+            n_syns = 1
+            n = r * 5
         # n = r + 40
         alg = 'prange'
         # alg = 'lee'
-        pr = _build_gje_circuit(r, n, gjmod, alg)
+        pr = _build_gje_circuit(r, n, n_syns, gji, alg)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
         ccnot_n = sts['gates'].get('C-C-X', 0) + sts['gates'].get('CCNOT', 0)
         cnot_n = sts['gates'].get('C-X', 0) + sts['gates'].get('CNOT', 0)
-        depth, depth_i, dic = _compute_depth(cr, include_intermediate=True)
+        depth, max_depth_qubits, dic = _compute_depth(
+            cr, include_intermediate=False)
         # depth, depth_i, dic = _compute_depth(cr, include_intermediate=False)
-        trans = _trans_qbit_to_txt(r, n, depth_i, gjmod, alg == 'prange')
+        trans = _trans_qbit_to_txt(r, n, n_syns, max_depth_qubits, gji)
 
         for op, dep in dic.items():
             print(op, dep)
 
+        print(f"r: {r}, n: {n}, nsyns: {n_syns}, circulant: {circulant}")
         print(
-            f"r: {r}, n: {n}, CNOT: {cnot_n}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {depth_i}/{cr.nbqbits}, corresponding to {trans}"
+            f"CNOT: {cnot_n}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {max_depth_qubits}/{cr.nbqbits}, corresponding to {trans}"
         )
 
         #################################
@@ -120,7 +137,7 @@ def main():
         # from qat.nnize.metrics import DurationMetric
         # from qat.plugins import Graphopt
         # from qat.core.simutil import optimize_circuit
- 
+
         # metric = DurationMetric()
         # metric.set_gate_time({"-DEFAULT-": 1})
         # print(f"Depth of circuit: {-metric(cr)}")
@@ -132,8 +149,6 @@ def main():
         # display(cr_opt)
         # depth, depth_i = _compute_depth(cr_opt, include_intermediate=False)
         # print(depth, depth_i)
-
- 
 
 
 if __name__ == '__main__':
