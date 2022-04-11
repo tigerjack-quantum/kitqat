@@ -150,6 +150,7 @@ class GjiTestCase(CircuitTestCase):
 
     @parameterized.expand([
         ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
+        ("3x6", np.array([[0, 1, 1, 1, 1, 0], [0, 0, 1, 0, 0, 0], [1, 1, 0, 1, 0, 1]])),
     ])
     @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
