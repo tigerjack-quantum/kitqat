@@ -104,11 +104,18 @@ def main():
     for r in range(25, 26):
         # for r in range(35, 36):
         if circulant:
-            n = 2 * r
+            if alg == 'prange':
+                n = r
+            else:
+                n = 2 * r
             n_syns = r
         else:
             n_syns = 1
-            n = r * 5
+            if alg == 'prange':
+                n = r
+            else:
+                # just a random value, more or less reasonable for McE
+                n = r * 3
         # n = r + 40
         alg = 'prange'
         # alg = 'lee'
