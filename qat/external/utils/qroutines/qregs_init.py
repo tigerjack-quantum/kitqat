@@ -1,7 +1,6 @@
-import nptyping
 import functools
 import logging
-from typing import TYPE_CHECKING, Sequence, Union, List
+from typing import TYPE_CHECKING, List, Sequence
 
 from qat.external.utils.bits import conversion
 from qat.lang.AQASM.gates import X
@@ -33,7 +32,7 @@ def _conditionally_initialize_qureg_given_bitarray(
     part = functools.partial(qr.apply, gate)
 
     if ncontrols > 0:
-        cbits = qr.new_wires(ncontrols) 
+        cbits = qr.new_wires(ncontrols)
         part = functools.partial(part, *cbits)
 
     mrange = zip(bits, reversed(a_arr)) if little_endian else zip(bits, a_arr)

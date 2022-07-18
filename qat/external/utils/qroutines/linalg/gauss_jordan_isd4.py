@@ -42,6 +42,7 @@ def get_rref(r, n, skip_rightmost, norig):
     The number of swap and add ancillae required can be obtained through the
     get_ancillae function.
 
+
     WARN: if you pass the syndrome(s) as well as columns of the matrix, you
     should put them at the end of the original matrix (i.e., after column n-1)
 
