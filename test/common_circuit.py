@@ -1,12 +1,12 @@
 import os
 from test.common import BasicTestCase
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from qat.core.console import display
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import Program
     from qat.core import Circuit, Result
+    from qat.lang.AQASM import Program
 
 
 class CircuitTestCase(BasicTestCase):
@@ -22,7 +22,7 @@ class CircuitTestCase(BasicTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.logger.info("using simulator: ", end="")
+        cls.logger.info("using simulator: ")
         cls.links = []
         if cls.SIMULATOR.lower() == 'pylinalg':
             cls.logger.info("PyLinalg")
@@ -35,8 +35,8 @@ class CircuitTestCase(BasicTestCase):
             cls.qpu = LinAlg()
         elif cls.SIMULATOR.lower() == 'stabs':
             cls.logger.info("Stabs")
-            from qat.qpus import Stabs
             from qat.external.utils.synthesis.mctrls.mcx import ccnot, x
+            from qat.qpus import Stabs
             cls.qpu = Stabs()
             cls.links = [ccnot, x]
         elif cls.SIMULATOR.lower() == 'feynman':
@@ -47,8 +47,13 @@ class CircuitTestCase(BasicTestCase):
             cls.logger.info("MPS")
             from qat.qpus import MPS
             cls.qpu = MPS(lnnize=True)
+        elif cls.SIMULATOR.lower() == 'bdd':
+            cls.logger.info("BDD")
+            from qat.qpus import Bdd
+            cls.qpu = Bdd(48)
         else:
             raise Exception(f"Simulator choice {cls.SIMULATOR} not correct")
+        print(cls.qpu)
 
     @classmethod
     def simulate_program(cls, program, circ_args={}, job_args={}):

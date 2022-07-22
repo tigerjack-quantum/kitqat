@@ -55,7 +55,6 @@ class SortingNetworkTestCase(CircuitTestCase):
 
         qrout = sn.build_gate_bitonic_sorter(pattern)
         self.pr.apply(qrout, self.qr, self.comps)
-        cr = self.pr.to_circ()
 
         res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
         sorted_string_exp = ''.join(list(sorted(string)))
@@ -94,8 +93,6 @@ class SortingNetworkTestCase(CircuitTestCase):
 
         qrout = sn.build_gate_merger(pattern)
         self.pr.apply(qrout, self.qr, self.comps)
-        cr = self.pr.to_circ()
-        # self.draw_circuit(cr, max_depth=2)
 
         res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
         sorted_string_exp = ''.join(list(sorted(string)))

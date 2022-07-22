@@ -34,14 +34,21 @@ def build_u_matrix_from_sample(sample, nsquare):
     """
     if len(sample.intermediate_measurements) != 2:
         return
+    # this creates a bitlist
     inter_meas_aout, inter_meas_bout = [
         i.cbits for i in sample.intermediate_measurements
     ]
-    return build_u_matrix_from_bitstrings(inter_meas_aout, inter_meas_bout,
+    return build_u_matrix_from_bitlists(inter_meas_aout, inter_meas_bout,
                                           nsquare)
 
-
 def build_u_matrix_from_bitstrings(swaps: str, adds: str, nsquare):
+    return build_u_matrix_from_bitlists(
+        [int(i) for i in swaps],
+        [int(i) for i in adds],
+        nsquare
+    )
+
+def build_u_matrix_from_bitlists(swaps: list, adds: list, nsquare):
     """Build the matrix of transformations applied to obtain the RREF. I.e., if
     original matrix was A and its RREF is B, we have U * B = A.
 
