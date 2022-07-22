@@ -93,6 +93,7 @@ def _trans_qbit_to_txt(r, n, n_syns, qbits, gjmod):
     return txts
 
 
+
 def main():
     circulant = False
     alg = 'prange'
@@ -106,20 +107,17 @@ def main():
     # for r in range(20, 21):
     # for r in range(6, 101):
     for r in range(25, 26):
+        if alg == 'prange':
+            # with prange, we do not consider the right-most k\times n submatrix
+            n = r
+        else:
+            # just a random value, more or less reasonable for McE
+            n = 4 * r
         if circulant:
-            if alg == 'prange':
-                n = r
-            else:
-                n = 2 * r
             n_syns = r
         else:
             n_syns = 1
-            if alg == 'prange':
-                n = r
-            else:
-                # just a random value, more or less reasonable for McE
-                n = r * 3
-        # n = r + 40
+
         pr = _build_gje_circuit(r, n, n_syns, gji, alg)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
