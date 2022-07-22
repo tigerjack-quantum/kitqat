@@ -4,7 +4,7 @@ import unittest
 from math import factorial
 from test.common_circuit import CircuitTestCase
 
-from qat.external.utils.qroutines.hamming_weight_generate import bartschi
+from qat.external.utils.qroutines.hamming_weight_generate import bartschiE19
 from qat.lang.AQASM import Program
 
 
@@ -13,7 +13,7 @@ class BartschiTestCase(CircuitTestCase):
     def setUpClass(cls):
         CircuitTestCase.setUpClass()
         bartschi_logger = logging.getLogger(
-            'isdquantum.qroutins.hamming_weight_generate.bartschi')
+            'isdquantum.qroutins.hamming_weight_generate.bartschiE19')
         bartschi_logger.setLevel(cls.logger.level)
         bartschi_logger.handlers = cls.logger.handlers
 
@@ -21,7 +21,7 @@ class BartschiTestCase(CircuitTestCase):
         self.pr = Program()
         qr = self.pr.qalloc(n)
         # pr.apply(dicke_scs(nbqbits), qr)
-        self.pr.apply(bartschi.generate(n, k), qr)
+        self.pr.apply(bartschiE19.generate(n, k), qr)
 
     def _analyse_res_extensive(self, n, k):
         circ = self.pr.to_circ()
@@ -58,7 +58,7 @@ class BartschiTestCase(CircuitTestCase):
             with self.subTest(n=n, k=k):
                 self._generate_program(n, k)
                 self.pr.apply(
-                    bartschi.generate(n, k).dag(), self.pr.registers[0])
+                    bartschiE19.generate(n, k).dag(), self.pr.registers[0])
                 circ = self.pr.to_circ()
                 res = self.qpu.submit(circ.to_job())
                 self.assertEqual(len(res), 1)
