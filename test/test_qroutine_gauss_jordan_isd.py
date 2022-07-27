@@ -10,6 +10,8 @@ from qat.external.utils.qatmgmt import results
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 
+from qat.core.console import display
+
 
 class GjiTestCase(CircuitTestCase):
 
@@ -47,8 +49,9 @@ class GjiTestCase(CircuitTestCase):
         ncols = n + 1
         # concatenate the syndrome to the original matrix
         matrix_ext = np.hstack((matrix, syndrome))
+        skip_rightmost_val = (False,) if r == n else (False, True)
 
-        for skip_rightmost in (False, True):
+        for skip_rightmost in skip_rightmost_val:
             with self.subTest(skip_rightmost=skip_rightmost):
                 pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
                     matrix_ext)
@@ -58,10 +61,11 @@ class GjiTestCase(CircuitTestCase):
                     pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
                 else:
                     pr.apply(gji_gate, qregs_rows, swap_qregs)
-                print(pr.qbit_count)
-                return
+                # print(pr.qbit_count)
 
                 cr = pr.to_circ()
+                # input("data")
+                # display(cr, max_depth=2)
                 if test_u:
                     # we measure all the qubits
                     res = self.qpu.submit(cr.to_job())
@@ -79,6 +83,8 @@ class GjiTestCase(CircuitTestCase):
 
                 mat_gji = qmatrix.build_matrix_from_sample(
                     sample, qbit_range, (nrows, ncols))
+                # print(mat_gji)
+                # input("data")
                 mat_gji_diag = mat_gji.diagonal()
                 mat_gji_sim = Matrix(matrix_ext).rref(pivots=False) % 2
                 mat_gji_sim_diag = mat_gji_sim.diagonal()
@@ -88,17 +94,16 @@ class GjiTestCase(CircuitTestCase):
                 self.logger.debug("reduced matrix from qcircuit")
                 self.logger.debug(f"\n{mat_gji}")
                 if should_iden:
-                    # check we have all ones on the diagonal
                     self.assertTrue(all(mat_gji_diag))
                     self.assertTrue(all(mat_gji_sim_diag))
                     # check the syndrome calculation is correct
                     syn = mat_gji[:, n].reshape(r, 1)
                     np.testing.assert_array_equal(syn, mat_gji_sim[:, n])
                     if not skip_rightmost:
-                        # if we didn't skip anything, the results should be identical
-                        np.testing.assert_array_equal(mat_gji[:, :r],
-                                                      np.eye(r))
-                        np.testing.assert_array_equal(mat_gji, mat_gji_sim)
+                        # Additionally, if we didn't skip operations on the
+                        # rightmost r*k matrix, the results on this portion
+                        # should be equal.
+                        np.testing.assert_array_equal(mat_gji[:,r:n], mat_gji_sim[:,r:n])
                     # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
                     if add_qregs and test_u:
                         add_bitstring, swap_bitstring = results.get_qregs_to_bitstring_from_sample(
@@ -126,6 +131,7 @@ class GjiTestCase(CircuitTestCase):
                     self.assertFalse(all(mat_gji_sim_diag))
 
     @parameterized.expand([
+        # ("3x3", np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])),
         ("3x3", np.array([[0, 1, 1], [1, 0, 1], [0, 0, 1]])),
         ("3x4", np.array([[1, 1, 0, 0], [1, 0, 0, 0], [0, 1, 1, 1]])),
         ("3x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]])),

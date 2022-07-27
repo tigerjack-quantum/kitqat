@@ -3,16 +3,16 @@
 import logging
 from functools import partial
 
-from qat.lang.AQASM.gates import CCNOT, CNOT, X
+from qat.lang.AQASM.gates import CCNOT, CNOT, X, H
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
 LOGGER = logging.getLogger(__name__)
 # Just a fake swap for pictorial representation of deleted gates
-# FAKE = H
+# FAKE = X
 
 
-def get_required_ancillae(r: int):
+def get_required_ancillae(r: int) -> tuple[int, int]:
     """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
 the RREF.
 
@@ -20,14 +20,15 @@ the RREF.
     :returns: (swap_ancilla, add_ancilla)
 
     """
-    # add_ancilla_n = r * (r - 1)
     # Add ancilla is necessary an even number, so there is no actual rounding here
     swap_ancilla_n = (r * (r - 1)) // 2
+    # Add ancilla not necessary anymore
+    # add_ancilla_n = r * (r - 1)
     return swap_ancilla_n, 0
 
 
 @build_gate('GJISD', [int, int, bool, int])
-def get_rref(r, n, skip_rightmost, norig):
+def get_rref(r, n, skip_rightmost, norig) -> QRoutine:
     """Apply RREF to a matrix H.
 
     :param r: The number of rows of the original matrix H
@@ -37,15 +38,12 @@ def get_rref(r, n, skip_rightmost, norig):
     The gate takes as input, in this order:
     - The matrix (r * n), represented as qreg
     - The swap ancillae
-    - The add ancillae
 
     The number of swap and add ancillae required can be obtained through the
     get_ancillae function.
 
-
     WARN: if you pass the syndrome(s) as well as columns of the matrix, you
     should put them at the end of the original matrix (i.e., after column n-1)
-
     """
     qrout = QRoutine()
     if norig < 0:
@@ -58,42 +56,34 @@ def get_rref(r, n, skip_rightmost, norig):
 
     swap_ancilla_n, _ = get_required_ancillae(r)
     swap_ancillae = qrout.new_wires(swap_ancilla_n)
-    # add_ancillae = qrout.new_wires(add_ancilla_n)
-    # add_ancilla_idx = 0
     swap_ancilla_idx = 0
 
     if skip_rightmost:
-        # in Prange we skip the rightmost columns
+        # in Prange we skip the rightmost r X k columns of original matrix H
         skip_cols = set(range(r, norig))
     else:
         skip_cols = set()
-    # impr. 7, we skip the first r columns, but only for the rows above pivot
-    # skip_cols_add = set(range(1, r))
 
+    qrout.apply(X, qregs_rows[0][0])
     for x in range(r):
-        qrout.apply(X, qregs_rows[x][x])
-    for x in range(r):
-        # impr. 1
-        if x > 0:
-            skip_cols.add(x - 1)
-
         _skip_cols = skip_cols.copy()
         rowswap = partial(get_row_swap, r, n, x, _skip_cols)
         rowadd = partial(get_row_addition, r, n, x, _skip_cols)
-        # we don't apply swap gates for the last row
+        # we don't check the pivot for the last row, we'll check at later
+        # stages if it's equal to 1
         if x != r - 1:
-            # improvement 3, X before starting all phases 1
-            # phase 1, look for a pivot in rows below
+            # phase 1, look for a valid pivot in rows below
             for i in range(x + 1, r):
-                # if skip_rightmost and x > r - 2:
-                #     pivot_last = False
-                # else:
-                #     pivot_last = i == r - 1
                 pivot_last = i == r - 1
                 qrout.apply(rowswap(pivot_last), qregs_rows[x], qregs_rows[i],
                             swap_ancillae[swap_ancilla_idx])
                 swap_ancilla_idx += 1
-            # improvement 3, X after finishing all phases 1
+            # improvement 3, X anticipated
+            if x != r - 2:
+                qrout.apply(X, qregs_rows[x + 1][x + 1])  # 
+
+        if x != r - 1:
+            qrout.apply(X, qregs_rows[x][x])
 
         # phase 2, put 0 in pivot column for each row below and above pivot one
         for i in range(r):
@@ -105,10 +95,8 @@ def get_rref(r, n, skip_rightmost, norig):
                 qregs_rows[i],
                 qregs_rows[x],
             )
-            # add_ancillae[add_ancilla_idx])
-            # add_ancilla_idx += 1
-    for x in range(r):
-        qrout.apply(X, qregs_rows[x][x])
+        # impr. 1
+        skip_cols.add(x)
 
     return qrout
 

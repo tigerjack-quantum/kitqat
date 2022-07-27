@@ -4,7 +4,7 @@ from qat.core.util import statistics
 from qat.external.utils.qatmgmt.qbits import \
     add_name_to_qbits_following_pattern
 # from qat.external.utils.qroutines.fake import fake_gate
-from qat.external.utils.qroutines.linalg import gauss_jordan_isd as gji
+from qat.external.utils.qroutines.linalg import gauss_jordan_isd4 as gji
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
 # from qat.qpus import LinAlg
@@ -37,15 +37,15 @@ def test_simple(mat):
                                                   add_fake_gate=False)
     r, n = mat.shape
 
-    add_ancillae_n, swap_ancillae_n = gji.get_required_ancillae(r)
+    swap_ancillae_n, add_ancillae_n = gji.get_required_ancillae(r)
     swap_ancillae = pr.qalloc(swap_ancillae_n)
-    add_ancillae = pr.qalloc(add_ancillae_n)
+    # add_ancillae = pr.qalloc(add_ancillae_n)
     add_name_to_qbits_following_pattern(pr, {
-        'cadd': add_ancillae,
+        # 'cadd': add_ancillae,
         'swap': swap_ancillae
     })
     rref_gate = gji.get_rref(r, n, False, -1)
-    pr.apply(rref_gate, qregs_rows, swap_ancillae, add_ancillae)
+    pr.apply(rref_gate, qregs_rows, swap_ancillae)
 
     cr = pr.to_circ()
     # display(cr, max_depth=2)
