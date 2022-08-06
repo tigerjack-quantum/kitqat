@@ -6,7 +6,11 @@ GRTAGS
 *.aqasm
 *.chp
 tmp/
-experiments/measures
+experiments/*
+*.jpg
+*.gv
+*.dot
+*.png
 #########
 ### PYTHON
 ##########
