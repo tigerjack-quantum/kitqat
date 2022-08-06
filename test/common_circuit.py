@@ -53,7 +53,7 @@ class CircuitTestCase(BasicTestCase):
             cls.qpu = Bdd(48)
         else:
             raise Exception(f"Simulator choice {cls.SIMULATOR} not correct")
-        print(cls.qpu)
+        print(f"Selected simulator is {cls.qpu}")
 
     @classmethod
     def simulate_program(cls, program, circ_args={}, job_args={}):
@@ -61,9 +61,16 @@ class CircuitTestCase(BasicTestCase):
             print("linking")
             circ_args['link'] = cls.links
         cr = program.to_circ(**circ_args)
-        jb = cr.to_job(**job_args)
-        res = cls.qpu.submit(jb)
-        # print("simulation over")
+        return cls.simulate_circuit(cr, job_args)
+
+    @classmethod
+    def simulate_circuit(cls, circuit, job_args={}):
+        jb = circuit.to_job(**job_args)
+        return cls.simulate_job(jb)
+
+    @classmethod
+    def simulate_job(cls, job):
+        res = cls.qpu.submit(job)
         return res
 
     @staticmethod

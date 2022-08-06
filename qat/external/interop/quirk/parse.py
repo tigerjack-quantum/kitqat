@@ -27,6 +27,12 @@ UNI_TO_UTF_T = str.maketrans(UNI_TO_UTF)
 _RM_CHARS_T = str.maketrans({'\'': '', '{': '', '}': ''})
 
 
+def parse_expr(expr: str):
+    tmp = parsing.parse_expr(expr.translate(UNI_TO_UTF_T)).n()
+    tmp = tmp.subs({'i': '1j'})
+    return tmp
+
+
 def parse_matrix(matrix: str):
     """Expect something like {{√½,√½i},{√½i,√½}}"""
 
@@ -51,9 +57,7 @@ def parse_matrix(matrix: str):
             except ValueError:
                 pass
             finally:
-                elem_mat = parsing.parse_expr(elem.translate(UNI_TO_UTF_T)).n()
-                elem_mat = elem_mat.subs({'i': '1j'})
-                arr.append(elem_mat)
+                arr.append(parse_expr(elem))
         return arr
 
     matrix_arr_math = del_sqrt_symbol()

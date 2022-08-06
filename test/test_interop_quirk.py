@@ -12,6 +12,7 @@ FILE = DATA_DIR + '{filename}'
 
 class QuirkCircData(NamedTuple):
     additional: str
+    time_parameter: float
     circuit: str
     output_amplitude: str
 
@@ -38,7 +39,7 @@ class TestQuirk(CircuitTestCase):
             additional = fname.split(name)[1][1:]
             with open(FILE.format(filename=f"{name}_{additional}"), 'r') as f:
                 data = json.loads(''.join(f.readlines()))
-                quirkdata = QuirkCircData(additional, data['circuit'],
+                quirkdata = QuirkCircData(additional, data['time_parameter'], data['circuit'],
                                           data['output_amplitudes'])
                 adds.append(quirkdata)
         return adds
@@ -49,7 +50,9 @@ class TestQuirk(CircuitTestCase):
             with self.subTest(additional=data.additional):
                 res_exp = quirk.simulation_data_list(data.output_amplitude)
                 pr = quirk.dict_to_program(data.circuit)
-                res = self.simulate_program(pr)
+                cr = quirk.convert_program_to_circuit(pr)
+                jb = quirk.convert_circuit_to_job(cr, time_val=float(data.time_parameter))
+                res = self.simulate_job(jb, )
                 self._test_res(res_exp, res)
 
     def _test_res(self, res_exp_quirk, res_pr):
@@ -57,6 +60,7 @@ class TestQuirk(CircuitTestCase):
             index = int(sample.state.bitstring[::-1], base=2)
             sample_exp = complex(res_exp_quirk[index])
             self.assertAlmostEqual(sample.amplitude, sample_exp)
+
 
     def test_init(self):
         self._test_common('test_init')
@@ -71,7 +75,7 @@ class TestQuirk(CircuitTestCase):
         self._test_common('test_cols_zctrls')
 
     def test_formulaic_gates(self):
-        self.skipTest("Not yet")
+        # self.skipTest("Not yet")
         self._test_common('test_formulaic_gates')
 
     def test_custom_gates_matrix(self):
