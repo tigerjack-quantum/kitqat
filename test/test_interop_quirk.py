@@ -1,60 +1,82 @@
 from .common_circuit import CircuitTestCase
 from parameterized import parameterized
-from qat.external.interop import quirk
+from qat.external.interop.quirk import quirk
 import unittest
+import os
+from typing import Callable, Dict, NamedTuple, Optional
+import json
+
+DATA_DIR = 'test/data/interop/quirk/'
+FILE = DATA_DIR + '{filename}'
+
+
+class QuirkCircData(NamedTuple):
+    additional: str
+    circuit: str
+    output_amplitude: str
 
 
 class TestQuirk(CircuitTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.quirk_circ_datas = {}
+        for fun_name in filter(
+                lambda x: x.startswith('test') and callable(
+                    getattr(TestQuirk, x)), dir(TestQuirk)):
+            name = fun_name.split('test_')[1]
+            cls.quirk_circ_datas[name] = cls._read_data(name)
+
+        super().setUpClass()
+
+    @classmethod
+    def _read_data(cls, name) -> list[QuirkCircData]:
+        # multiple names associated
+        fnames = filter(lambda x: x.startswith(name), os.listdir(DATA_DIR))
+        adds = []
+        for fname in fnames:
+            additional = fname.split(name)[1][1:]
+            with open(FILE.format(filename=f"{name}_{additional}"), 'r') as f:
+                data = json.loads(''.join(f.readlines()))
+                quirkdata = QuirkCircData(additional, data['circuit'],
+                                          data['output_amplitudes'])
+                adds.append(quirkdata)
+        return adds
+
+    def _test_common(self, fun_name: str):
+        name = fun_name.split('test_')[1]
+        for data in self.quirk_circ_datas[name]:
+            with self.subTest(additional=data.additional):
+                res_exp = quirk.simulation_data_list(data.output_amplitude)
+                pr = quirk.dict_to_program(data.circuit)
+                res = self.simulate_program(pr)
+                self._test_res(res_exp, res)
+
     def _test_res(self, res_exp_quirk, res_pr):
         for sample in res_pr:
             index = int(sample.state.bitstring[::-1], base=2)
-            # index = int(sample.state.state)
             sample_exp = complex(res_exp_quirk[index])
             self.assertAlmostEqual(sample.amplitude, sample_exp)
 
     def test_init(self):
-        for init_val in (1, '+', '-', 'i', '-i'):
-            with self.subTest(init_val=init_val):
-                with open(f'test/data/interop/quirk/init_{init_val}_url'
-                          ) as fin, open(
-                              f'./test/data/interop/quirk/init_{init_val}_res'
-                          ) as fres:
-                    line = fin.readline()
-                    pr = quirk.url_to_program(line)
-                    res_exp = quirk.simulation_data(''.join(fres.readlines()))
-                    res = self.simulate_program(pr)
-                    self._test_res(res_exp, res)
+        self._test_common('test_init')
 
     def test_cols_simple(self):
-        circ_json = '{"cols": [["H", "X"]]}'
-        circ_res = '{"output_amplitudes":[{"r":0,"i":0},{"r":0,"i":0},{"r":0.7071067690849304,"i":0},{"r":0.7071067690849304,"i":0}]}'
-        res_exp = quirk.simulation_data(circ_res)
-        pr = quirk.json_to_program(circ_json)
-        res = self.simulate_program(pr)
-        self._test_res(res_exp, res)
-
+        self._test_common('test_cols_simple')
 
     def test_cols_ctrls(self):
-        circ_url = 'https://algassert.com/quirk#circuit={%22cols%22:[[%22H%22,1,%22Z%22],[%22%E2%80%A2%22,%22Z%22,%22%E2%80%A2%22]],%22init%22:[%22-i%22]}'
-        circ_res = '{"output_amplitudes":[{"r":0.4999999701976776,"i":-0.4999999701976776},{"r":0.4999999701976776,"i":0.4999999701976776},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0}]}'
-        res_exp = quirk.simulation_data(circ_res)
-        pr = quirk.url_to_program(circ_url)
-        self.draw_circuit(pr.to_circ())
-        res = self.simulate_program(pr)
-        self._test_res(res_exp, res)
+        self._test_common('test_cols_ctrls')
 
     def test_cols_zctrls(self):
-        circ_url = 'https://algassert.com/quirk#circuit={%22cols%22:[[%22H%22,1,%22Z%22],[%22%E2%97%A6%22,%22Z%22,%22%E2%80%A2%22]],%22init%22:[%22-i%22]}'
-        circ_res = '{"output_amplitudes": [{"r":0.4999999701976776,"i":-0.4999999701976776},{"r":0.4999999701976776,"i":0.4999999701976776},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0},{"r":0,"i":0}]}'
-        res_exp = quirk.simulation_data(circ_res)
-        pr = quirk.url_to_program(circ_url)
-        self.draw_circuit(pr.to_circ())
-        res = self.simulate_program(pr)
-        self._test_res(res_exp, res)
+        self._test_common('test_cols_zctrls')
 
-    def test_custom_gates(self):
-        pass
-        # circ_txt = (
-        # '{"cols":[["~d3pq"],["Y"]],'
-        # '"gates":[{"id":"~d3pq","circuit":{"cols":[["H"],["•","X"]]}}]}')
+    def test_formulaic_gates(self):
+        self.skipTest("Not yet")
+        self._test_common('test_formulaic_gates')
+
+    def test_custom_gates_matrix(self):
+        self._test_common('test_custom_gates_matrix')
+
+    def test_custom_gates_subcircuit(self):
+        self.skipTest("Not yet")
+        self._test_common('test_custom_gates_subcircuit')

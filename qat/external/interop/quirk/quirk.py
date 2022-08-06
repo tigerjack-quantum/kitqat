@@ -5,7 +5,7 @@ from qat.lang.AQASM.program import Program
 from qat.lang.AQASM import gates
 from qat.lang.AQASM.routines import QRoutine
 import functools
-import operator
+from qat.external.interop.quirk import parse
 
 IGNORED_GATES = ('Chance', 1, '•', '◦')
 
@@ -21,16 +21,19 @@ def url_to_program(url: str) -> Program:
 
 
 def json_to_program(circ_str: str):
-    quirk_json = json.loads(circ_str)
-    if not quirk_json.keys() <= {'cols', 'gates', 'init'}:
+    circ_dict = json.loads(circ_str)
+    return dict_to_program(circ_dict)
+
+def dict_to_program(circ_dict: dict):
+    if not circ_dict.keys() <= {'cols', 'gates', 'init'}:
         raise ValueError('Unrecognized Circuit JSON keys.')
 
     pr = Program()
     nqubits = 0
-    if len(quirk_json['cols']) > 0:
-        nqubits = functools.reduce(max, map(len, quirk_json['cols']))
-    if 'init' in quirk_json:
-        qfun_init = _init(quirk_json['init'])
+    if len(circ_dict['cols']) > 0:
+        nqubits = functools.reduce(max, map(len, circ_dict['cols']))
+    if 'init' in circ_dict:
+        qfun_init = _init(circ_dict['init'])
         nqubits = max(nqubits, qfun_init.arity)
         qr = pr.qalloc(nqubits)
         pr.apply(qfun_init, qr[:qfun_init.arity])
@@ -38,12 +41,11 @@ def json_to_program(circ_str: str):
         qr = pr.qalloc(nqubits)
 
     gate_name_to_qrout = {}
-    if 'gates' in quirk_json:
-        pass
-        _gates(quirk_json['gates'])
+    if 'gates' in circ_dict:
+        _gates(circ_dict['gates'], gate_name_to_qrout)
 
-    if len(quirk_json['cols']) > 0:
-        cols = _cols(quirk_json['cols'], gate_name_to_qrout)
+    if len(circ_dict['cols']) > 0:
+        cols = _cols(circ_dict['cols'], gate_name_to_qrout)
         pr.apply(cols, qr)
 
     return pr
@@ -74,21 +76,22 @@ def _init(init_j: List[Union[str, int]]) -> QRoutine:
     return qfun
 
 
-def _gates(gates_j):
+def _gates(gates_j, gate_name_to_qrout):
     if not isinstance(gates_j, list):
         raise ValueError('"gates" JSON must be a list.')
-    pass
-    # for custom_gate in gates_j:
-    #     _register_custom_gate(custom_gate, gate_name_to_qrout)
+    for custom_gate in gates_j:
+        _register_custom_gate(custom_gate, gate_name_to_qrout)
 
 
 def _get_gate(gate_id, additional_gates):
     if gate_id in IGNORED_GATES:
         return None
-    try:
+    if gate_id in gates.__dict__:
         gate = gates.__dict__[gate_id]
-    except KeyError:
+    elif gate_id in additional_gates:
         gate = additional_gates[gate_id]
+    else:
+        raise Exception("Gate not found")
     return gate
 
 
@@ -134,29 +137,27 @@ def _register_custom_gate(gate_json: Dict, registry: Dict[str, Any]):
             f'Custom gate json={gate_json!r}.')
 
     qrout = QRoutine()
+    name = gate_json['name']
     if 'matrix' in gate_json:
-        pass
-        if not isinstance(gate_json['matrix'], str):
+        matrix_s = gate_json['matrix']
+        if not isinstance(matrix_s, str):
             raise ValueError(
                 f'Custom gate matrix json must be a string.\nCustom gate json={gate_json!r}.'
             )
-        gate = gates.AbstractGate(identifier, [], matrix_generator=None)
-        gate = oggps.MatrixGate(parse_matrix(gate_json['matrix']))
-        registry[identifier] = CellMaker(
-            identifier=identifier,
-            size=gate.num_qubits(),
-            maker=lambda args: gate(*args.qubits[::-1]),
-        )
+        gate = gates.AbstractGate(name, [], matrix_generator=lambda : parse.parse_matrix(matrix_s))
+        registry[identifier] = gate()
     elif 'circuit' in gate_json:
-        qrout
+        raise Exception("not yet implemented")
+        pass
+        # qrout
 
-        comp = _parse_cols_into_composite_cell(gate_json['circuit'], registry)
-        registry[identifier] = CellMaker(
-            identifier=identifier,
-            size=comp.height,
-            maker=lambda args: comp.with_line_qubits_mapped_to(
-                list(args.qubits)),
-        )
+        # comp = _parse_cols_into_composite_cell(gate_json['circuit'], registry)
+        # registry[identifier] = CellMaker(
+        #     identifier=identifier,
+        #     size=comp.height,
+        #     maker=lambda args: comp.with_line_qubits_mapped_to(
+        #         list(args.qubits)),
+        # )
 
     else:
         raise ValueError(f'Custom gate json must have a matrix or a circuit.\n'
@@ -169,9 +170,12 @@ def simulation_data(output_json: str):
         raise ValueError("Unable to reconstruct output without amplitudes")
 
     amps_json = data['output_amplitudes']
+    return simulation_data_list(amps_json)
+
+def simulation_data_list(amplitude_list: list):
     amps_rebuild = []
 
-    for res in amps_json:
+    for res in amplitude_list:
         res_c = complex(res['r'], res['i'])
         amps_rebuild.append(res_c)
 
