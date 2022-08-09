@@ -1,12 +1,13 @@
+import functools
 import json
 import math
-from typing import Any, Dict, List, Union
 import urllib.parse
-from qat.lang.AQASM.program import Program
-from qat.lang.AQASM import gates
-from qat.lang.AQASM.routines import QRoutine
-import functools
+from typing import Any, Dict, List, Union
+
 from qat.external.interop.quirk import parse
+from qat.lang.AQASM import gates
+from qat.lang.AQASM.program import Program
+from qat.lang.AQASM.routines import QRoutine
 
 IGNORED_GATES = ('Chance', 1, '•', '◦')
 # TODO brutto ma efficace
@@ -74,6 +75,7 @@ def convert_program_to_circuit(program: Program, **kwargs):
     circ = program.to_circ(**kwargs)
     return circ
 
+
 def convert_circuit_to_job(circuit, time_val=0.0):
     job = circuit.to_job()
     vars = job.get_variables()
@@ -124,8 +126,10 @@ def _get_abstrat_gate(gate_id, gate_arg, var):
             arg = float(parse.parse_expr(gate_arg))
         else:
             # https://github.com/Strilanc/Quirk/blob/5416d529d9b50c33f924a171eed06d09f3ba8b3a/src/gates/ParametrizedRotationGates.js#L350
-            arg = math.pi * var **2
+            arg = math.pi * var**2
         gate = gate(arg)
+    else:
+        raise Exception("Other gates not implemented yet")
     return gate
 
 

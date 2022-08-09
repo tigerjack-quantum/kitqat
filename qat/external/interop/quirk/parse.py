@@ -1,6 +1,7 @@
 import math
-from sympy import parsing
+
 import numpy as np
+from sympy import parsing
 
 UNI_TO_UTF = {
     "½": '1 / 2',

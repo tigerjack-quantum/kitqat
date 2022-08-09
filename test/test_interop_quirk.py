@@ -1,10 +1,10 @@
-from .common_circuit import CircuitTestCase
-from parameterized import parameterized
-from qat.external.interop.quirk import quirk
-import unittest
-import os
-from typing import Callable, Dict, NamedTuple, Optional
 import json
+import os
+from typing import NamedTuple
+
+from qat.external.interop.quirk import quirk
+
+from .common_circuit import CircuitTestCase
 
 DATA_DIR = 'test/data/interop/quirk/'
 FILE = DATA_DIR + '{filename}'
@@ -39,7 +39,8 @@ class TestQuirk(CircuitTestCase):
             additional = fname.split(name)[1][1:]
             with open(FILE.format(filename=f"{name}_{additional}"), 'r') as f:
                 data = json.loads(''.join(f.readlines()))
-                quirkdata = QuirkCircData(additional, data['time_parameter'], data['circuit'],
+                quirkdata = QuirkCircData(additional, data['time_parameter'],
+                                          data['circuit'],
                                           data['output_amplitudes'])
                 adds.append(quirkdata)
         return adds
@@ -51,7 +52,9 @@ class TestQuirk(CircuitTestCase):
                 res_exp = quirk.simulation_data_list(data.output_amplitude)
                 pr = quirk.dict_to_program(data.circuit)
                 cr = quirk.convert_program_to_circuit(pr)
-                jb = quirk.convert_circuit_to_job(cr, time_val=float(data.time_parameter))
+                jb = quirk.convert_circuit_to_job(cr,
+                                                  time_val=float(
+                                                      data.time_parameter))
                 res = self.simulate_job(jb, )
                 self._test_res(res_exp, res)
 
@@ -60,7 +63,6 @@ class TestQuirk(CircuitTestCase):
             index = int(sample.state.bitstring[::-1], base=2)
             sample_exp = complex(res_exp_quirk[index])
             self.assertAlmostEqual(sample.amplitude, sample_exp)
-
 
     def test_init(self):
         self._test_common('test_init')
