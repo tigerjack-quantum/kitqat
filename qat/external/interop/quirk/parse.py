@@ -29,7 +29,8 @@ _RM_CHARS_T = str.maketrans({'\'': '', '{': '', '}': ''})
 
 
 def parse_expr(expr: str):
-    tmp = parsing.parse_expr(expr.translate(UNI_TO_UTF_T)).n()
+    tmp = parsing.parse_expr(expr.translate(UNI_TO_UTF_T),
+                             transformations='all').n()
     tmp = tmp.subs({'i': '1j'})
     return tmp
 

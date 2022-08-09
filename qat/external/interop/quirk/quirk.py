@@ -1,8 +1,9 @@
 import functools
 import json
+import logging
 import math
 import urllib.parse
-from typing import Any, Dict, List, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from qat.external.interop.quirk import parse
 from qat.lang.AQASM import gates
@@ -11,6 +12,9 @@ from qat.lang.AQASM.routines import QRoutine
 
 if TYPE_CHECKING:
     from qat.core.variables import Variable
+    from qat.lang.AQASM.gates import ParamGate
+
+LOGGER = logging.getLogger(__name__)
 
 IGNORED_GATES = ('Chance', 1, '•', '◦')
 # TODO brutto ma efficace
@@ -28,6 +32,8 @@ TIME_GATES = (
     'Y^ft',
     'Z^ft',
 )
+
+FUNS = ('cos', 'sin', 'acos', 'asin', 'tan', 'atan', 'ln', 'sqrt', 'exp')
 
 
 def url_to_program(url: str) -> Program:
@@ -63,16 +69,20 @@ def dict_to_program(circ_dict: dict):
     else:
         qr = pr.qalloc(nqubits)
 
-    qfun = _dict_to_qfun(circ_dict, nqubits, var)
+    gate_name_to_qrout = {}
+    qfun = _dict_to_qfun(circ_dict, nqubits, var, gate_name_to_qrout)
     pr.apply(qfun, qr)
     return pr
 
-def _dict_to_qfun(circ_dict: dict, nqubits: int, var: 'Variable') -> QRoutine:
+
+def _dict_to_qfun(
+        circ_dict: dict, nqubits: int, var: 'Variable',
+        gate_name_to_qrout: Dict[str, Union[QRoutine,
+                                            'ParamGate']]) -> QRoutine:
 
     qfun = QRoutine()
     qr = qfun.new_wires(nqubits)
 
-    gate_name_to_qrout = {}
     if 'gates' in circ_dict:
         _gates(circ_dict['gates'], gate_name_to_qrout)
 
@@ -128,6 +138,7 @@ def _gates(gates_j, gate_name_to_qrout):
     if not isinstance(gates_j, list):
         raise ValueError('"gates" JSON must be a list.')
     for custom_gate in gates_j:
+        LOGGER.debug("Custom gate %s" % custom_gate)
         _register_custom_gate(custom_gate, gate_name_to_qrout)
 
 
@@ -178,7 +189,7 @@ def _cols(cols_j, var, additional_gates=None):
     if not isinstance(cols_j, list):
         raise ValueError(
             f'Circuit JSON cols must be a list, got.\nJSON={cols_j}')
-    for col in cols_j:
+    for col_idx, col in enumerate(cols_j):
         ctrls = [i for i, v in enumerate(col) if v == '•']
         zctrls = [i for i, v in enumerate(col) if v == '◦']
         ctrls.extend(zctrls)
@@ -186,14 +197,16 @@ def _cols(cols_j, var, additional_gates=None):
         for i in zctrls:
             qfun.apply(gates.X, i)
         for i, gate_pre in enumerate(col):
+            # print(col_idx, i, gate_pre)
             gate = _get_gate(gate_pre, additional_gates, var)
             if gate == None:
                 continue
-            # print(gate)
+            LOGGER.debug("Gate arity is %d " % gate.arity)
             if has_ctrls and gate_pre != '•':
                 qfun.apply(gate.ctrl(len(ctrls)), *ctrls, i)
             else:
-                qfun.apply(gate, i)
+                gate_list = [qb for qb in range(i, i + gate.arity)]
+                qfun.apply(gate, gate_list)
         for i in zctrls:
             qfun.apply(gates.X, i)
     return qfun
@@ -215,30 +228,34 @@ def _register_custom_gate(gate_json: Dict, registry: Dict[str, Any]):
             f'Custom gate json={gate_json!r}.')
 
     name = gate_json['name']
+    LOGGER.debug("Custom gate name = %s" % name)
     if 'matrix' in gate_json:
+        LOGGER.debug("Custom gate has matrix")
         matrix_s = gate_json['matrix']
         if not isinstance(matrix_s, str):
             raise ValueError(
                 f'Custom gate matrix json must be a string.\nCustom gate json={gate_json!r}.'
             )
+        LOGGER.debug("Custom gate name=%s matrix\n%s" % (name, matrix_s))
         gate = gates.AbstractGate(
             name, [], matrix_generator=lambda: parse.parse_matrix(matrix_s))
+        arity = math.log2(matrix_s.count('{') - 1)
+        if not arity.is_integer():
+            raise ValueError("Unknown error, found arity %f" % arity)
+        gate.arity = int(arity)
         registry[identifier] = gate()
     elif 'circuit' in gate_json:
-        cols_s = gate_json['circuit']
-        qfun = QRoutine()
-        qfun
-        raise Exception("not yet implemented")
-        # qrout
-
-        # comp = _parse_cols_into_composite_cell(gate_json['circuit'], registry)
-        # registry[identifier] = CellMaker(
-        #     identifier=identifier,
-        #     size=comp.height,
-        #     maker=lambda args: comp.with_line_qubits_mapped_to(
-        #         list(args.qubits)),
-        # )
-
+        LOGGER.debug("Custom gate has circuit")
+        circ_dict = gate_json['circuit']
+        if len(circ_dict['cols']) > 0:
+            nqubits = functools.reduce(max, map(len, circ_dict['cols']))
+            LOGGER.debug("Custom gate has %d nqubits" % nqubits)
+        else:
+            raise ValueError("Wrong, no cols")
+        qfun = _dict_to_qfun(circ_dict, nqubits, None, registry)
+        qfun.name = gate_json['name']
+        LOGGER.debug("Custom gate created %s\n" % qfun)
+        registry[identifier] = qfun
     else:
         raise ValueError(f'Custom gate json must have a matrix or a circuit.\n'
                          f'Custom gate json={gate_json!r}.')
