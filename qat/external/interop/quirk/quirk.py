@@ -2,12 +2,15 @@ import functools
 import json
 import math
 import urllib.parse
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, TYPE_CHECKING
 
 from qat.external.interop.quirk import parse
 from qat.lang.AQASM import gates
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
+
+if TYPE_CHECKING:
+    from qat.core.variables import Variable
 
 IGNORED_GATES = ('Chance', 1, '•', '◦')
 # TODO brutto ma efficace
@@ -60,15 +63,24 @@ def dict_to_program(circ_dict: dict):
     else:
         qr = pr.qalloc(nqubits)
 
+    qfun = _dict_to_qfun(circ_dict, nqubits, var)
+    pr.apply(qfun, qr)
+    return pr
+
+def _dict_to_qfun(circ_dict: dict, nqubits: int, var: 'Variable') -> QRoutine:
+
+    qfun = QRoutine()
+    qr = qfun.new_wires(nqubits)
+
     gate_name_to_qrout = {}
     if 'gates' in circ_dict:
         _gates(circ_dict['gates'], gate_name_to_qrout)
 
     if len(circ_dict['cols']) > 0:
         cols = _cols(circ_dict['cols'], var, gate_name_to_qrout)
-        pr.apply(cols, qr)
+        qfun.apply(cols, qr)
 
-    return pr
+    return qfun
 
 
 def convert_program_to_circuit(program: Program, **kwargs):
@@ -213,6 +225,9 @@ def _register_custom_gate(gate_json: Dict, registry: Dict[str, Any]):
             name, [], matrix_generator=lambda: parse.parse_matrix(matrix_s))
         registry[identifier] = gate()
     elif 'circuit' in gate_json:
+        cols_s = gate_json['circuit']
+        qfun = QRoutine()
+        qfun
         raise Exception("not yet implemented")
         # qrout
 
