@@ -1,10 +1,10 @@
 import functools
 import json
 import logging
-import math
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union
 
+import numpy as np
 from qat.external.interop.quirk import parse
 from qat.lang.AQASM import gates
 from qat.lang.AQASM.program import Program
@@ -17,23 +17,75 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 IGNORED_GATES = ('Chance', 1, '•', '◦')
-# TODO brutto ma efficace
-TIME_GATES = (
-    'Rxft',
-    'Ryft',
-    'Rzft',
-    'X^t',
-    'Y^t',
-    'Z^t',
-    'X^-t',
-    'Y^-t',
-    'Z^-t',
-    'X^ft',
-    'Y^ft',
-    'Z^ft',
-)
+TIME_GATES = {
+    'Rxft', 'Ryft', 'Rzft', 'X^ft', 'Y^ft', 'Z^ft', "X^½", "X^-½", "X^¼",
+    "X^-¼", "Y^½", "Y^-½", "Y^¼", "Y^-¼"
+}
 
-FUNS = ('cos', 'sin', 'acos', 'asin', 'tan', 'atan', 'ln', 'sqrt', 'exp')
+
+class PauliInfos(NamedTuple):
+    matrix: np.ndarray
+    # eigenvalues: np.ndarray
+    # eigenvalues are always np.array([1, np.exp(-1j * np.pi)]),
+    eigenv_plus: np.ndarray
+    eigenv_minus: np.ndarray
+
+
+PAULI_TO_NP = {
+    'X':
+    PauliInfos(np.array([[0, 1], [1, 0]]),
+               np.array([1 / np.sqrt(2), 1 / np.sqrt(2)]),
+               np.array([1 / np.sqrt(2), -1 / np.sqrt(2)])),
+    'Y':
+    PauliInfos(np.array([[0, -1j], [1j, 0]]),
+               np.array([1 / np.sqrt(2), 1j / np.sqrt(2)]),
+               np.array([1 / np.sqrt(2), -1j / np.sqrt(2)])),
+    'Z':
+    PauliInfos(np.array([[1, 0], [0, -1]]), np.array([1, 0]), np.array([0, 1]))
+}
+
+OTHER_MAPS = {
+    "Z^½": gates.S,
+    "Z^-½": gates.S.dag(),
+    "Z^¼": gates.T,
+    "Z^-¼": gates.T.dag()
+}
+
+
+def simulation_data(output_json: str):
+    data = json.loads(output_json)
+    if 'output_amplitudes' not in data:
+        raise ValueError("Unable to reconstruct output without amplitudes")
+
+    amps_json = data['output_amplitudes']
+    return simulation_data_list(amps_json)
+
+
+def simulation_data_list(amplitude_list: list):
+    amps_rebuild = []
+
+    for res in amplitude_list:
+        res_c = complex(res['r'], res['i'])
+        amps_rebuild.append(res_c)
+
+    return amps_rebuild
+
+
+def convert_program_to_circuit(program: Program, **kwargs):
+    circ = program.to_circ(**kwargs)
+    return circ
+
+
+def convert_circuit_to_job(circuit, time_val=0.0):
+    job = circuit.to_job()
+    vars = job.get_variables()
+    if len(vars) > 0:
+        if len(vars) > 1:
+            raise Exception("We expect at most 1 var called t")
+        # Don't know why they use time_val*2 - 1, but that's it
+        # https://github.com/Strilanc/Quirk/blob/5416d529d9b50c33f924a171eed06d09f3ba8b3a/src/gates/ParametrizedRotationGates.js#L350
+        job = job(**{'t': time_val * 2 - 1})
+    return job
 
 
 def url_to_program(url: str) -> Program:
@@ -56,7 +108,6 @@ def dict_to_program(circ_dict: dict):
         raise ValueError('Unrecognized Circuit JSON keys.')
 
     pr = Program()
-    # there's always a t variable,
     var = pr.new_var(float, 't')
     nqubits = 0
     if len(circ_dict['cols']) > 0:
@@ -93,23 +144,6 @@ def _dict_to_qfun(
     return qfun
 
 
-def convert_program_to_circuit(program: Program, **kwargs):
-    circ = program.to_circ(**kwargs)
-    return circ
-
-
-def convert_circuit_to_job(circuit, time_val=0.0):
-    job = circuit.to_job()
-    vars = job.get_variables()
-    if len(vars) > 0:
-        if len(vars) > 1:
-            raise Exception("We expect at most 1 var called t")
-        # Don't know why they use time_val*2 - 1, but that's it
-        # https://github.com/Strilanc/Quirk/blob/5416d529d9b50c33f924a171eed06d09f3ba8b3a/src/gates/ParametrizedRotationGates.js#L350
-        job = job(**{'t': time_val * 2 - 1})
-    return job
-
-
 def _init(init_j: List[Union[str, int]]) -> QRoutine:
     qfun = QRoutine()
 
@@ -142,76 +176,6 @@ def _gates(gates_j, gate_name_to_qrout):
         _register_custom_gate(custom_gate, gate_name_to_qrout)
 
 
-def _get_abstrat_gate(gate_id, gate_arg, var):
-    if gate_id.startswith('R'):
-        gate = gates.__dict__[gate_id[:2].upper()]
-        if gate_arg is not None:
-            arg = float(parse.parse_expr(gate_arg))
-        else:
-            # https://github.com/Strilanc/Quirk/blob/5416d529d9b50c33f924a171eed06d09f3ba8b3a/src/gates/ParametrizedRotationGates.js#L350
-            arg = math.pi * var**2
-        gate = gate(arg)
-    else:
-        raise Exception("Other gates not implemented yet")
-    return gate
-
-
-def _get_gate(gate_pre, additional_gates, var):
-    if isinstance(gate_pre, int):
-        if gate_pre == 1:
-            return None
-        else:
-            raise Exception("Unknown gate %s" % gate_pre)
-    elif isinstance(gate_pre, dict):
-        #parametric gate
-        gate_id = gate_pre['id']
-        gate_arg = gate_pre['arg'] if gate_pre['arg'] else None
-        gate = _get_abstrat_gate(gate_id, gate_arg, var)
-    elif isinstance(gate_pre, str):
-        gate_id = gate_pre
-        if gate_id in IGNORED_GATES:
-            return None
-        if gate_id in TIME_GATES:
-            gate = _get_abstrat_gate(gate_id, None, var)
-        elif gate_id in gates.__dict__:
-            gate = gates.__dict__[gate_id]
-        elif gate_id in additional_gates:
-            gate = additional_gates[gate_id]
-        else:
-            raise Exception("Gate not found %s" % gate_id)
-    else:
-        raise Exception("Gate of unknown type %s" % gate_pre)
-    return gate
-
-
-def _cols(cols_j, var, additional_gates=None):
-    qfun = QRoutine()
-    if not isinstance(cols_j, list):
-        raise ValueError(
-            f'Circuit JSON cols must be a list, got.\nJSON={cols_j}')
-    for col_idx, col in enumerate(cols_j):
-        ctrls = [i for i, v in enumerate(col) if v == '•']
-        zctrls = [i for i, v in enumerate(col) if v == '◦']
-        ctrls.extend(zctrls)
-        has_ctrls = len(ctrls) > 0
-        for i in zctrls:
-            qfun.apply(gates.X, i)
-        for i, gate_pre in enumerate(col):
-            # print(col_idx, i, gate_pre)
-            gate = _get_gate(gate_pre, additional_gates, var)
-            if gate == None:
-                continue
-            LOGGER.debug("Gate arity is %d " % gate.arity)
-            if has_ctrls and gate_pre != '•':
-                qfun.apply(gate.ctrl(len(ctrls)), *ctrls, i)
-            else:
-                gate_list = [qb for qb in range(i, i + gate.arity)]
-                qfun.apply(gate, gate_list)
-        for i in zctrls:
-            qfun.apply(gates.X, i)
-    return qfun
-
-
 def _register_custom_gate(gate_json: Dict, registry: Dict[str, Any]):
     if 'id' not in gate_json:
         raise ValueError(
@@ -239,7 +203,7 @@ def _register_custom_gate(gate_json: Dict, registry: Dict[str, Any]):
         LOGGER.debug("Custom gate name=%s matrix\n%s" % (name, matrix_s))
         gate = gates.AbstractGate(
             name, [], matrix_generator=lambda: parse.parse_matrix(matrix_s))
-        arity = math.log2(matrix_s.count('{') - 1)
+        arity = np.log2(matrix_s.count('{') - 1)
         if not arity.is_integer():
             raise ValueError("Unknown error, found arity %f" % arity)
         gate.arity = int(arity)
@@ -261,20 +225,140 @@ def _register_custom_gate(gate_json: Dict, registry: Dict[str, Any]):
                          f'Custom gate json={gate_json!r}.')
 
 
-def simulation_data(output_json: str):
-    data = json.loads(output_json)
-    if 'output_amplitudes' not in data:
-        raise ValueError("Unable to reconstruct output without amplitudes")
+def _cols(cols_j, var, additional_gates=None):
+    qfun = QRoutine()
+    if not isinstance(cols_j, list):
+        raise ValueError(
+            f'Circuit JSON cols must be a list, got.\nJSON={cols_j}')
+    for col_idx, col in enumerate(cols_j):
+        ctrls = [i for i, v in enumerate(col) if v == '•']
+        zctrls = [i for i, v in enumerate(col) if v == '◦']
+        ctrls.extend(zctrls)
+        has_ctrls = len(ctrls) > 0
+        for i in zctrls:
+            qfun.apply(gates.X, i)
+        for i, gate_pre in enumerate(col):
+            LOGGER.debug(f"Parsing gate: {col_idx}, {i}, {gate_pre}")
+            gate = _get_gate(gate_pre, additional_gates, var)
+            if gate is None:
+                continue
+            LOGGER.debug("Gate arity is %d " % gate.arity)
+            if has_ctrls and gate_pre != '•':
+                qfun.apply(gate.ctrl(len(ctrls)), *ctrls, i)
+            else:
+                gate_list = [qb for qb in range(i, i + gate.arity)]
+                qfun.apply(gate, gate_list)
+        for i in zctrls:
+            qfun.apply(gates.X, i)
+    return qfun
 
-    amps_json = data['output_amplitudes']
-    return simulation_data_list(amps_json)
+
+def _get_gate(gate_pre, additional_gates, var):
+    if isinstance(gate_pre, int):
+        if gate_pre == 1:
+            return None
+        else:
+            raise Exception("Unknown gate %s" % gate_pre)
+    elif isinstance(gate_pre, dict):
+        #parametric gate with arg
+        gate_id = gate_pre['id']
+        gate_arg = gate_pre['arg'] if gate_pre['arg'] else None
+        gate = _get_abstrat_gate(gate_id, gate_arg, var)
+    elif isinstance(gate_pre, str):
+        gate_id = gate_pre
+        if gate_id in IGNORED_GATES:
+            return None
+        if gate_id in TIME_GATES:
+            gate = _get_abstrat_gate(gate_id, None, var)
+        elif gate_id in OTHER_MAPS:
+            gate = OTHER_MAPS[gate_id]
+        elif gate_id in gates.__dict__:
+            gate = gates.__dict__[gate_id]
+        elif gate_id in additional_gates:
+            gate = additional_gates[gate_id]
+        else:
+            raise Exception("Gate not found %s" % gate_id)
+    else:
+        raise Exception("Gate of unknown type %s" % gate_pre)
+    return gate
 
 
-def simulation_data_list(amplitude_list: list):
-    amps_rebuild = []
+def _get_abstrat_gate(gate_id, gate_arg, var):
 
-    for res in amplitude_list:
-        res_c = complex(res['r'], res['i'])
-        amps_rebuild.append(res_c)
+    # def rot_angle(angle, pauli_name):
+    #     # I think this is valid for RX, RY, RZ,but ATM is unused
+    #     # R_n (angle) = e^(-i * angle/2 * d_n), where d_n is the matrix of
+    #     # pauli gate n, n in (X, Y, Z)
 
-    return amps_rebuild
+    #     # = cos(angle/2)*I - i * sin(angle/2)* d_n
+    #     pauli_matrix = PAULI_TO_NP[pauli_name].matrix
+    #     LOGGER.debug("Pauli matrix is\n%s" % pauli_matrix)
+    #     return np.cos(angle) * np.eye(2) - 1j * np.cos(angle) * pauli_matrix
+
+    # def rot_value(value, pauli_name):
+    #     # Another way to look at it is R_d_n = -i * d_n
+    #     # The -i global phase gate
+    #     qfun = QRoutine()
+    #     qfun.apply(gates.PH(-np.pi / 2), 0)
+    #     qfun.apply(gates.X, 0)
+    #     qfun.apply(gates.PH(-np.pi / 2), 0)
+    #     qfun.apply(gates.X, 0)
+    #     # The actual rotation
+    #     rotation_gate = f'R{pauli_name.upper()}'
+    #     gate = gates.__dict__[rotation_gate]
+    #     qfun.apply(gate(value * np.pi), 0)
+    #     return qfun
+
+    def exp_value(value, pauli_name):
+        pauli_eig_p = PAULI_TO_NP[pauli_name].eigenv_plus
+        pauli_eig_m = PAULI_TO_NP[pauli_name].eigenv_minus
+        plus = np.outer(pauli_eig_p, pauli_eig_p.conj())
+        minus = np.outer(pauli_eig_m, pauli_eig_m.conj())
+        # eigval_m = np.exp(1j * np.pi)
+        # angle = (eigval_m)**value
+        angle = np.exp(1j * value * np.pi)
+        matrix = plus + minus * angle
+        return matrix
+
+    if gate_id in ('Rxft', 'Ryft', 'Rzft'):
+        gate = gates.__dict__[gate_id[:2].upper()]
+        if gate_arg is not None:
+            arg = float(parse.parse_expr(gate_arg))
+        else:
+            # https://github.com/Strilanc/Quirk/blob/5416d529d9b50c33f924a171eed06d09f3ba8b3a/src/gates/ParametrizedRotationGates.js#L350
+            arg = np.pi * var**2
+        gate = gate(arg)
+
+    elif gate_id[1] == '^':
+        LOGGER.debug("Getting abstract gate for %s" % gate_id)
+        if gate_arg is not None:
+            LOGGER.debug(f"arg {gate_arg}")
+            exp = float(parse.parse_expr(gate_arg))
+            LOGGER.debug("Exponent is %f " % exp)
+        elif gate_id[2:] in ("¼", "-¼", "½", "-½"):
+            LOGGER.debug(f"fraction {gate_id[2:]}")
+            exp = float(parse.parse_expr(gate_id[2:]))
+            LOGGER.debug("Exponent is %f " % exp)
+        elif gate_id[2:] == 'ft':
+            LOGGER.debug("Predefined time function")
+            raise Exception("Not sure how to circumvent the use of a variable")
+            # exp = np.sin(var * np.pi)
+            # sin function approximation
+            # exp = 16 * var * (np.pi - var) / (5 * np.pi**2 - 4 * var *
+            #                                   (np.pi - var))
+        else:
+            raise Exception("Exponent not found for gate %s" % gate_id)
+
+        pauli_name = gate_id[0]
+        gate = gates.AbstractGate(
+            f"Exp", [float, str],
+            matrix_generator=lambda x, y: exp_value(x, y))
+        gate.arity = 1
+        gate = gate(exp, pauli_name)
+
+        LOGGER.debug("Created gate %s" % (gate.name))
+        LOGGER.debug("Matrix should be\n%s" %
+                     np.around(exp_value(exp, pauli_name), decimals=6))
+    else:
+        raise Exception("Other gates not implemented yet")
+    return gate

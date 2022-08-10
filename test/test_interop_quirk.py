@@ -2,7 +2,7 @@ import json
 import os
 from typing import NamedTuple
 
-from qat.external.interop.quirk import quirk
+from qat.external.interop.quirk import parse, quirk
 
 from .common_circuit import CircuitTestCase
 
@@ -30,9 +30,10 @@ class TestQuirk(CircuitTestCase):
             cls.quirk_circ_datas[name] = cls._read_data(name)
 
         if cls.logger.level != 0:
-            quirk.LOGGER.setLevel(cls.logger.level)
-            for handler in cls.logger.handlers:
-                quirk.LOGGER.addHandler(handler)
+            for module in (quirk, parse):
+                module.LOGGER.setLevel(cls.logger.level)
+                for handler in cls.logger.handlers:
+                    module.LOGGER.addHandler(handler)
 
     @classmethod
     def _read_data(cls, name) -> list[QuirkCircData]:
@@ -54,7 +55,6 @@ class TestQuirk(CircuitTestCase):
         for data in self.quirk_circ_datas[name]:
             with self.subTest(msg=f"Instance {data.additional}",
                               additional=data.additional):
-                # self.logger.critical(self._subtest._message)
                 res_exp = quirk.simulation_data_list(data.output_amplitude)
                 pr = quirk.dict_to_program(data.circuit)
                 cr = quirk.convert_program_to_circuit(pr)
@@ -83,9 +83,11 @@ class TestQuirk(CircuitTestCase):
     def test_cols_zctrls(self):
         self._test_common('test_cols_zctrls')
 
-    def test_formulaic_gates(self):
-        # self.skipTest("Not yet")
-        self._test_common('test_formulaic_gates')
+    def test_formulaic_gates_rotation(self):
+        self._test_common('test_formulaic_gates_rotation')
+
+    def test_formulaic_gates_exponentiation(self):
+        self._test_common('test_formulaic_gates_exponentiation')
 
     def test_custom_gates_matrix(self):
         self._test_common('test_custom_gates_matrix')

@@ -1,7 +1,10 @@
 import math
+import logging
 
 import numpy as np
 from sympy import parsing
+
+LOGGER = logging.getLogger(__name__)
 
 UNI_TO_UTF = {
     "½": '1 / 2',
@@ -32,6 +35,7 @@ def parse_expr(expr: str):
     tmp = parsing.parse_expr(expr.translate(UNI_TO_UTF_T),
                              transformations='all').n()
     tmp = tmp.subs({'i': '1j'})
+    LOGGER.debug("Parsed expression %s to %s" % (expr, tmp))
     return tmp
 
 
