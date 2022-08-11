@@ -94,3 +94,6 @@ class TestQuirk(CircuitTestCase):
 
     def test_custom_gates_subcircuit(self):
         self._test_common('test_custom_gates_subcircuit')
+
+    def test_left_rotate(self):
+        self._test_common('test_left_rotate')
