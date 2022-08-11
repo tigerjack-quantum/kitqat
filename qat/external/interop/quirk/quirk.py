@@ -231,24 +231,49 @@ def _cols(cols_j, var, additional_gates=None):
     if not isinstance(cols_j, list):
         raise ValueError(
             f'Circuit JSON cols must be a list, got.\nJSON={cols_j}')
+    
     for col_idx, col in enumerate(cols_j):
-        ctrls = [i for i, v in enumerate(col) if v == '•']
-        zctrls = [i for i, v in enumerate(col) if v == '◦']
-        ctrls.extend(zctrls)
-        has_ctrls = len(ctrls) > 0
+        ctrls = []
+        zctrls = []
+        swap_idxs = []
+        for i, v in enumerate(col):
+            if v == '•':
+                ctrls.append(i)
+            elif v == '◦':
+                zctrls.append(i)
+            elif v == "Swap":
+                swap_idxs.append(i)
+                
         for i in zctrls:
             qfun.apply(gates.X, i)
+        ctrls.extend(zctrls)
+        has_ctrls = len(ctrls) > 0
+
         for i, gate_pre in enumerate(col):
-            LOGGER.debug(f"Parsing gate: {col_idx}, {i}, {gate_pre}")
+            LOGGER.debug(f"Parsing gate: col = {col_idx}, row = {i}, name = {gate_pre}")
             gate = _get_gate(gate_pre, additional_gates, var)
             if gate is None:
+                LOGGER.debug("None gate returned for %s" % gate_pre)
                 continue
             LOGGER.debug("Gate arity is %d " % gate.arity)
-            if has_ctrls and gate_pre != '•':
-                qfun.apply(gate.ctrl(len(ctrls)), *ctrls, i)
+            if gate is gates.SWAP:
+                if len(swap_idxs) > 0:
+                    targets = tuple(swap_idxs)
+                    swap_idxs = []
+                else:
+                    LOGGER.debug("Skipping, this gate has already been processed")
+                    # we already processed this swap
+                    continue
             else:
-                gate_list = [qb for qb in range(i, i + gate.arity)]
-                qfun.apply(gate, gate_list)
+                targets = [qb for qb in range(i, gate.arity)]
+
+            if has_ctrls and gate_pre != '•':
+                LOGGER.debug(f"Applying gate {gate} with ctrls {ctrls} and targets {targets}")
+                qfun.apply(gate.ctrl(len(ctrls)), ctrls, targets)
+            else:
+                LOGGER.debug(f"Applying gate {gate} with targets {targets}")
+                # gate_list = [qb for qb in range(i, targets)]
+                qfun.apply(gate, targets)
         for i in zctrls:
             qfun.apply(gates.X, i)
     return qfun
@@ -275,6 +300,8 @@ def _get_gate(gate_pre, additional_gates, var):
             gate = OTHER_MAPS[gate_id]
         elif gate_id.startswith("<<"):
             gate = mine.left_rotate(int(gate_id[2]))
+        elif gate_id == "Swap":
+            gate = gates.__dict__['SWAP']
         elif gate_id in gates.__dict__:
             gate = gates.__dict__[gate_id]
         elif gate_id in additional_gates:
