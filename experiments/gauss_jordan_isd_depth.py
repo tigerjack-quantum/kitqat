@@ -95,7 +95,7 @@ def _trans_qbit_to_txt(r, n, n_syns, qbits, gjmod):
 
 
 def main():
-    circulant = False
+    circulant = True
     alg = 'prange'
     # alg = 'lee'
 

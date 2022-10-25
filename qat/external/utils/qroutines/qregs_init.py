@@ -17,6 +17,10 @@ LOGGER = logging.getLogger(__name__)
 # big endian |100> would be equal to 4, while in little endian it will be equal
 # to 1. Big endian is used by both ibm's qiskit and atos' qlm results. However,
 # Atos qlm uses little endian for all other stuffs
+
+
+# Little endian in qubit initialization also means left-to-right bitstring
+# corresponds bottom-to-top in circuit
 def _conditionally_initialize_qureg_given_bitarray(
     a_arr: Sequence[int],
     ncontrols: int,
