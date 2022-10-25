@@ -110,6 +110,10 @@ Society 2021. [Accepted on July 31th, 2021] [bibtex](TODO)
   * [ ] Use slack suggestion for gate definition
 
 # To implement list #
+  * Reversible simulator
+    * [X] Implementation
+    * [ ] Integration with QLM 
+    
   * Reversible combinatorial circuits
     * [x] Sorting network
     * [x] Benes network

@@ -2,8 +2,8 @@ import functools
 from test.common import BasicTestCase
 
 from qat.external.qpus.reversible import RGate, RProgram
+from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, H, X
 from qat.lang.AQASM.program import Program
-from qat.lang.AQASM.gates import H, X, CNOT, CCNOT, SWAP
 from qat.qpus import PyLinalg
 
 
@@ -55,7 +55,7 @@ class TestRCircuit(BasicTestCase):
         pr = Program()
         pr.apply(H, pr.qalloc(1))
 
-        part = functools.partial(RProgram.program_to_rprogram, pr)
+        part = functools.partial(RProgram.circuit_to_rprogram, pr.to_circ())
         self.assertRaises(AttributeError, part)
 
     def test_program_to_rprogram(self):
@@ -70,11 +70,12 @@ class TestRCircuit(BasicTestCase):
         pr.apply(CCNOT, qr[2:5])
         pr.apply(SWAP.ctrl(3), qr)
         qpu = PyLinalg()
-        res = qpu.submit(pr.to_circ().to_job())
+        cr = pr.to_circ()
+        res = qpu.submit(cr.to_job())
         sample = None
         for sample in res:
             pass
-        self.assertNotEqual(sample, None)
-        rpr = RProgram.program_to_rprogram(pr)
+        assert sample is not None
+        rpr = RProgram.circuit_to_rprogram(cr)
         print()
         self.assertEqual(sample.state.bitstring, rpr.qbits.to01())
