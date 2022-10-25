@@ -17,10 +17,28 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-IGNORED_GATES = ('Chance', 1, '•', '◦')
+IGNORED_GATES = (1, '•', '◦', "Density", "Bloch", "Chance", "Amps")
 TIME_GATES = {
-    'Rxft', 'Ryft', 'Rzft', 'X^ft', 'Y^ft', 'Z^ft', "X^½", "X^-½", "X^¼",
-    "X^-¼", "Y^½", "Y^-½", "Y^¼", "Y^-¼"
+    'Rxft',
+    'Ryft',
+    'Rzft',
+    'X^ft',
+    'Y^ft',
+    'Z^ft',  #
+    "X^½",
+    "X^-½",
+    "X^¼",
+    "X^-¼",
+    "Y^½",
+    "Y^-½",
+    "Y^¼",
+    "Y^-¼",  #
+    'X^t',
+    'Y^t',
+    'Z^t',
+    'X^-t',
+    'Y^-t',
+    'Z^-t'
 }
 
 
@@ -231,7 +249,7 @@ def _cols(cols_j, var, additional_gates=None):
     if not isinstance(cols_j, list):
         raise ValueError(
             f'Circuit JSON cols must be a list, got.\nJSON={cols_j}')
-    
+
     for col_idx, col in enumerate(cols_j):
         ctrls = []
         zctrls = []
@@ -243,14 +261,15 @@ def _cols(cols_j, var, additional_gates=None):
                 zctrls.append(i)
             elif v == "Swap":
                 swap_idxs.append(i)
-                
+
         for i in zctrls:
             qfun.apply(gates.X, i)
         ctrls.extend(zctrls)
         has_ctrls = len(ctrls) > 0
 
         for i, gate_pre in enumerate(col):
-            LOGGER.debug(f"Parsing gate: col = {col_idx}, row = {i}, name = {gate_pre}")
+            LOGGER.debug(
+                f"Parsing gate: col = {col_idx}, row = {i}, name = {gate_pre}")
             gate = _get_gate(gate_pre, additional_gates, var)
             if gate is None:
                 LOGGER.debug("None gate returned for %s" % gate_pre)
@@ -261,14 +280,17 @@ def _cols(cols_j, var, additional_gates=None):
                     targets = tuple(swap_idxs)
                     swap_idxs = []
                 else:
-                    LOGGER.debug("Skipping, this gate has already been processed")
+                    LOGGER.debug(
+                        "Skipping, this gate has already been processed")
                     # we already processed this swap
                     continue
             else:
                 targets = [qb for qb in range(i, gate.arity)]
 
             if has_ctrls and gate_pre != '•':
-                LOGGER.debug(f"Applying gate {gate} with ctrls {ctrls} and targets {targets}")
+                LOGGER.debug(
+                    f"Applying gate {gate} with ctrls {ctrls} and targets {targets}"
+                )
                 qfun.apply(gate.ctrl(len(ctrls)), ctrls, targets)
             else:
                 LOGGER.debug(f"Applying gate {gate} with targets {targets}")
@@ -369,7 +391,7 @@ def _get_abstrat_gate(gate_id, gate_arg, var):
             LOGGER.debug(f"fraction {gate_id[2:]}")
             exp = float(parse.parse_expr(gate_id[2:]))
             LOGGER.debug("Exponent is %f " % exp)
-        elif gate_id[2:] == 'ft':
+        elif gate_id[2:] in ('ft', 't', '-t'):
             LOGGER.debug("Predefined time function")
             raise Exception("Not sure how to circumvent the use of a variable")
             # exp = np.sin(var * np.pi)
