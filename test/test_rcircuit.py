@@ -4,7 +4,7 @@ from test.common import BasicTestCase
 from qat.external.qpus.reversible import RGate, RProgram
 from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, H, X
 from qat.lang.AQASM.program import Program
-from qat.qpus import PyLinalg
+from qat.pylinalg import PyLinalg
 
 
 class TestRCircuit(BasicTestCase):
@@ -58,7 +58,7 @@ class TestRCircuit(BasicTestCase):
         part = functools.partial(RProgram.circuit_to_rprogram, pr.to_circ())
         self.assertRaises(AttributeError, part)
 
-    def test_program_to_rprogram(self):
+    def test_rcircuit_to_rprogram(self):
         pr = Program()
         qr = pr.qalloc(5)
         pr.apply(X, qr[0])
@@ -67,6 +67,7 @@ class TestRCircuit(BasicTestCase):
         pr.apply(CNOT, qr[:2])
         pr.apply(CCNOT, qr[:3])
         pr.apply(SWAP, qr[2], qr[4])
+        # Note that this last 2 gates are not applied since their ctrls are not all 1's
         pr.apply(CCNOT, qr[2:5])
         pr.apply(SWAP.ctrl(3), qr)
         qpu = PyLinalg()
