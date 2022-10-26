@@ -10,8 +10,6 @@ import operator
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence, Set, Union
 
-from qat.lang.AQASM.gates import Gate
-
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
 
@@ -52,10 +50,12 @@ class RProgram():
                       and all(operator.itemgetter(*ctrls)(self.qbits)))
         if not ctrl:
             return
+
         if isinstance(trgts, int):
             trgts = {trgts}
         if ctrls is not None and not ctrls.isdisjoint(trgts):
             raise ValueError("The target and control set should be disjoint")
+        self.ops.append((gate, ctrls, trgts))
         if gate == RGate.NOT:
             for trgt in trgts:
                 self.qbits.invert(trgt)
@@ -68,11 +68,10 @@ class RProgram():
                 raise ValueError("Swap gates can have only 2 targets")
         else:
             raise ValueError(f"Unknown gate {gate}")
-        self.ops.append((gate, ctrls, trgts))
 
     @classmethod
     def _get_and_apply_gate(cls, qcircuit: 'Circuit', rprogram: RProgram,
-                            gate: Gate, qbits: Sequence[int]):
+                            gate: str, qbits: Sequence[int]):
         if not gate.endswith(cls.rev_gate_names):
             if gate.startswith('_'):
                 return cls._get_and_apply_gate(qcircuit, rprogram,
@@ -80,39 +79,37 @@ class RProgram():
                                                qbits)
             else:
                 raise AttributeError(
-                    "Reversible gates: X, SWAP and their controlled versions"
-                )
+                    "Reversible gates: X, SWAP and their controlled versions")
         if gate == 'SWAP':
             ctrls = set(qbits[:-2])
             trgts = set(qbits[-2:])
             rgate = RGate.SWAP
         elif gate == 'X':
             if len(qbits) == 2:
-                gate.name = 'CNOT'
-                return cls._get_and_apply_gate(qcircuit, rprogram, gate, qbits)
+                return cls._get_and_apply_gate(qcircuit, rprogram, 'CNOT', qbits)
             elif len(qbits) == 3:
-                gate.name = 'CCNOT'
-                return cls._get_and_apply_gate(qcircuit, rprogram, gate, qbits)
-            elif len(qbits) == 1:
+                return cls._get_and_apply_gate(qcircuit, rprogram, 'CCNOT', qbits)
+            else:
                 rgate = RGate.NOT
                 trgts = {qbits[-1]}
-                ctrls = set()
-        elif gate == 'CNOT':
+                ctrls = set(qbits[:-1])
+        elif gate == 'CNOT' or gate == 'C-NOT':
             ctrls = {qbits[0]}
             trgts = {qbits[1]}
             rgate = RGate.NOT
-        elif gate == 'CCNOT':
+        elif gate == 'CCNOT' or gate == 'C-C-NOT':
             ctrls = {qbits[0], qbits[1]}
             trgts = {qbits[2]}
             rgate = RGate.NOT
         else:
             raise Exception(
-                f"Got an unknown gate that passed the first check {gate.name}")
+                f"Got an unknown gate that passed the first check {gate}")
 
         rprogram.apply(rgate, ctrls, trgts)
 
     @classmethod
     def circuit_to_rprogram(cls, qcirc: Circuit) -> RProgram:
+        """Warn: circuit should be generated with inline=True to avoid errors"""
         rprogram = RProgram()
         rprogram.qalloc(qcirc.nbqbits)
         for op in qcirc.ops:
