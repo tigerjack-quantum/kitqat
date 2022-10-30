@@ -31,8 +31,16 @@ class RProgram():
         self.ops = [
         ]  # should contain the list of operations for logging purposes
         self.qbits: bitarray = bitarray()
+        self.rregs: dict[range, str] = {}
 
-    def qalloc(self, n=1):
+    def qalloc(self, n=1, name=None):
+        rang = range(len(self.qbits),
+                     len(self.qbits) + n)  # upper not included
+        if name is None:
+            name = str(rang)[6:].replace(', ', '_').replace(')', '')
+        elif name in self.rregs:
+            raise ValueError("Already another register with the same name")
+        self.rregs[rang] = name
         self.qbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, ctrls: Optional[Set[int]],
@@ -86,9 +94,11 @@ class RProgram():
             rgate = RGate.SWAP
         elif gate == 'X':
             if len(qbits) == 2:
-                return cls._get_and_apply_gate(qcircuit, rprogram, 'CNOT', qbits)
+                return cls._get_and_apply_gate(qcircuit, rprogram, 'CNOT',
+                                               qbits)
             elif len(qbits) == 3:
-                return cls._get_and_apply_gate(qcircuit, rprogram, 'CCNOT', qbits)
+                return cls._get_and_apply_gate(qcircuit, rprogram, 'CCNOT',
+                                               qbits)
             else:
                 rgate = RGate.NOT
                 trgts = {qbits[-1]}
@@ -107,11 +117,25 @@ class RProgram():
 
         rprogram.apply(rgate, ctrls, trgts)
 
+    def get_result(self) -> bitarray:
+        return self.qbits
+
+    def get_result_by_name(self):
+        res = {}
+        for rang, name in self.rregs.items():
+            res[name] = self.qbits[rang.start:rang.stop]
+        return res
+
     @classmethod
-    def circuit_to_rprogram(cls, qcirc: Circuit) -> RProgram:
+    def circuit_to_rprogram(
+        cls, qcirc: Circuit, reg_names: dict[range, str] = dict()) -> RProgram:
         """Warn: circuit should be generated with inline=True to avoid errors"""
         rprogram = RProgram()
-        rprogram.qalloc(qcirc.nbqbits)
+        for qr in qcirc.qregs:
+            rang = range(qr.start, qr.start + qr.length)
+            name = reg_names.get(rang, None)
+            rprogram.qalloc(qr.length, name)
         for op in qcirc.ops:
             cls._get_and_apply_gate(qcirc, rprogram, op.gate, op.qbits)
+
         return rprogram
