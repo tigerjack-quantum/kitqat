@@ -7,49 +7,49 @@ from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
 
 
-class TestRCircuit(BasicTestCase):
-    nqbits = 10
+class TestRProgram(BasicTestCase):
+    nrbits = 10
 
     def setUp(self):
         super().setUp()
-        self.rpu = RProgram()
-        self.rpu.qalloc(self.nqbits)
-        self._test_arr = ['0'] * self.nqbits
+        self.rcr = RProgram()
+        self.rcr.qalloc(self.nrbits)
+        self._test_arr = ['0'] * self.nrbits
 
     def test_not(self):
-        self.rpu.apply(RGate.NOT, None, 1)
+        self.rcr.apply(RGate.NOT, None, 1)
         self._test_arr[1] = '1'
-        self.assertEqual(self.rpu.qbits.to01(), ''.join(self._test_arr))
+        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
 
     def test_mnot(self):
         lst = {1, 3, 4, 9}
-        self.rpu.apply(RGate.NOT, None, lst)
+        self.rcr.apply(RGate.NOT, None, lst)
         for i in lst:
             self._test_arr[i] = '1'
-        self.assertEqual(self.rpu.qbits.to01(), ''.join(self._test_arr))
+        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
 
     def test_swap(self):
-        self.rpu.apply(RGate.NOT, None, 3)
-        self.rpu.apply(RGate.SWAP, None, {3, 2})
+        self.rcr.apply(RGate.NOT, None, 3)
+        self.rcr.apply(RGate.SWAP, None, {3, 2})
         self._test_arr[2] = '1'
-        self.assertEqual(self.rpu.qbits.to01(), ''.join(self._test_arr))
+        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
 
     def test_not_disjoints(self):
-        self.rpu.qbits.invert(3)
-        self.rpu.qbits.invert(4)
-        part = functools.partial(self.rpu.apply, RGate.NOT, {3, 4}, {4, 5})
+        self.rcr.rbits.invert(3)
+        self.rcr.rbits.invert(4)
+        part = functools.partial(self.rcr.apply, RGate.NOT, {3, 4}, {4, 5})
         self.assertRaises(ValueError, part)
 
     def test_mcmnot(self):
         trgts = {1, 3, 4, 9}
         ctrls = {2, 5}
         for i in ctrls:
-            self.rpu.qbits.invert(i)
+            self.rcr.rbits.invert(i)
             self._test_arr[i] = '1'
         for i in trgts:
             self._test_arr[i] = '1'
-        self.rpu.apply(RGate.NOT, ctrls, trgts)
-        self.assertEqual(self.rpu.qbits.to01(), ''.join(self._test_arr))
+        self.rcr.apply(RGate.NOT, ctrls, trgts)
+        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
 
     def test_program_to_rprogram_error(self):
         pr = Program()
@@ -79,4 +79,4 @@ class TestRCircuit(BasicTestCase):
         assert sample is not None
         rpr = RProgram.circuit_to_rprogram(cr)
         print()
-        self.assertEqual(sample.state.bitstring, rpr.qbits.to01())
+        self.assertEqual(sample.state.bitstring, rpr.rbits.to01())

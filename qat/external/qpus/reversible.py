@@ -30,22 +30,22 @@ class RProgram():
     def __init__(self):
         self.ops = [
         ]  # should contain the list of operations for logging purposes
-        self.qbits: bitarray = bitarray()
+        self.rbits: bitarray = bitarray()
         self.rregs: dict[range, str] = {}
 
     def qalloc(self, n=1, name=None):
-        rang = range(len(self.qbits),
-                     len(self.qbits) + n)  # upper not included
+        rang = range(len(self.rbits),
+                     len(self.rbits) + n)  # upper not included
         if name is None:
             name = str(rang)[6:].replace(', ', '_').replace(')', '')
         elif name in self.rregs:
             raise ValueError("Already another register with the same name")
         self.rregs[rang] = name
-        self.qbits.extend(util.zeros(n))
+        self.rbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, ctrls: Optional[Set[int]],
               trgts: Union[int, Set[int]]):
-        if self.qbits is None:
+        if self.rbits is None:
             raise AttributeError("You should initialize your qubits")
 
         # print(ctrls)
@@ -53,9 +53,9 @@ class RProgram():
         #     print(len(ctrls))
 
         ctrl = (ctrls is None or len(ctrls) == 0) or (
-            len(ctrls) == 1 and operator.itemgetter(*ctrls)(self.qbits)
+            len(ctrls) == 1 and operator.itemgetter(*ctrls)(self.rbits)
             == 1) or (len(ctrls) > 1
-                      and all(operator.itemgetter(*ctrls)(self.qbits)))
+                      and all(operator.itemgetter(*ctrls)(self.rbits)))
         if not ctrl:
             return
 
@@ -66,12 +66,12 @@ class RProgram():
         self.ops.append((gate, ctrls, trgts))
         if gate == RGate.NOT:
             for trgt in trgts:
-                self.qbits.invert(trgt)
+                self.rbits.invert(trgt)
         elif gate == RGate.SWAP:
             if len(trgts) == 2:
                 _trgts = list(trgts)
-                self.qbits[_trgts[1]], self.qbits[_trgts[0]] = self.qbits[
-                    _trgts[0]], self.qbits[_trgts[1]]
+                self.rbits[_trgts[1]], self.rbits[_trgts[0]] = self.rbits[
+                    _trgts[0]], self.rbits[_trgts[1]]
             else:
                 raise ValueError("Swap gates can have only 2 targets")
         else:
@@ -79,37 +79,37 @@ class RProgram():
 
     @classmethod
     def _get_and_apply_gate(cls, qcircuit: 'Circuit', rprogram: RProgram,
-                            gate: str, qbits: Sequence[int]):
+                            gate: str, rbits: Sequence[int]):
         if not gate.endswith(cls.rev_gate_names):
             if gate.startswith('_'):
                 return cls._get_and_apply_gate(qcircuit, rprogram,
                                                qcircuit.gateDic[gate].subgate,
-                                               qbits)
+                                               rbits)
             else:
                 raise AttributeError(
                     "Reversible gates: X, SWAP and their controlled versions")
         if gate == 'SWAP':
-            ctrls = set(qbits[:-2])
-            trgts = set(qbits[-2:])
+            ctrls = set(rbits[:-2])
+            trgts = set(rbits[-2:])
             rgate = RGate.SWAP
         elif gate == 'X':
-            if len(qbits) == 2:
+            if len(rbits) == 2:
                 return cls._get_and_apply_gate(qcircuit, rprogram, 'CNOT',
-                                               qbits)
-            elif len(qbits) == 3:
+                                               rbits)
+            elif len(rbits) == 3:
                 return cls._get_and_apply_gate(qcircuit, rprogram, 'CCNOT',
-                                               qbits)
+                                               rbits)
             else:
                 rgate = RGate.NOT
-                trgts = {qbits[-1]}
-                ctrls = set(qbits[:-1])
+                trgts = {rbits[-1]}
+                ctrls = set(rbits[:-1])
         elif gate == 'CNOT' or gate == 'C-NOT':
-            ctrls = {qbits[0]}
-            trgts = {qbits[1]}
+            ctrls = {rbits[0]}
+            trgts = {rbits[1]}
             rgate = RGate.NOT
         elif gate == 'CCNOT' or gate == 'C-C-NOT':
-            ctrls = {qbits[0], qbits[1]}
-            trgts = {qbits[2]}
+            ctrls = {rbits[0], rbits[1]}
+            trgts = {rbits[2]}
             rgate = RGate.NOT
         else:
             raise Exception(
@@ -118,12 +118,12 @@ class RProgram():
         rprogram.apply(rgate, ctrls, trgts)
 
     def get_result(self) -> bitarray:
-        return self.qbits
+        return self.rbits
 
     def get_result_by_name(self):
         res = {}
         for rang, name in self.rregs.items():
-            res[name] = self.qbits[rang.start:rang.stop]
+            res[name] = self.rbits[rang.start:rang.stop]
         return res
 
     @classmethod
