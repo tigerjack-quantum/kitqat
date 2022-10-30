@@ -8,7 +8,7 @@ from qat.core.variables import Variable
 # from qat.core.variables import revert_type
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM import Circuit
+    from qat.core.wrappers.circuit import Circuit
 
 LOGGER = logging.getLogger(__name__)
 
