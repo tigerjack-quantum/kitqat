@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 from qat.core.console import display
 
 if TYPE_CHECKING:
-    from qat.core import Circuit, Result
-    from qat.lang.AQASM import Program
+    from qat.core.wrappers.circuit import Circuit
+    from qat.core.wrappers.result import Result
+    from qat.lang.AQASM.program import Program
 
 
 class CircuitTestCase(BasicTestCase):
@@ -18,6 +19,8 @@ class CircuitTestCase(BasicTestCase):
         SIMULATOR = os.getenv('SIMULATOR', 'linalg')
     else:
         SIMULATOR = os.getenv('SIMULATOR', 'pylinalg')
+    # Try to use reversible simulator whenever possible
+    REVERSIBLE_ON = os.getenv('REVERSIBLE_ON') is not None
 
     @classmethod
     def setUpClass(cls):
@@ -26,7 +29,7 @@ class CircuitTestCase(BasicTestCase):
         cls.links = []
         if cls.SIMULATOR.lower() == 'pylinalg':
             cls.logger.info("PyLinalg")
-            from qat.qpus import PyLinalg
+            from qat.pylinalg import PyLinalg
             cls.qpu = PyLinalg()
         elif cls.SIMULATOR.lower() == 'linalg':
             # default to linalg
@@ -54,6 +57,7 @@ class CircuitTestCase(BasicTestCase):
         else:
             raise Exception(f"Simulator choice {cls.SIMULATOR} not correct")
         print(f"Selected simulator is {cls.qpu}")
+        print(f"Reversible simulation is {cls.REVERSIBLE_ON}")
 
     @classmethod
     def simulate_program(cls, program, circ_args={}, job_args={}):
