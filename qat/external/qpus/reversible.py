@@ -8,10 +8,11 @@ from __future__ import annotations
 import logging
 import operator
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Sequence
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
+    from qat.lang.AQASM.routines import QRoutine
 
 from bitarray import bitarray, util
 
@@ -43,62 +44,51 @@ class RProgram():
         self.rregs[rang] = name
         self.rbits.extend(util.zeros(n))
 
-    def apply(self, gate: RGate, ctrls: Optional[Set[int]],
-              trgts: Union[int, Set[int]]):
+    def apply(self, gate: RGate, *rbits: int):
         if self.rbits is None:
             raise AttributeError("You should initialize your qubits")
-
-        # print(ctrls)
-        # if ctrls is not None:
-        #     print(len(ctrls))
-
+        if gate == RGate.NOT:
+            ntrgts = 1
+        elif gate == RGate.SWAP:
+            ntrgts = 2
+        else:
+            raise ValueError(f"Unknown gate {gate}")
+        trgts = rbits[-1:-1 * ntrgts - 1:-1]
+        ctrls = rbits[:len(rbits) - ntrgts]
+        # arity = len(rbits) - ntrgts
+        if len(trgts) + len(ctrls) != len(rbits):
+            raise ValueError(f"Wrong number of rbits {len(rbits)}")
+        if ctrls is not None and not set(ctrls).isdisjoint(set(trgts)):
+            raise ValueError("The target and control set should be disjoint")
         ctrl = (ctrls is None or len(ctrls) == 0) or (
             len(ctrls) == 1 and operator.itemgetter(*ctrls)(self.rbits)
             == 1) or (len(ctrls) > 1
                       and all(operator.itemgetter(*ctrls)(self.rbits)))
+        self.ops.append((gate, *ctrls, *trgts))
         if not ctrl:
+            # Nothing to do here
             return
 
-        if isinstance(trgts, int):
-            trgts = {trgts}
-        if ctrls is not None and not ctrls.isdisjoint(trgts):
-            raise ValueError("The target and control set should be disjoint")
-        self.ops.append((gate, ctrls, trgts))
         if gate == RGate.NOT:
             for trgt in trgts:
                 self.rbits.invert(trgt)
         elif gate == RGate.SWAP:
-            if len(trgts) == 2:
-                _trgts = list(trgts)
-                self.rbits[_trgts[1]], self.rbits[_trgts[0]] = self.rbits[
-                    _trgts[0]], self.rbits[_trgts[1]]
-            else:
-                raise ValueError("Swap gates can have only 2 targets")
+            self.rbits[trgts[1]], self.rbits[trgts[0]] = self.rbits[
+                trgts[0]], self.rbits[trgts[1]]
         else:
             raise ValueError(f"Unknown gate {gate}")
 
-    @classmethod
-    def _get_and_apply_gate(cls, qcircuit: 'Circuit', rprogram: RProgram,
-                            gate: str, rbits: Sequence[int]):
-        if not gate.endswith(cls.rev_gate_names):
-            if gate.startswith('_'):
-                return cls._get_and_apply_gate(qcircuit, rprogram,
-                                               qcircuit.gateDic[gate].subgate,
-                                               rbits)
-            else:
-                raise AttributeError(
-                    "Reversible gates: X, SWAP and their controlled versions")
+    def _apply_gate_from_name(self, gate: str, rbits: Sequence[int]):
+
         if gate == 'SWAP':
             ctrls = set(rbits[:-2])
             trgts = set(rbits[-2:])
             rgate = RGate.SWAP
         elif gate == 'X':
             if len(rbits) == 2:
-                return cls._get_and_apply_gate(qcircuit, rprogram, 'CNOT',
-                                               rbits)
+                return self._apply_gate_from_name('CNOT', rbits)
             elif len(rbits) == 3:
-                return cls._get_and_apply_gate(qcircuit, rprogram, 'CCNOT',
-                                               rbits)
+                return self._apply_gate_from_name('CCNOT', rbits)
             else:
                 rgate = RGate.NOT
                 trgts = {rbits[-1]}
@@ -112,10 +102,10 @@ class RProgram():
             trgts = {rbits[2]}
             rgate = RGate.NOT
         else:
-            raise Exception(
+            raise AttributeError(
                 f"Got an unknown gate that passed the first check {gate}")
 
-        rprogram.apply(rgate, ctrls, trgts)
+        self.apply(rgate, *ctrls, *trgts)
 
     def get_result(self) -> bitarray:
         return self.rbits
@@ -135,7 +125,44 @@ class RProgram():
             rang = range(qr.start, qr.start + qr.length)
             name = reg_names.get(rang, None)
             rprogram.qalloc(qr.length, name)
-        for op in qcirc.ops:
-            cls._get_and_apply_gate(qcirc, rprogram, op.gate, op.qbits)
-
+        rprogram.apply_gates_from_circuit(qcirc, qcirc)
         return rprogram
+
+    def apply_gates_from_circuit(self, top_circ: 'Circuit',
+                                 operation_circ: 'Circuit'):
+        for op in operation_circ.ops:
+            gatename = op.gate
+            subcirc = top_circ.gateDic[gatename].circuit_implementation
+            if subcirc is not None:
+                self.apply_gates_from_circuit(top_circ, subcirc)
+            else:
+                if not gatename.endswith(self.rev_gate_names):
+                    if gatename.startswith('_'):
+                        gatename = top_circ.gateDic[gatename].subgate
+                    else:
+                        raise AttributeError(
+                            "Reversible gates accepted: X, SWAP and their controlled versions"
+                        )
+                self._apply_gate_from_name(gatename, op.qbits)
+
+    def apply_gates_from_qroutine(
+        self,
+        qroutine: 'QRoutine',
+    ):
+        """Warn: this work with QRoutine, not with QRoutine lifted to
+        AbstractGate through the @build_gate annotation. If you have such a
+        gate and you to access the underlying QRoutine, use the tilde operator.
+
+        """
+        for op in qroutine.op_list:
+            gatename = op.gate.name
+            if gatename is not None:
+                self._apply_gate_from_name(gatename, op.args)
+                continue
+            if op.gate.subgate is not None:
+                gatename = op.gate.subgate.name
+                if gatename is not None:
+                    self._apply_gate_from_name(gatename, op.args)
+                    continue
+
+            self.apply_gates_from_qroutine(op.gate)
