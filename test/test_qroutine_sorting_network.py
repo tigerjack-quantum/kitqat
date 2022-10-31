@@ -2,6 +2,7 @@ import unittest
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
+from qat.external.qpus.reversible import RProgram
 from qat.external.utils.qroutines import qregs_init as qregs
 from qat.external.utils.qroutines import sorting_network as sn
 from qat.lang.AQASM.program import Program
@@ -27,8 +28,10 @@ class SortingNetworkTestCase(CircuitTestCase):
 
         is_sorted_1 = all(st1[i] <= st1[i + 1] for i in range(halflen - 1))
 
-        return is_sorted_1 and all(st2[i] <= st2[i + 1]
-                                   for i in range(halflen - 1))
+        res = is_sorted_1 and all(st2[i] <= st2[i + 1]
+                                  for i in range(halflen - 1))
+        if not res:
+            raise Exception(f"Halves not sorted {string}")
 
     def _prepare_circuit(self, string, pattern):
         self.pr = Program()
@@ -37,6 +40,49 @@ class SortingNetworkTestCase(CircuitTestCase):
         init = qregs.initialize_qureg_given_bitstring(string,
                                                       self.LITTLE_ENDIAN)
         self.pr.apply(init, self.qr)
+
+    def _simulate_and_check_result(self,
+                                   string: str,
+                                   expected: str,
+                                   check_sorted=True):
+        obtained = self._simulate_and_get_result()
+        if not obtained:
+            raise Exception(f"Unknown flow")
+        is_sorted = all(obtained[i] <= obtained[i + 1]
+                        for i in range(len(string) - 1))
+        if check_sorted:
+            self.assertTrue(is_sorted)
+            self.assertEqual(obtained, expected)
+
+    def _simulate_and_get_result(self):
+        obtained = None
+        if self.REVERSIBLE_ON:
+            cr = self.pr.to_circ(include_matrices=False, submatrices_only=True)
+            rpr = RProgram.circuit_to_rprogram(cr)
+            qridxs = [qbit.index for qbit in self.qr]
+            obtained = ''.join(
+                [str(bit) for i, bit in enumerate(rpr.rbits) if i in qridxs])
+        else:
+            res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
+            i = -1
+            for i, sample in enumerate(res):
+                obtained = sample.state.bitstring
+                if self.SIMULATOR == 'linalg':
+                    self.assertEqual(sample.probability, 1)
+            self.assertEqual(i, 0)
+        return obtained
+
+    def _test_sorter_common(self, string):
+        n = len(string)
+        pattern = sn.get_pattern_sorter(n)
+
+        self._prepare_circuit(string, pattern)
+
+        qrout = sn.build_gate_sorter(pattern)
+        self.pr.apply(qrout, self.qr, self.comps)
+        sorted_string_exp = ''.join(list(sorted(string)))
+
+        self._simulate_and_check_result(string, sorted_string_exp)
 
     @parameterized.expand([
         "0000",
@@ -56,25 +102,8 @@ class SortingNetworkTestCase(CircuitTestCase):
         qrout = sn.build_gate_bitonic_sorter(pattern)
         self.pr.apply(qrout, self.qr, self.comps)
 
-        res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
         sorted_string_exp = ''.join(list(sorted(string)))
-        if self.SIMULATOR == 'linalg':
-            # For QLM
-            if is_bitonic:
-                for sample in res:
-                    if sample.state.bitstring == sorted_string_exp:
-                        self.assertEqual(sample.probability, 1)
-                        break
-        elif self.SIMULATOR == 'pylinalg':
-            # myQLM
-            state = res[0].state
-            obtained = state.bitstring
-            is_sorted = all(obtained[i] <= obtained[i + 1]
-                            for i in range(len(string) - 1))
-
-            if is_bitonic:
-                self.assertTrue(is_sorted)
-                self.assertEqual(obtained, sorted_string_exp)
+        self._simulate_and_check_result(string, sorted_string_exp, is_bitonic)
 
     @parameterized.expand([
         "01",
@@ -86,7 +115,7 @@ class SortingNetworkTestCase(CircuitTestCase):
         "00110111",
     ])
     def test_merger(self, string):
-        are_sorted = self._check_halves_sorted(string)
+        self._check_halves_sorted(string)
         n = len(string)
         pattern = sn.get_pattern_merger(n)
         self._prepare_circuit(string, pattern)
@@ -94,49 +123,8 @@ class SortingNetworkTestCase(CircuitTestCase):
         qrout = sn.build_gate_merger(pattern)
         self.pr.apply(qrout, self.qr, self.comps)
 
-        res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
         sorted_string_exp = ''.join(list(sorted(string)))
-        if self.SIMULATOR == 'linalg':
-            # For QLM
-            if are_sorted:
-                for sample in res:
-                    if sample.state.bitstring == sorted_string_exp:
-                        self.assertEqual(sample.probability, 1)
-                        break
-        elif self.SIMULATOR == 'pylinalg':
-            # myQLM
-            obtained = res[0].state.bitstring
-            is_sorted = all(obtained[i] <= obtained[i + 1]
-                            for i in range(len(string) - 1))
-
-            if are_sorted:
-                self.assertTrue(is_sorted)
-                self.assertEqual(obtained, sorted_string_exp)
-
-    def _test_sorter_common(self, string):
-        n = len(string)
-        pattern = sn.get_pattern_sorter(n)
-
-        self._prepare_circuit(string, pattern)
-
-        qrout = sn.build_gate_sorter(pattern)
-        self.pr.apply(qrout, self.qr, self.comps)
-
-        res = self.simulate_program(self.pr, job_args={'qubits': self.qr})
-        sorted_string_exp = ''.join(list(sorted(string)))
-        if self.SIMULATOR == 'linalg':
-            # For QLM
-            for sample in res:
-                if sample.state.bitstring == sorted_string_exp:
-                    self.assertEqual(sample.probability, 1)
-                    break
-        elif self.SIMULATOR == 'pylinalg':
-            # myQLM
-            obtained = res[0].state.bitstring
-            is_sorted = all(obtained[i] <= obtained[i + 1]
-                            for i in range(len(string) - 1))
-            self.assertTrue(is_sorted)
-            self.assertEqual(obtained, sorted_string_exp)
+        self._simulate_and_check_result(string, sorted_string_exp)
 
     @parameterized.expand([
         "01",
@@ -156,8 +144,19 @@ class SortingNetworkTestCase(CircuitTestCase):
         "10110111",
     ])
     @unittest.skipUnless(
-        CircuitTestCase.SLOW_TEST_ON and CircuitTestCase.QLM_ON,
+        (CircuitTestCase.SLOW_TEST_ON and CircuitTestCase.QLM_ON)
+        or (CircuitTestCase.REVERSIBLE_ON),
         f"Either {CircuitTestCase.SLOW_TEST_ON_REASON} or {CircuitTestCase.QLM_ON_REASON}"
     )
     def test_sorter_qlm(self, string):
+        self._test_sorter_common(string)
+
+    @parameterized.expand([
+        "10110111111100110101000110100011",
+    ])
+    @unittest.skipUnless(
+        CircuitTestCase.REVERSIBLE_ON,
+        f"Only with reversible"
+    )
+    def test_sorter_long(self, string):
         self._test_sorter_common(string)
