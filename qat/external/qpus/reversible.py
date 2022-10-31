@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import operator
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Iterable, Sequence, Union
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -148,21 +148,31 @@ class RProgram():
     def apply_gates_from_qroutine(
         self,
         qroutine: 'QRoutine',
+        qbits: Sequence[int] = [],
     ):
         """Warn: this work with QRoutine, not with QRoutine lifted to
         AbstractGate through the @build_gate annotation. If you have such a
         gate and you to access the underlying QRoutine, use the tilde operator.
 
         """
+        if len(qbits) == 0:
+            qbits = range(qroutine.arity)
+        elif len(qbits) < qroutine.arity:
+            raise Exception(f"Too few qbits {len(qbits)}")
+        qrout_to_orig: dict[int, int] = {
+            a: b
+            for (a, b) in zip(range(qroutine.arity), qbits)
+        }
         for op in qroutine.op_list:
+            op_qbits = [qrout_to_orig[i] for i in op.args]
             gatename = op.gate.name
             if gatename is not None:
-                self._apply_gate_from_name(gatename, op.args)
+                self._apply_gate_from_name(gatename, op_qbits)
                 continue
             if op.gate.subgate is not None:
                 gatename = op.gate.subgate.name
                 if gatename is not None:
-                    self._apply_gate_from_name(gatename, op.args)
+                    self._apply_gate_from_name(gatename, op_qbits)
                     continue
 
-            self.apply_gates_from_qroutine(op.gate)
+            self.apply_gates_from_qroutine(op.gate, op_qbits)

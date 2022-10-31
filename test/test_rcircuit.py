@@ -30,7 +30,6 @@ def _m_gate2(nbits: int) -> QRoutine:
     return qrout
 
 
-
 class TestRProgram(CircuitTestCase):
     nrbits = 10
 
@@ -134,3 +133,25 @@ class TestRProgram(CircuitTestCase):
 
         self.assertEqual(sample.state.bitstring, self.rcr.rbits.to01())
 
+    def test_qroutine_to_rprogram_apply_diff_map(self):
+        pr = Program()
+        qr = pr.qalloc(self.nrbits)
+        for i, qb in enumerate(qr[:3]):
+            pr.apply(X, qb)
+            self.rcr.apply(RGate.NOT, i)
+        # to access the qroutine itself, we need to use ~
+        tgt_qbits = qr[3:-2]
+        breakpoint()
+        qrout = _m_gate2(len(tgt_qbits))
+        pr.apply(qrout, tgt_qbits)
+        cr = pr.to_circ()
+        self.rcr.apply_gates_from_qroutine(qrout,
+                                           [qb.index for qb in tgt_qbits])
+
+        res = self.qpu.submit(cr.to_job())
+        sample = None
+        for sample in res:
+            pass
+        assert sample is not None
+
+        self.assertEqual(sample.state.bitstring, self.rcr.rbits.to01())
