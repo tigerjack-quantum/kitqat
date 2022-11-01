@@ -2,31 +2,43 @@ import functools
 from test.common_circuit import CircuitTestCase
 
 from qat.external.qpus.reversible import RGate, RProgram
-from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, H, X
+from qat.lang.AQASM.gates import CCNOT, SWAP, H, X
+from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
 
 
-# @build_gate("MGATE1", [int], lambda x: x )
+@build_gate("MGATE1", [int], lambda x: x )
 def _m_gate1(nbits: int) -> QRoutine:
     assert nbits > 1, f"{nbits}"
     qrout = QRoutine()
     qw = qrout.new_wires(nbits)
     for wire in qw[1:]:
-        qrout.apply(CNOT, qw[0], wire)
+        qrout.apply(X.ctrl(1), qw[0], wire)
     return qrout
 
 
-# @build_gate("MGATE2", [int], lambda x: x )
+@build_gate("MGATE2", [int], lambda x: x )
 def _m_gate2(nbits: int) -> QRoutine:
     assert nbits > 3
     qrout = QRoutine()
     qw = qrout.new_wires(nbits)
     for i in range(1, len(qw) - 1):
         qrout.apply(SWAP.ctrl(), qw[0], qw[i], qw[i + 1])
-    qrout2 = _m_gate1(nbits)
-    # qrout2 = (~_m_gate1)(nbits)
-    qrout.apply(qrout2, qw)
+    qrout2 = _m_gate1(nbits - 2)
+    qrout.apply(qrout2, qw[0], qw[2], qw[4:])
+    return qrout
+
+def _m_gate3(nbits: int) -> QRoutine:
+    assert nbits > 3
+    qrout = QRoutine()
+    qw = qrout.new_wires(nbits)
+    for i in range(1, len(qw) - 1):
+        qrout.apply(SWAP.ctrl(), qw[0], qw[i], qw[i + 1])
+    # to access the qroutine itself (and not the abstract/param gate generated
+    # through the build gate), we need to use ~
+    qrout2 = (~_m_gate1)(nbits - 2)
+    qrout.apply(qrout2, qw[0], qw[2], qw[4:])
     return qrout
 
 
@@ -102,7 +114,25 @@ class TestRProgram(CircuitTestCase):
         qr = pr.qalloc(5)
         for qb in qr:
             pr.apply(X, qb)
-        pr.apply(_m_gate2(5), qr)
+        qfun = _m_gate3(4)
+        pr.apply(qfun, qr[1], qr[0], qr[4], qr[2])
+
+        cr = pr.to_circ(include_matrices=False, submatrices_only=True)
+        res = self.qpu.submit(cr.to_job())
+        sample = None
+        for sample in res:
+            pass
+        assert sample is not None
+        rpr = RProgram.circuit_to_rprogram(cr)
+        self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
+
+    def test_qcircuit_to_rprogram_with_build_gates(self):
+        pr = Program()
+        qr = pr.qalloc(6)
+        for qb in qr:
+            pr.apply(X, qb)
+        qfun_param = _m_gate2(4)
+        pr.apply(qfun_param, qr[1], qr[3], qr[4], qr[2])
 
         cr = pr.to_circ(include_matrices=False, submatrices_only=True)
         res = self.qpu.submit(cr.to_job())
@@ -119,8 +149,7 @@ class TestRProgram(CircuitTestCase):
         for i, qb in enumerate(qr[:3]):
             pr.apply(X, qb)
             self.rcr.apply(RGate.NOT, i)
-        # to access the qroutine itself, we need to use ~
-        qrout = _m_gate2(self.nrbits)
+        qrout = _m_gate3(self.nrbits)
         pr.apply(qrout, qr)
         cr = pr.to_circ()
         self.rcr.apply_gates_from_qroutine(qrout)
@@ -139,10 +168,8 @@ class TestRProgram(CircuitTestCase):
         for i, qb in enumerate(qr[:3]):
             pr.apply(X, qb)
             self.rcr.apply(RGate.NOT, i)
-        # to access the qroutine itself, we need to use ~
         tgt_qbits = qr[3:-2]
-        breakpoint()
-        qrout = _m_gate2(len(tgt_qbits))
+        qrout = _m_gate3(len(tgt_qbits))
         pr.apply(qrout, tgt_qbits)
         cr = pr.to_circ()
         self.rcr.apply_gates_from_qroutine(qrout,

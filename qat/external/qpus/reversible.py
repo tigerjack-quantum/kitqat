@@ -129,12 +129,24 @@ class RProgram():
         return rprogram
 
     def apply_gates_from_circuit(self, top_circ: 'Circuit',
-                                 operation_circ: 'Circuit'):
+                                 operation_circ: 'Circuit',
+                                 qbits: Sequence[int] = [],
+                                 ):
+        if len(qbits) == 0:
+            qbits = range(operation_circ.nbqbits)
+        elif len(qbits) < operation_circ.nbqbits:
+            raise Exception(f"Too few qbits: {len(qbits)} vs {operation_circ.nbqbits}")
+        qcirc_to_orig: dict[int, int] = {
+            a: b
+            for (a, b) in zip(range(operation_circ.nbqbits), qbits)
+        }
         for op in operation_circ.ops:
             gatename = op.gate
             subcirc = top_circ.gateDic[gatename].circuit_implementation
+            op_qbits = [qcirc_to_orig[i] for i in op.qbits]
             if subcirc is not None:
-                self.apply_gates_from_circuit(top_circ, subcirc)
+                # subcirc can be applied to a different subset of qubits
+                self.apply_gates_from_circuit(top_circ, subcirc, op_qbits)
             else:
                 if not gatename.endswith(self.rev_gate_names):
                     if gatename.startswith('_'):
@@ -143,7 +155,7 @@ class RProgram():
                         raise AttributeError(
                             "Reversible gates accepted: X, SWAP and their controlled versions"
                         )
-                self._apply_gate_from_name(gatename, op.qbits)
+                self._apply_gate_from_name(gatename, op_qbits)
 
     def apply_gates_from_qroutine(
         self,
