@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-
 # In big endian the MSB is on the left, while the LSB is on the right. So in
 # big endian |100> would be equal to 4, while in little endian it will be equal
 # to 1. Big endian is used by both ibm's qiskit and atos' qlm results. However,
@@ -21,6 +20,7 @@ LOGGER = logging.getLogger(__name__)
 
 # Little endian in qubit initialization also means left-to-right bitstring
 # corresponds bottom-to-top in circuit
+@build_gate("QBIT_INIT", [Sequence, int, bool], lambda x, y, _: len(x) + y)
 def _conditionally_initialize_qureg_given_bitarray(
     a_arr: Sequence[int],
     ncontrols: int,
@@ -49,7 +49,6 @@ def _conditionally_initialize_qureg_given_bitarray(
     return qr
 
 
-@build_gate("QBIT_INIT", [list, int, bool])
 def conditionally_initialize_qureg_given_bitarray(
     a_arr: Sequence[int],
     ncontrols: 'QRegister',
@@ -123,7 +122,6 @@ def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
         a_str, 0, little_endian)
 
 
-@build_gate("QBIT_INIT", [int, int, bool])
 def initialize_qureg_given_int(a_int, n_bits, little_endian):
     """Given a decimal integer, initialize the qreg to the proper value
     corresponding to it. Basically, if a_int is 11, i.e. 1011 in binary, the

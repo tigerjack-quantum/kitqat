@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List, Set, Tuple
 
-import nptyping
+# import nptyping
 import numpy as np
 from qat.external.utils.qroutines import qregs_init
 from qat.external.utils.qroutines import sorting_network as sn
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from qat.lang.AQASM.bits import Qbit, QRegister
 
 
-@build_gate("MATRIX_INIT", [nptyping.NDArray])
+@build_gate("MATRIX_INIT", [np.ndarray])
 def initialize_qureg_to_binary_matrix(matrix):
     """Initialize a set of quregs to the value of the binary matrix, row-wise. I.e.
        matrix [[1, 0], [1, 0]] will produce qreg [1, 0, 1, 0].
@@ -73,10 +73,14 @@ def get_columns_as_index_list(nrows: int, ncols: int,
 
 
 def build_matrix_from_sample(sample: 'Sample', qreg_range: Set[int],
-                             shape: Tuple[int, int]) -> nptyping.NDArray:
+                             shape: Tuple[int, int]) -> np.ndarray:
+    return build_matrix_from_bitstring(sample.state.bitstring, qreg_range, shape)
+
+def build_matrix_from_bitstring(bitstring: str, qreg_range: Set[int],
+                             shape: Tuple[int, int]) -> np.ndarray:
     matrix = np.zeros(shape, dtype=np.ubyte)
     interesting_bits = [
-        val for i, val in enumerate(sample.state.bitstring) if i in qreg_range
+        val for i, val in enumerate(bitstring) if i in qreg_range
     ]
     for i, val in enumerate(interesting_bits):
         row = i // shape[1]

@@ -35,6 +35,7 @@ def _common_init(a_l, b_l, overflow_qbit, little_endian):
     LOGGER.debug("b %s", b)
     if b_l > 1:
         cin = qfun.new_wires(1)
+        # This will always be reset to 0 according to cuccaro scheme; however, it is not required when we use our 2-bit adder
         qfun.set_ancillae(cin)
         # qfun.apply(fake("cin"), cin[0])
         LOGGER.debug("cin %s", cin)
@@ -201,7 +202,7 @@ def adder(a_l: int,
     return qfun
 
 
-@build_gate("MAJ", [str])
+@build_gate("MAJ", [str], arity= lambda _: 3)
 def _majority(name):
     """Majority gate."""
     LOGGER.debug("name %s", name)
@@ -215,7 +216,7 @@ def _majority(name):
     return qfun
 
 
-@build_gate("UMA", [str])
+@build_gate("UMA", [str], arity= lambda _: 3)
 def _unmajority(name):
     """Unmajority gate."""
     LOGGER.debug("name %s", name)
