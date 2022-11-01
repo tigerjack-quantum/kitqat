@@ -285,7 +285,7 @@ def _cols(cols_j, var, additional_gates=None):
                     # we already processed this swap
                     continue
             else:
-                targets = [qb for qb in range(i, gate.arity)]
+                targets = [qb for qb in range(i, i + gate.arity)]
 
             if has_ctrls and gate_pre != '•':
                 LOGGER.debug(
