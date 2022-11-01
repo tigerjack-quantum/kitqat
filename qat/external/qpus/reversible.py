@@ -125,6 +125,10 @@ class RProgram():
             rang = range(qr.start, qr.start + qr.length)
             name = reg_names.get(rang, None)
             rprogram.qalloc(qr.length, name)
+        qdiff = qcirc.nbqbits - len(rprogram.rbits)
+        if qdiff > 0:
+            # there are ancillae
+            rprogram.qalloc(qdiff, "ancillae")
         rprogram.apply_gates_from_circuit(qcirc, qcirc)
         return rprogram
 
