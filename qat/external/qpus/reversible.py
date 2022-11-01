@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import operator
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Iterable, Sequence, Union
+from typing import TYPE_CHECKING, Sequence
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -129,37 +129,32 @@ class RProgram():
         if qdiff > 0:
             # there are ancillae
             rprogram.qalloc(qdiff, "ancillae")
+
         rprogram.apply_gates_from_circuit(qcirc, qcirc)
         return rprogram
 
-    def apply_gates_from_circuit(self, top_circ: 'Circuit',
-                                 operation_circ: 'Circuit',
-                                 qbits: Sequence[int] = [],
-                                 ):
-        if len(qbits) == 0:
-            qbits = range(operation_circ.nbqbits)
-        elif len(qbits) < operation_circ.nbqbits:
-            raise Exception(f"Too few qbits: {len(qbits)} vs {operation_circ.nbqbits}")
-        qcirc_to_orig: dict[int, int] = {
-            a: b
-            for (a, b) in zip(range(operation_circ.nbqbits), qbits)
-        }
-        for op in operation_circ.ops:
+    def apply_gates_from_circuit(
+        self,
+        top_circ: 'Circuit',
+        operation_circ: 'Circuit',
+    ):
+        # It's iterating on the inlined version
+        for op in operation_circ:
             gatename = op.gate
             subcirc = top_circ.gateDic[gatename].circuit_implementation
-            op_qbits = [qcirc_to_orig[i] for i in op.qbits]
             if subcirc is not None:
                 # subcirc can be applied to a different subset of qubits
-                self.apply_gates_from_circuit(top_circ, subcirc, op_qbits)
+                self.apply_gates_from_circuit(top_circ, subcirc)
             else:
                 if not gatename.endswith(self.rev_gate_names):
                     if gatename.startswith('_'):
+                        # Should be a custom gate with defined subgate
                         gatename = top_circ.gateDic[gatename].subgate
                     else:
                         raise AttributeError(
                             "Reversible gates accepted: X, SWAP and their controlled versions"
                         )
-                self._apply_gate_from_name(gatename, op_qbits)
+                self._apply_gate_from_name(gatename, op.qbits)
 
     def apply_gates_from_qroutine(
         self,
@@ -169,6 +164,7 @@ class RProgram():
         """Warn: this work with QRoutine, not with QRoutine lifted to
         AbstractGate through the @build_gate annotation. If you have such a
         gate and you to access the underlying QRoutine, use the tilde operator.
+        Indeed, the QRoutine is easier since all the gates are inlined.
 
         """
         if len(qbits) == 0:
