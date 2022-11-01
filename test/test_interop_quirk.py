@@ -58,7 +58,6 @@ class TestQuirk(CircuitTestCase):
                 res_exp = quirk.simulation_data_list(data.output_amplitude)
                 pr = quirk.dict_to_program(data.circuit)
                 cr = quirk.convert_program_to_circuit(pr)
-                # self.draw_circuit(cr)
                 jb = quirk.convert_circuit_to_job(cr,
                                                   time_val=float(
                                                       data.time_parameter))
