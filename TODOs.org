@@ -1,4 +1,8 @@
 * TODO Parametrized circuits
+* TODO Check circuit to program conversions (utils.qatmgmt.gates)
+- State "TODO"       from              [2022-10-30 dom 17:46]
+  - Extend test coverage
+  - Check with qat-gatesplitter
 * TODO Check qat.core.circuit_builder.matrix_util
   - arg_ph(np matrix) to get the argument of a gate from its matrix
   - gen_ph(angle) generate gate from an angle
