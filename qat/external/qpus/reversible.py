@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class RGate(Enum):
     NOT = auto()
     SWAP = auto()
+    RESET = auto()
 
 
 class RProgram():
@@ -51,6 +52,8 @@ class RProgram():
             ntrgts = 1
         elif gate == RGate.SWAP:
             ntrgts = 2
+        elif gate == RGate.RESET:
+            ntrgts = 1
         else:
             raise ValueError(f"Unknown gate {gate}")
         trgts = rbits[-1:-1 * ntrgts - 1:-1]
@@ -75,6 +78,8 @@ class RProgram():
         elif gate == RGate.SWAP:
             self.rbits[trgts[1]], self.rbits[trgts[0]] = self.rbits[
                 trgts[0]], self.rbits[trgts[1]]
+        elif gate == RGate.RESET:
+            self.rbits[trgt] = 0
         else:
             raise ValueError(f"Unknown gate {gate}")
 
@@ -141,6 +146,13 @@ class RProgram():
         # It's iterating on the inlined version
         for op in operation_circ:
             gatename = op.gate
+            if gatename is None:
+                if op.type == 1:
+                    # measure operation, NOP
+                    continue
+                elif op.type == 2:
+                    # reset
+                    self.apply(RGate.RESET, op.qbits)
             subcirc = top_circ.gateDic[gatename].circuit_implementation
             if subcirc is not None:
                 # subcirc can be applied to a different subset of qubits
