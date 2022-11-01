@@ -3,7 +3,7 @@
 import logging
 from functools import partial
 
-from qat.lang.AQASM.gates import CCNOT, CNOT, X, H
+from qat.lang.AQASM.gates import CCNOT, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 

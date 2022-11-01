@@ -3,14 +3,11 @@ from test.common_circuit import CircuitTestCase
 
 import numpy as np
 from parameterized import parameterized
+from qat.external.qpus.reversible import RProgram
 from qat.external.utils.qroutines.linalg import gauss_jordan_isd4 as gji
 from qat.external.utils.qroutines.linalg import matrix as qmatrix
-from qat.external.utils.qroutines.linalg import rref
-from qat.external.utils.qatmgmt import results
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
-
-from qat.core.console import display
 
 
 class GjiTestCase(CircuitTestCase):
@@ -29,6 +26,7 @@ class GjiTestCase(CircuitTestCase):
         swap_qregs = pr.qalloc(swap_anc_n)
         if add_anc_n > 0:
             add_qregs = pr.qalloc(add_anc_n)
+            raise Exception("Unhandled")
         else:
             add_qregs = None
         return pr, qregs_rows, add_qregs, swap_qregs, qbit_range
@@ -49,42 +47,46 @@ class GjiTestCase(CircuitTestCase):
         ncols = n + 1
         # concatenate the syndrome to the original matrix
         matrix_ext = np.hstack((matrix, syndrome))
-        skip_rightmost_val = (False,) if r == n else (False, True)
+        skip_rightmost_val = (False, ) if r == n else (False, True)
 
         for skip_rightmost in skip_rightmost_val:
             with self.subTest(skip_rightmost=skip_rightmost):
                 pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
                     matrix_ext)
-                gji_gate = gji.get_rref(nrows, ncols, skip_rightmost,
-                                        n)
+                gji_gate = gji.get_rref(nrows, ncols, skip_rightmost, n)
                 if add_qregs:
                     pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
                 else:
                     pr.apply(gji_gate, qregs_rows, swap_qregs)
-                # print(pr.qbit_count)
 
                 cr = pr.to_circ()
-                # input("data")
-                # display(cr, max_depth=2)
-                if test_u:
-                    # we measure all the qubits
-                    res = self.qpu.submit(cr.to_job())
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    if test_u:
+                        # we measure all the qubits
+                        bitstring = rpr.rbits.to01()
+                    else:
+                        # ... otw only the qubits containing the matrix
+                        bitstring = ''.join(
+                            [rpr.rbits[qb.index] for qb in qbit_range])
                 else:
-                    # ... otw only the qubits containing the matrix
-                    res = self.qpu.submit(cr.to_job(qubits=qbit_range))
+                    if test_u:
+                        # we measure all the qubits
+                        res = self.qpu.submit(cr.to_job())
+                    else:
+                        # ... otw only the qubits containing the matrix
+                        res = self.qpu.submit(cr.to_job(qubits=qbit_range))
 
-                self.assertEqual(len(res), 1)
+                    self.assertEqual(len(res), 1)
+                    sample = None
+                    for sample in res:
+                        pass
+                    if sample is None:
+                        raise Exception("Unknown flow")
+                    bitstring = sample.state.bitstring
 
-                # This is equivalent to sample = res[0], but on
-                # QLM only through iteration the sample result will be
-                # initialized
-                for sample in res:
-                    pass
-
-                mat_gji = qmatrix.build_matrix_from_sample(
-                    sample, qbit_range, (nrows, ncols))
-                # print(mat_gji)
-                # input("data")
+                mat_gji = qmatrix.build_matrix_from_bitstring(
+                    bitstring, qbit_range, (nrows, ncols))
                 mat_gji_diag = mat_gji.diagonal()
                 mat_gji_sim = Matrix(matrix_ext).rref(pivots=False) % 2
                 mat_gji_sim_diag = mat_gji_sim.diagonal()
@@ -103,26 +105,28 @@ class GjiTestCase(CircuitTestCase):
                         # Additionally, if we didn't skip operations on the
                         # rightmost r*k matrix, the results on this portion
                         # should be equal.
-                        np.testing.assert_array_equal(mat_gji[:,r:n], mat_gji_sim[:,r:n])
-                    # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
-                    if add_qregs and test_u:
-                        add_bitstring, swap_bitstring = results.get_qregs_to_bitstring_from_sample(
-                            [add_qregs, swap_qregs], sample)
-                        u = rref.build_u_matrix_from_bitstrings(
-                            swap_bitstring, add_bitstring, r)
-                        if not skip_rightmost:
-                            check_matrix = matrix_ext
-                            check_against = mat_gji
-                        else:
-                            # if we skipped the righmost rxn matrix, we should
-                            # check only the leftmost one AND the syndrome
-                            range_cols = list(range(r))
-                            # append syndrome
-                            range_cols.append(n)
-                            check_matrix = matrix_ext[:, range_cols]
-                            check_against = mat_gji[:, range_cols]
-                        np.testing.assert_array_equal(u @ check_matrix % 2,
-                                                      check_against)
+                        np.testing.assert_array_equal(mat_gji[:, r:n],
+                                                      mat_gji_sim[:, r:n])
+                    # # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
+                    # if add_qregs and test_u:
+                    #     raise Exception("Impossible")
+                    #     add_bitstring, swap_bitstring = results.get_qregs_to_bitstring_from_sample(
+                    #         [add_qregs, swap_qregs], sample)
+                    #     u = rref.build_u_matrix_from_bitstrings(
+                    #         swap_bitstring, add_bitstring, r)
+                    #     if not skip_rightmost:
+                    #         check_matrix = matrix_ext
+                    #         check_against = mat_gji
+                    #     else:
+                    #         # if we skipped the righmost rxn matrix, we should
+                    #         # check only the leftmost one AND the syndrome
+                    #         range_cols = list(range(r))
+                    #         # append syndrome
+                    #         range_cols.append(n)
+                    #         check_matrix = matrix_ext[:, range_cols]
+                    #         check_against = mat_gji[:, range_cols]
+                    #     np.testing.assert_array_equal(u @ check_matrix % 2,
+                    #                                   check_against)
                 else:
                     # in this case, we just check that at least one element on
                     # the diagonal is 0. This is enough to make the algorithm
@@ -156,9 +160,12 @@ class GjiTestCase(CircuitTestCase):
 
     @parameterized.expand([
         ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
-        ("3x6", np.array([[0, 1, 1, 1, 1, 0], [0, 0, 1, 0, 0, 0], [1, 1, 0, 1, 0, 1]])),
+        ("3x6",
+         np.array([[0, 1, 1, 1, 1, 0], [0, 0, 1, 0, 0, 0], [1, 1, 0, 1, 0,
+                                                            1]])),
     ])
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON
+                         or CircuitTestCase.REVERSIBLE_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
@@ -168,7 +175,8 @@ class GjiTestCase(CircuitTestCase):
         ("3x5", np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0], [0, 1, 1, 0, 1]])),
         ("3x5", np.array([[1, 0, 0, 1, 0], [0, 0, 0, 0, 0], [1, 1, 0, 1, 1]])),
     ])
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON,
+    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON
+                         or CircuitTestCase.REVERSIBLE_ON,
                          CircuitTestCase.SLOW_TEST_ON_REASON)
     def test_no_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
