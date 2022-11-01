@@ -28,8 +28,9 @@ def build_u_matrix_from_sample(sample, nsquare):
     """Build the matrix of transformations applied to obtain the RREF. I.e., if
     original matrix was A and its RREF is B, we have U * B = A.
 
-    This function will return the U matrix by analyzing the ancilla qubits
-    produced by the RREF gate.
+    This function will return the U matrix by analyzing the intermediate
+    measurements on the ancilla (swap and add) qubits produced by the RREF
+    gate.
 
     """
     if len(sample.intermediate_measurements) != 2:
