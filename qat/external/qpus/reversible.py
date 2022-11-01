@@ -79,7 +79,7 @@ class RProgram():
             self.rbits[trgts[1]], self.rbits[trgts[0]] = self.rbits[
                 trgts[0]], self.rbits[trgts[1]]
         elif gate == RGate.RESET:
-            self.rbits[trgt] = 0
+            self.rbits[trgts[0]] = 0
         else:
             raise ValueError(f"Unknown gate {gate}")
 
