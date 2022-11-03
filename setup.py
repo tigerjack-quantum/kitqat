@@ -19,7 +19,7 @@ tests_requirements = [
 
 setup(
     name="qat-utils",
-    version="1.4.1",
+    version="1.4.2",
     description="Some useful extension to Atos Qat language",
     url="https://github.com/tigerjack/qat-utils",
     author="tigerjack",
