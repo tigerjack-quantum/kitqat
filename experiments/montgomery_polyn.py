@@ -40,7 +40,7 @@ def degree(a: bitarray) -> int:
     degree = len(a) - a.find(1) - 1
     return degree
 
-def _convert_and_print_res(pr: Program, rang: range, dq: list):
+def _convert_and_print_res(pr: Program, rang: dict, dq: list):
         circ = pr.to_circ(include_matrices=False, submatrices_only=True)
         rcr = RProgram.circuit_to_rprogram(circ, rang)
         res_whole = rcr.rbits
@@ -48,6 +48,7 @@ def _convert_and_print_res(pr: Program, rang: range, dq: list):
         print(res_whole_named)
         print(f"res w/ deque {[res_whole[i.index] for i in dq]}")
         print([qb.index for qb in dq])
+        return rcr
 
 
 def main():
@@ -81,8 +82,8 @@ def main():
     br = prog.qalloc(k + 1)
     rang[range(prog.qbit_count, prog.qbit_count + k + 1)] = 'c'
     cr = prog.qalloc(k + 1)
-    rang[range(prog.qbit_count, prog.qbit_count + k + 1)] = 'anc'
-    ancr = prog.qalloc(k + 1)
+    rang[range(prog.qbit_count, prog.qbit_count + k)] = 'anc'
+    ancr = prog.qalloc(k)
     # print(rang)
 
     prog.apply(qregs.initialize_qureg_given_bitstring('0' + a, False), ar)
@@ -104,31 +105,7 @@ def main():
     print(f"Exp {poly_str(res_exp)}; {res_exp}")
     # should be a * b * r^{-1}
     prog1 = deepcopy(prog)
-    # print(len(ar))
-    # print(len(br))
-    # print(len(cr))
-    # print(len(nr))
 
-    # #
-    # dq = deque([qb for qb in cr])
-    # # c idxs are [2k + 1, ..., 3k]
-    # adder = marith.mcadd(k + 1)
-    # for i, abit in enumerate(reversed(ar[1:])):
-    #     print("-" * 20)
-    #     print(f"it {i}")
-    #     # test
-    #     _convert_and_print_res(prog1, rang, dq)
-    #     # end test
-    #     print("c = a[i] and (c xor b")
-    #     prog1.apply(adder, abit, br, dq)
-    #     _convert_and_print_res(prog1, rang, dq)
-    #     print("c = c[k] and (c xor n ")
-    #     prog1.apply(CNOT, dq[k], ancr[i])
-    #     prog1.apply(adder, ancr[i], nr, dq)
-    #     _convert_and_print_res(prog1, rang, dq)
-    #     print("Shifting")
-    #     dq.rotate()
-    #     _convert_and_print_res(prog1, rang, dq)
 
     qrout = marith.mmul(k)
     prog1.apply(qrout, ar, br, cr, nr, ancr)
@@ -140,10 +117,9 @@ def main():
     # print(res)
     # for sample in res:
     #     print(sample)
-    # display(circ, max_depth=2)
-    rcr = RProgram.circuit_to_rprogram(circ, rang)
+    display(circ, max_depth=2)
     dq_fake = [qb for qb in cr[1:]] + [cr[0]]
-    _convert_and_print_res(prog1, rang, dq_fake)
+    rcr = _convert_and_print_res(prog1, rang, dq_fake)
 
     # res_whole = rcr.rbits
     # print(f"res w/ deque {[res_whole[i.index] for i in cr]}")

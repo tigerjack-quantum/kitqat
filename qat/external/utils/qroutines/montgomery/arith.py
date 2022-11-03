@@ -31,7 +31,7 @@ def mcadd(nbits: int) -> QRoutine:
     return qf
 
 
-@build_gate("M_MUL", [int], arity=lambda x: x * 5 + 5)
+@build_gate("M_MUL", [int], arity=lambda x: x * 5 + 4)
 def mmul(k: int) -> QRoutine:
     """It performs |a>|b>|0...0>|n>|anc> -> |a>|b>|a*b*r^{-1}>|n>|anc>.
     Sizes should be |k>|k>|k>|k+1>|k>.
@@ -54,7 +54,7 @@ def mmul(k: int) -> QRoutine:
     cr = qf.new_wires(k + 1)
     # qf.set_ancillae(c[0])
     nr = qf.new_wires(k + 1)
-    anc = qf.new_wires(k + 1)
+    anc = qf.new_wires(k)
 
     c_dq = deque([qb for qb in cr])
     # c idxs are [2k + 1, ..., 3k]
