@@ -117,6 +117,39 @@ def mmul2(k: int) -> QRoutine:
     return qf
 
 
+@build_gate("M_MUL", [int], arity=lambda x: x * 4 - 1)
+def mmul3(k: int) -> QRoutine:
+    """TODO Version from Jang et al. 2021 of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
+    Without ancillae.
+
+    It performs |a>|b>|0...0> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
+    modulus n. Even if n is a bitstring of length k+1, we already know that
+    n[k] (the MSB, = x^k) is 1. For this reason, we expect the n qreg to be of
+    length k.
+
+    Length of registers are |k>|k>|k>|k>.
+
+    Check :
+
+    """
+    qf = QRoutine()
+    ar = qf.new_wires(k)
+    br = qf.new_wires(k)
+    cr = qf.new_wires(k)
+    # Since we do not take LSB and MSB of n as input
+    nr = qf.new_wires(k-1)
+
+    c_dq = deque([qb for qb in cr])
+    cadder1 = mcadd(k)
+    # we skip the LSB of modulus. We know it's 1 already.
+    cadder2 = mcadd(k-1)
+    for i, abit in enumerate(reversed(ar)):
+        qf.apply(cadder1, abit, br, c_dq)
+        qf.apply(cadder2, c_dq[k-1], nr, list(islice(c_dq, 0, k-1)))
+        c_dq.rotate()
+    return qf
+
+
 @build_gate("M_MUL_FIXED_N", [int, str], arity=lambda x, _: x * 4 + 3)
 def mmul_fixed_n(k: int, modulus: str) -> QRoutine:
     """It performs |a>|b>|0...0>|anc> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
@@ -180,6 +213,35 @@ def mmul_fixed_n2(k: int, modulus: str) -> QRoutine:
         qf.apply(CNOT, ancr[i], c_dq[0])
     return qf
 
+
+@build_gate("M_MUL_FIXED_N", [str], arity=lambda x: (len(x)+1) * 3)
+def mmul_fixed_n3(modulus: str) -> QRoutine:
+    """TODO Version from Jang et al. 2021 of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
+    It performs |a>|b>|0...0>|anc> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
+    modulus n. Even if n is a bitstring of length k+1, we already know that
+    n[k] (the MSB, = x^k) is 1; same for n[0]. For this reason, we expect the n qreg to be of
+    length k-1, i.e. modulus = n[1:k]
+
+    Length of registers are |k>|k>|k>|k>.
+
+    Check :
+
+    """
+    qf = QRoutine()
+    k = len(modulus) + 1
+    ar = qf.new_wires(k)
+    br = qf.new_wires(k)
+    cr = qf.new_wires(k)
+
+    c_dq = deque([qb for qb in cr])
+    adder = mcadd(k)
+    # we skip the MSB and LSB of modulus. We know it's 1 already.
+    const_cadder = m_const_cadd(k-1, modulus)
+    for i, abit in enumerate(reversed(ar)):
+        qf.apply(adder, abit, br, c_dq)
+        qf.apply(const_cadder, c_dq[k-1], list(islice(c_dq, 0, k-1)))
+        c_dq.rotate()
+    return qf
 
 # @build_gate("M_EXP_FIXED_N_FIXED_E", [int, str, str])
 # # def mexp(a: bitarray, e: bitarray, n: bitarray, r: bitarray) -> bitarray:
