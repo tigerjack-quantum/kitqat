@@ -48,7 +48,7 @@ class TestRProgram(CircuitTestCase):
     def setUp(self):
         super().setUp()
         self.rcr = RProgram()
-        self.rcr.qalloc(self.nrbits)
+        self.rcr.ralloc(self.nrbits)
         self._test_arr = ['0'] * self.nrbits
 
     def test_not(self):

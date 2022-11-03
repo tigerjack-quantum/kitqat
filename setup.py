@@ -9,6 +9,7 @@ install_requirements = [
     "qat-lang",
     "typing",
     "numpy>=1.15",
+    "bitarray",
 ]
 
 tests_requirements = [
@@ -18,7 +19,7 @@ tests_requirements = [
 
 setup(
     name="qat-utils",
-    version="0.2.0",
+    version="1.4.2",
     description="Some useful extension to Atos Qat language",
     url="https://github.com/tigerjack/qat-utils",
     author="tigerjack",
@@ -29,7 +30,7 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering",
     ],
     keywords="qat atos quantum qlm",
@@ -38,5 +39,5 @@ setup(
     tests_requires=tests_requirements,
     test_suite="unittest",
     include_package_data=True,
-    python_requires=">=3.8,<3.9",
+    python_requires=">=3.9",
 )
