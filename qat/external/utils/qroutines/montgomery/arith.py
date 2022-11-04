@@ -1,12 +1,12 @@
 """
 Montgomery multiplication for polynomials
 """
+from collections import deque
+from itertools import islice
+
 from qat.lang.AQASM.gates import CCNOT, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
-from qat.external.utils.qroutines import qregs_init as qregs
-from collections import deque
-from itertools import islice
 
 
 @build_gate("M_ADD", [int], arity=lambda x: x * 2)
@@ -43,7 +43,8 @@ def mcadd(nbits: int) -> QRoutine:
         qf.apply(CCNOT, ctrl, w1, w2)
     return qf
 
-@build_gate("M_CONST_CADD", [int, str], arity=lambda x, _: x  + 1)
+
+@build_gate("M_CONST_CADD", [int, str], arity=lambda x, _: x + 1)
 def m_const_cadd(nbits: int, bitstring: str) -> QRoutine:
     """Controlled bitwise add |ctrl>|a> -> |ctrl>|a xor b>, with b constant bitstring of the same len of a."""
     qf = QRoutine()
@@ -84,6 +85,7 @@ def mmul1(k: int) -> QRoutine:
         c_dq.rotate()
     return qf
 
+
 @build_gate("M_MUL", [int], arity=lambda x: x * 5)
 def mmul2(k: int) -> QRoutine:
     """It performs |a>|b>|0...0>|n>|anc> -> |a>|b>|a*b*r^{-1}>|n>|anc>.
@@ -110,7 +112,7 @@ def mmul2(k: int) -> QRoutine:
     adder = mcadd(k)
     for i, abit in enumerate(reversed(ar)):
         qf.apply(adder, abit, br, c_dq)
-        qf.apply(CNOT, c_dq[k-1], ancr[i])
+        qf.apply(CNOT, c_dq[k - 1], ancr[i])
         qf.apply(adder, ancr[i], nr, c_dq)
         c_dq.rotate()
         qf.apply(CNOT, ancr[i], c_dq[0])
@@ -137,15 +139,15 @@ def mmul3(k: int) -> QRoutine:
     br = qf.new_wires(k)
     cr = qf.new_wires(k)
     # Since we do not take LSB and MSB of n as input
-    nr = qf.new_wires(k-1)
+    nr = qf.new_wires(k - 1)
 
     c_dq = deque([qb for qb in cr])
     cadder1 = mcadd(k)
     # we skip the LSB of modulus. We know it's 1 already.
-    cadder2 = mcadd(k-1)
-    for i, abit in enumerate(reversed(ar)):
+    cadder2 = mcadd(k - 1)
+    for _, abit in enumerate(reversed(ar)):
         qf.apply(cadder1, abit, br, c_dq)
-        qf.apply(cadder2, c_dq[k-1], nr, list(islice(c_dq, 0, k-1)))
+        qf.apply(cadder2, c_dq[k - 1], nr, list(islice(c_dq, 0, k - 1)))
         c_dq.rotate()
     return qf
 
@@ -182,6 +184,7 @@ def mmul_fixed_n(k: int, modulus: str) -> QRoutine:
         c_dq.rotate()
     return qf
 
+
 @build_gate("M_MUL_FIXED_N", [int, str], arity=lambda x, _: x * 4)
 def mmul_fixed_n2(k: int, modulus: str) -> QRoutine:
     """Optimized version of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
@@ -206,7 +209,7 @@ def mmul_fixed_n2(k: int, modulus: str) -> QRoutine:
     const_cadder = m_const_cadd(k, modulus)
     for i, abit in enumerate(reversed(ar)):
         qf.apply(adder, abit, br, c_dq)
-        qf.apply(CNOT, c_dq[k-1], ancr[i])
+        qf.apply(CNOT, c_dq[k - 1], ancr[i])
         # qf.apply(adder, ancr[i], nr, c_dq)
         qf.apply(const_cadder, ancr[i], c_dq)
         c_dq.rotate()
@@ -214,7 +217,7 @@ def mmul_fixed_n2(k: int, modulus: str) -> QRoutine:
     return qf
 
 
-@build_gate("M_MUL_FIXED_N", [str], arity=lambda x: (len(x)+1) * 3)
+@build_gate("M_MUL_FIXED_N", [str], arity=lambda x: (len(x) + 1) * 3)
 def mmul_fixed_n3(modulus: str) -> QRoutine:
     """TODO Version from Jang et al. 2021 of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
     It performs |a>|b>|0...0>|anc> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
@@ -222,7 +225,7 @@ def mmul_fixed_n3(modulus: str) -> QRoutine:
     n[k] (the MSB, = x^k) is 1; same for n[0]. For this reason, we expect the n qreg to be of
     length k-1, i.e. modulus = n[1:k]
 
-    Length of registers are |k>|k>|k>|k>.
+    Length of registers are |k>|k>|k>.
 
     Check :
 
@@ -236,35 +239,56 @@ def mmul_fixed_n3(modulus: str) -> QRoutine:
     c_dq = deque([qb for qb in cr])
     adder = mcadd(k)
     # we skip the MSB and LSB of modulus. We know it's 1 already.
-    const_cadder = m_const_cadd(k-1, modulus)
-    for i, abit in enumerate(reversed(ar)):
+    const_cadder = m_const_cadd(k - 1, modulus)
+    for _, abit in enumerate(reversed(ar)):
         qf.apply(adder, abit, br, c_dq)
-        qf.apply(const_cadder, c_dq[k-1], list(islice(c_dq, 0, k-1)))
+        qf.apply(const_cadder, c_dq[k - 1], list(islice(c_dq, 0, k - 1)))
         c_dq.rotate()
     return qf
 
-# @build_gate("M_EXP_FIXED_N_FIXED_E", [int, str, str])
-# # def mexp(a: bitarray, e: bitarray, n: bitarray, r: bitarray) -> bitarray:
-# def mexp_fixed_n(k: int, modulus: str, exp: str, r: str) -> QRoutine:
-#     """e is the exponent, in binary form, \nin the field.
-#     c is first initialized to the Montgomery multiplicative unit, i.e. r
-#     """
-#     qf = QRoutine()
-#     ar = qf.new_wires(k + 1)
-#     cr = qf.new_wires(k + 1)
-#     # TODO get exact dimension
-#     ancr = qf.new_wires(k * 2)
-#     qf.apply(qregs.initialize_qureg_given_bitstring(r, False), cr)
 
-#     # first bit (MSB) of exponent shoud be 1
-#     exp_start = e.find(1)
-#     if exp_start < 0:
-#         return qf
+@build_gate("M_SQUARE", [int])
+def msquare(k: int):
+    """|a>|0...0>|n> -> |a>|a^2>|n>"""
+    qf = QRoutine()
+    ar = qf.new_wires(k)
+    cr = qf.new_wires(k)
+    nr = qf.new_wires(k - 1)
 
-#     cmul = mmul_fixed_n(k, modulus)
-#     for ebit in reversed(exp[exp_start:]):
-#         if ebit:
-#             cmul(cr, ar, )
-#             c = mul_simple3(c, an, n)
-#         an = square_simple1(an, n)
-#     return c
+    anc = qf.new_wires(1)
+    qf.set_ancillae(anc)
+
+    c_dq = deque([qb for qb in cr])
+    cadder1 = mcadd(k)
+    # we skip the LSB of modulus. We know it's 1 already.
+    cadder2 = mcadd(k - 1)
+    for _, abit in enumerate(reversed(ar)):
+        qf.apply(CNOT, abit, anc)
+        qf.apply(cadder1, anc, ar, c_dq)
+        qf.apply(CNOT, abit, anc)
+        qf.apply(cadder2, c_dq[k - 1], nr, list(islice(c_dq, 0, k - 1)))
+        c_dq.rotate()
+    return qf
+
+
+@build_gate("M_SQUARE_FIXN", [str])
+def msquare_fixedn(modulus: str):
+    """|a>|0...0>|0> -> |a>|a^2>|0>"""
+    qf = QRoutine()
+    k = len(modulus) + 1
+    ar = qf.new_wires(k)
+    cr = qf.new_wires(k)
+    anc = qf.new_wires(1)
+    qf.set_ancillae(anc)
+
+    c_dq = deque([qb for qb in cr])
+    adder = mcadd(k)
+    # we skip the MSB and LSB of modulus. We know it's 1 already.
+    const_cadder = m_const_cadd(k - 1, modulus)
+    for _, abit in enumerate(reversed(ar)):
+        qf.apply(CNOT, abit, anc)
+        qf.apply(adder, anc, ar, c_dq)
+        qf.apply(CNOT, abit, anc)
+        qf.apply(const_cadder, c_dq[k - 1], list(islice(c_dq, 0, k - 1)))
+        c_dq.rotate()
+    return qf
