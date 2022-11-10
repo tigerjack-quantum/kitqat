@@ -1,5 +1,5 @@
 """
-Montgomery multiplication for polynomials
+Montgomery routines for polynomials
 """
 from collections import deque
 from itertools import islice

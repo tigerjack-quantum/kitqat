@@ -4,7 +4,7 @@ from copy import deepcopy
 from bitarray import bitarray
 from qat.external.qpus.reversible import RProgram
 from qat.external.utils.qroutines import qregs_init as qregs
-from qat.external.utils.qroutines.montgomery import arith as marith
+from qat.external.utils.qroutines.algebraic.gf2x import montgomery_arith as marith
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.gates import X, CNOT
 from qat.core.console import display
