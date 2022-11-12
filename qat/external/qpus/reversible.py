@@ -136,7 +136,7 @@ class RProgram():
 
     def filter_result_by_name(self, *name: str):
         res = {}
-        for rang, _name in self.rregs.items():
+        for _name, rang  in self.rregs.items():
             if _name in name:
                 res[_name] = self.rbits[rang.start:rang.stop]
         return res
