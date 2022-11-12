@@ -1,5 +1,7 @@
-"""This gauss-jordan procedure is specifically tailored for ISD
-It contains optimization 5 only w.r.t. the other one, which does not seem t provide any benefit
+"""This gauss-jordan procedure is specifically tailored for ISD It contains
+optimization 5 only w.r.t.
+
+the other one, which does not seem t provide any benefit
 """
 import logging
 
@@ -13,13 +15,12 @@ FAKE = H
 
 
 def get_required_ancillae(r: int):
-    """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
-the RREF.
+    """Get the number of additional (swap_ancilla, add_ancilla) qubits required
+    for the RREF.
 
     :param nrows: Rows of matrix
     :param ncols: Cols of matrix
     :returns: (swap_ancilla, add_ancilla)
-
     """
     add_ancilla_n = r * (r - 1)
     # Add ancilla is necessary an even number
@@ -41,7 +42,6 @@ def get_rref(r, n, skip_rightmost=True):
 
     The number of swap and add ancillae required can be obtained through the
     get_ancillae function.
-
     """
     qrout = QRoutine()
 

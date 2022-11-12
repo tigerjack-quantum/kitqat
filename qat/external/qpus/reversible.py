@@ -1,7 +1,7 @@
-"""For now it is only a test bench, creating a fake Program object. Virtually,
- it should be integrated into qat, taking a circuit as input and running the
- simulation.
+"""For now it is only a test bench, creating a fake Program object.
 
+Virtually, it should be integrated into qat, taking a circuit as input
+and running the simulation.
 """
 from __future__ import annotations
 
@@ -20,16 +20,17 @@ logger = logging.getLogger(__name__)
 
 
 class RGate(Enum):
-    """Reversible Gate: NOT, SWAP or RESET"""
+    """Reversible Gate: NOT, SWAP or RESET."""
     NOT = auto()
     SWAP = auto()
     RESET = auto()
 
 
 class RProgram():
-    """A Reversible equivalent of the qat Program object. Differently from it,
-    when you call the apply function, the reversible gate is immediately
-    applied onto the reversible bit.
+    """A Reversible equivalent of the qat Program object.
+
+    Differently from it, when you call the apply function, the
+    reversible gate is immediately applied onto the reversible bit.
     """
 
     rev_gate_names = ('X', 'NOT', 'SWAP')
@@ -41,10 +42,10 @@ class RProgram():
         self.rregs: dict[str, range] = {}
 
     def ralloc(self, n=1, name: Optional[str] = None):
-        """Allocate a register of `n` reversible bits. `n` defaults to 1. You
-        can additionally decide to name this register passing the `name`
-        parameter.
+        """Allocate a register of `n` reversible bits.
 
+        `n` defaults to 1. You can additionally decide to name this
+        register passing the `name` parameter.
         """
         rang = range(len(self.rbits),
                      len(self.rbits) + n)  # upper not included
@@ -56,8 +57,10 @@ class RProgram():
         self.rbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, *rbits: int):
-        """Apply a Reversible gate on the reversible bits. Last bits are the
-        targets, first the controls (if any)."""
+        """Apply a Reversible gate on the reversible bits.
+
+        Last bits are the targets, first the controls (if any).
+        """
         if self.rbits is None:
             raise AttributeError("You should initialize your qubits")
         if gate == RGate.NOT:
@@ -96,7 +99,11 @@ class RProgram():
             raise ValueError(f"Unknown gate {gate}")
 
     def _apply_gate_from_name(self, gatename: str, rbits: Sequence[int]):
-        """Apply a gate given the gatename. Allowed SWAP, X, NOT, CNOT, C-NOT, CX, C-X, CCNOT, C-C-NOT, C-C-X, CCX"""
+        """Apply a gate given the gatename.
+
+        Allowed SWAP, X, NOT, CNOT, C-NOT, CX, C-X, CCNOT, C-C-NOT,
+        C-C-X, CCX
+        """
 
         if gatename == 'SWAP':
             ctrls = set(rbits[:-2])
@@ -144,8 +151,9 @@ class RProgram():
     @classmethod
     def circuit_to_rprogram(
         cls, qcirc: Circuit, reg_names: dict[str, range] = dict()) -> RProgram:
-        """Convert a qat Circuit object to a reversible program :class:`~qat.external.qpus.reversible.RProgram`, applying all the operations contained.
-        """
+        """Convert a qat Circuit object to a reversible program
+        :class:`~qat.external.qpus.reversible.RProgram`, applying all the
+        operations contained."""
         rprogram = RProgram()
         reg_names_inv = dict((v,k) for k, v in reg_names.items())
         for qr in qcirc.qregs:
@@ -171,8 +179,8 @@ class RProgram():
         embedded. `operation_circ` can indeed be a circuit implementation of a
         gate embedded in the `top_circ`.
 
-        If you want to apply all the gates from the top_circ, you can set the two to the same value.
-
+        If you want to apply all the gates from the top_circ, you can
+        set the two to the same value.
         """
         # It's iterating on the inlined version
         for op in operation_circ:

@@ -1,12 +1,9 @@
-"""
-See http://staff.ustc.edu.cn/~csli/graduate/algorithms/book6/chap28.htm
-and https://fileadmin.cs.lth.se/cs/Personal/Rolf_Karlsson/lect10.pdf
-for reference.
+"""See http://staff.ustc.edu.cn/~csli/graduate/algorithms/book6/chap28.htm and
+https://fileadmin.cs.lth.se/cs/Personal/Rolf_Karlsson/lect10.pdf for reference.
 
-The original work is in Chapter 27.3,4,5 of
-T. H. Cormen, C. E. Leiserson, R. L. Rivest, and C. Stein,
-Introduction to algorithms, second edition.
-The MIT Press and McGraw-Hill Book Company, 2001.
+The original work is in Chapter 27.3,4,5 of T. H. Cormen, C. E.
+Leiserson, R. L. Rivest, and C. Stein, Introduction to algorithms,
+second edition. The MIT Press and McGraw-Hill Book Company, 2001.
 """
 import logging
 from typing import Any, Dict
@@ -48,10 +45,10 @@ def build_gate_bitonic_sorter(net_data: Dict[str, Any]) -> QRoutine:
 
 
 def get_pattern_bitonic_sorter(n) -> Dict[str, Any]:
-    """Given how it's built, n should be a power of 2 and, if not, it returns the
-    combination rounding up to the top power of 2. If the original n is not a
-    power of 2, you may want to adapt the circuit avoiding the use of the last
-    bits.
+    """Given how it's built, n should be a power of 2 and, if not, it returns
+    the combination rounding up to the top power of 2. If the original n is not
+    a power of 2, you may want to adapt the circuit avoiding the use of the
+    last bits.
 
     Returns a dictionary containing the:
     1. n_lines, the number of lines required; it is the rounding up of n to the

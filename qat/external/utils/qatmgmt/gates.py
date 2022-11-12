@@ -95,7 +95,7 @@ def extract_custom_gates_from_program(
 
 
 def from_circuit_to_program(circ: 'Circuit') -> Program:
-    """Returns a program built starting from circuit operations"""
+    """Returns a program built starting from circuit operations."""
     pr = Program()
     pr_qregs = []
     all_qbits = []
@@ -131,8 +131,8 @@ def generate_gate_from_circuit_op(
     generate_variables_if_missing=False,
     apply_gatedef_ops=True,
 ) -> tuple['Gate', dict[str, 'Variable']]:
-    """Returns a gate and, if it depends on a variable (f.e. parametrized gates) the
- name of that variable
+    """Returns a gate and, if it depends on a variable (f.e. parametrized
+    gates) the name of that variable.
 
     :param Circuit circuit: the top-level circuit
     :param Op operation: the operation of teh circuit
@@ -168,14 +168,13 @@ def get_gate_from_gate_name(
     apply_gatedef_ops=True,
 ) -> tuple['Gate', dict[str, 'Variable']]:
     """Get a gate from its name inspecting all the relevant datastructures
-    contained in the circuit
+    contained in the circuit.
 
     :param Circuit circuit: the top-level circuit
     :param str name: the name of the gate
     :param dict[str, Variable] variables_map: a map of variable names
     :param bool apply_gatedef_ops: specify if you want to apply all the final
     :param bool operations, like ctrl, dagger, conjugate and transpose
-
     """
     LOGGER.debug("name is %s", name)
     vname_to_var: dict[str, 'Variable'] = {}
@@ -331,7 +330,9 @@ def get_np_matrix_from_circuit_by_op(circuit: 'Circuit',
 def get_np_matrix_from_circuit_by_name(circuit: 'Circuit',
                                        gate_name: str) -> np.ndarray:
     """Return the matrix associated to a gate by looking at the circuit object.
-    Raise an exception if the matrix is not found"""
+
+    Raise an exception if the matrix is not found
+    """
     gate_def = circuit.gateDic[gate_name]
     gate_matrix_qlm = gate_def.matrix
     if gate_matrix_qlm is None:

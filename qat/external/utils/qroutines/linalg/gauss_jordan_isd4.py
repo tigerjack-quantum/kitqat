@@ -1,5 +1,4 @@
-"""This gauss-jordan procedure is specifically tailored for ISD
-"""
+"""This gauss-jordan procedure is specifically tailored for ISD."""
 import logging
 from functools import partial
 
@@ -13,12 +12,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 def get_required_ancillae(r: int) -> tuple[int, int]:
-    """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
-the RREF.
+    """Get the number of additional (swap_ancilla, add_ancilla) qubits required
+    for the RREF.
 
     :param nrows: Rows of matrix
     :returns: (swap_ancilla, add_ancilla)
-
     """
     # Add ancilla is necessary an even number, so there is no actual rounding here
     swap_ancilla_n = (r * (r - 1)) // 2

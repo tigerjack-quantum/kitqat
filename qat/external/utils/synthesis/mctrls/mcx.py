@@ -8,8 +8,10 @@ MTCCNOT = AbstractGate("MTCCNOT", [int, bool], arity=lambda x, _: x + 2)
 
 @build_gate("X", [], arity=lambda : 1)
 def x():
-    """Transform an X gate into HSSH. It can be used in stabilizer
-circuits."""
+    """Transform an X gate into HSSH.
+
+    It can be used in stabilizer circuits.
+    """
     qfun = QRoutine()
     wires = qfun.new_wires(1)
     qfun.apply(H, wires[0])
@@ -20,7 +22,7 @@ circuits."""
 
 @build_gate("CCNOT", [], arity=lambda : 3)
 def ccnot():
-    """ CCNOT implemented with CNOT, H and T gates"""
+    """CCNOT implemented with CNOT, H and T gates."""
     qfun = QRoutine()
     wires = qfun.new_wires(3)
     qfun.set_ancillae(anc)
@@ -65,8 +67,10 @@ def mccnot_sqrroot(n_tgts, global_phase_enabled):
 
 @build_gate("MTCCNOT", [int, bool])
 def mccnot_ht(n_tgts, global_phase_enabled):
-    """With this gate, we always have a global phase. That is, the result is
-    equivalent to a multi-target toffoli up to a global phase.
+    """With this gate, we always have a global phase.
+
+    That is, the result is equivalent to a multi-target toffoli up to a
+    global phase.
     """
     # nielsen chuang, p.182
     qfun = QRoutine()

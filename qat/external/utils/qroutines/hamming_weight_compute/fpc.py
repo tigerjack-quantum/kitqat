@@ -19,10 +19,12 @@ LOGGER = logging.getLogger(__name__)
 @build_gate("FPC_WCOM", [int, int, dict])
 def get_qroutine_for_qubits_weight(a_len: int, cout_len: int,
                                    patterns_dict: dict):
-    """QRoutine to compute the hamming weight of a set of qubits. The patterns_dict
-    must be computed in advance by the :func:
-    `~get_qroutine_for_qubits_weight_get_pattern`. This will help to have a
-    precise estimate of the number of qbits and gates that will be required.
+    """QRoutine to compute the hamming weight of a set of qubits.
+
+    The patterns_dict must be computed in advance by the :func:
+    `~get_qroutine_for_qubits_weight_get_pattern`. This will help to
+    have a precise estimate of the number of qbits and gates that will
+    be required.
     """
 
     assert a_len == patterns_dict['n_lines']
@@ -61,7 +63,7 @@ def get_qroutine_for_qubits_weight(a_len: int, cout_len: int,
 
 def get_to_measure_qubits(a_qs: 'QRegister', cout_qs: 'QRegister',
                           patterns_dict: dict):
-    """It returns the list of qbits containing the final result"""
+    """It returns the list of qbits containing the final result."""
     to_measure_qubits = []
     for j in patterns_dict['results']:
         if j[0] == 'a':
@@ -76,13 +78,13 @@ def get_to_measure_qubits(a_qs: 'QRegister', cout_qs: 'QRegister',
 
 
 def get_qroutine_for_qubits_weight_get_pattern(n):
-    """Given n bits, it returns a dictionary containing the pattern to compute the
-    weight of this n bits, ie:
+    """Given n bits, it returns a dictionary containing the pattern to compute
+    the weight of this n bits, ie:
 
-    #. n_lines: required qubits (>= n, the closest power of 2)
-    #. n_couts, the total number of couts required by the adders
-    #. adders_pattern, the pattern of adders
-    #. results, the bits containing the final results
+    #. n_lines: required qubits (>= n, the closest power of 2) #.
+    n_couts, the total number of couts required by the adders #.
+    adders_pattern, the pattern of adders #. results, the bits
+    containing the final results
     """
     steps = ceil(log(n, 2))
     # TODO maybe we can use fewer lines
@@ -136,7 +138,7 @@ def get_qroutine_for_qubits_weight_check(a_l, cout_l, weight_int,
     """Circuit to check if a given set of register (a_qs) has weight equal to
     weight_int. In this case, eq is set to 1. The compute_eq flag is
     particularly useful if we want to use a compute-uncompute pattern, while
-    still leaving the eq qubit untouched. In other words, the flow will be
+    still leaving the eq qubit untouched. In other words, the flow will be.
 
     1. apply weight_check(True)
     2. apply weight_checl(False).dag()

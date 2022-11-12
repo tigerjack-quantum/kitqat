@@ -88,7 +88,7 @@ def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
     0, 1 and 3 of the qreg. # 3->0; 2->1; 1->2; 0;3 Note that the qreg has the
     most significant bit in the rightmost part (little endian) of the qreg,
     i.e. the most significant bit is on qreg 0. In the circuit, it means that
-    the most significant bits are the lower ones of the qreg
+    the most significant bits are the lower ones of the qreg.
 
     :param a_str: the binary digits bit string
     :param qreg: the QuantumRegister on which the integer should be set
@@ -96,7 +96,6 @@ def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
 
     :return False if no operation was performed, True if at least one operation
     was performed
-
     """
     return _conditionally_initialize_qureg_given_bitarray(
         a_str, 0, little_endian)
@@ -108,7 +107,7 @@ def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
     0, 1 and 3 of the qreg. # 3->0; 2->1; 1->2; 0;3 Note that the qreg has the
     most significant bit in the rightmost part (little endian) of the qreg,
     i.e. the most significant bit is on qreg 0. In the circuit, it means that
-    the most significant bits are the lower ones of the qreg
+    the most significant bits are the lower ones of the qreg.
 
     :param a_str: the binary digits bit string
     :param qreg: the QuantumRegister on which the integer should be set
@@ -116,7 +115,6 @@ def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
 
     :return False if no operation was performed, True if at least one operation
     was performed
-
     """
     return conditionally_initialize_qureg_given_bitstring(
         a_str, 0, little_endian)
@@ -131,7 +129,6 @@ def initialize_qureg_given_int(a_int, n_bits, little_endian):
     :param a_int: the integer in decimal base
     :param qreg: the QuantumRegister on which the integer should be set
     :param circuit: the QuantumCircuit containing the q_reg
-
     """
     a_str = conversion.get_bitstring_from_int(a_int, n_bits)
     return initialize_qureg_given_bitstring(a_str, little_endian)

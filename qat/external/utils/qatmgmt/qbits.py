@@ -39,9 +39,8 @@ def get_qbits_from_program_idxs(program: 'Program', *idxs: int):
 
 def add_name_to_qbits_following_pattern(program: 'Program',
                                         pattern: Dict[str, List['Qbit']]):
-    """It allows to add a fake gate to a set of qbit in order to
-    help their visualization.
-    """
+    """It allows to add a fake gate to a set of qbit in order to help their
+    visualization."""
     for k, qbits in pattern.items():
         for i, qbit in enumerate(qbits):
             absgate = fake_gate(f"{k}_{i}", 1)

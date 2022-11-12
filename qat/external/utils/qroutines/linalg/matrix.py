@@ -15,13 +15,12 @@ if TYPE_CHECKING:
 
 @build_gate("MATRIX_INIT", [np.ndarray])
 def initialize_qureg_to_binary_matrix(matrix):
-    """Initialize a set of quregs to the value of the binary matrix, row-wise. I.e.
-       matrix [[1, 0], [1, 0]] will produce qreg [1, 0, 1, 0].
+    """Initialize a set of quregs to the value of the binary matrix, row-wise.
+    I.e. matrix [[1, 0], [1, 0]] will produce qreg [1, 0, 1, 0].
 
     :param matrix: The binary matrix
     :param little_endian:  The endiannes
     :returns: QRoutine
-
     """
     n_rows, n_cols = matrix.shape
     qfun = QRoutine()
@@ -128,12 +127,11 @@ def move_columns_end_gate(data: dict) -> QRoutine:
     The returned QRoutine takes as input:
     #. the original matrix qbits (A), initialized using the
     :meth: `initialize_qureg_to_binary_matrix` function.
-    #. a qreg (COMB) of the same length of the matrix columns. The vector should 
+    #. a qreg (COMB) of the same length of the matrix columns. The vector should
     contain a 1 for each column that is selected, i.e., for each column that will
     be moved at the end of the matrix
     #. a qreg (COMP) containing the qubits that will be used for the swaps. All qbits
     must be 0.
-
     """
     ncols: int = data['n_cols']
     comp_len: int = data['n_comps']

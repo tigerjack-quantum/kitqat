@@ -336,7 +336,6 @@ def _get_gate(gate_pre, additional_gates, var):
 
 
 def _get_abstrat_gate(gate_id, gate_arg, var):
-
     # def rot_angle(angle, pauli_name):
     #     # I think this is valid for RX, RY, RZ,but ATM is unused
     #     # R_n (angle) = e^(-i * angle/2 * d_n), where d_n is the matrix of

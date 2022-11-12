@@ -38,9 +38,10 @@ class AdderTestCase(CircuitTestCase):
         (24, 7),
     ])
     def test_adder(self, a_int, b_int):
-        """
-        Add a_int and b_int and check their result.
-        The number of bits used to represent the ints is computed at runtime.
+        """Add a_int and b_int and check their result.
+
+        The number of bits used to represent the ints is computed at
+        runtime.
         """
         bits = misc.get_required_bits(a_int, b_int)
         for little_endian, overflow in itertools.product((True, False),
@@ -117,8 +118,8 @@ class AdderTestCase(CircuitTestCase):
         (24, 7),
     ])
     def test_adder_inverse(self, a_int, b_int):
-        """
-        Test the adder + adder_inverse.
+        """Test the adder + adder_inverse.
+
         The output should be equal to the original state of the circuit.
         """
         bits = misc.get_required_bits(a_int, b_int)
@@ -172,9 +173,7 @@ class AdderTestCase(CircuitTestCase):
         (2, 33),
     ])
     def test_adder_different_size_b_bigger(self, a_int, b_int):
-        """
-        Test the adder when the output reg is bigger than the other one.
-        """
+        """Test the adder when the output reg is bigger than the other one."""
         a_bits = misc.get_required_bits(a_int)
         b_bits = misc.get_required_bits(b_int)
         if a_bits == b_bits:
@@ -247,9 +246,7 @@ class AdderTestCase(CircuitTestCase):
         (33, 2),
     ])
     def test_adder_different_size_a_bigger(self, a_int, b_int):
-        """
-        Test the adder when the output reg is smaller than the other one.
-        """
+        """Test the adder when the output reg is smaller than the other one."""
         a_bits = misc.get_required_bits(a_int)
         b_bits = misc.get_required_bits(b_int)
         if a_bits == b_bits:
@@ -320,9 +317,7 @@ class AdderTestCase(CircuitTestCase):
         (7, 5),
     ])
     def test_halves_sum(self, a_int, bits):
-        """
-        Add two halves of a register on a given number of bits
-        """
+        """Add two halves of a register on a given number of bits."""
         if bits % 2 == 1:
             bits = bits + 1
         self.logger.debug("n bits = %s", bits)
@@ -484,8 +479,8 @@ class AdderTestCase(CircuitTestCase):
         (9, 9),
     ])
     def test_a_smaller_than_b(self, a_int, b_int):
-        """Test that a is smaller than b and, if that is the case, store 1 in cout
-        """
+        """Test that a is smaller than b and, if that is the case, store 1 in
+        cout."""
         # Prepare qubits
         bits = misc.get_required_bits(a_int, b_int)
         self.logger.debug("n bits = %s", bits)
@@ -529,9 +524,10 @@ class AdderTestCase(CircuitTestCase):
         (1, 1),
     ])
     def test_two_bits_adder(self, a_int, b_int):
-        """
-        Add a_int and b_int and check their result.
-        The number of bits used to represent the ints is computed at runtime.
+        """Add a_int and b_int and check their result.
+
+        The number of bits used to represent the ints is computed at
+        runtime.
         """
         # bits = misc.get_required_bits(a_int, b_int)
         self._prepare_adder_circuit(1, 1, True)
@@ -577,9 +573,10 @@ class AdderTestCase(CircuitTestCase):
         (1, 1),
     ])
     def test_two_bits_comparator(self, a_int, b_int):
-        """
-        Add a_int and b_int and check their result.
-        The number of bits used to represent the ints is computed at runtime.
+        """Add a_int and b_int and check their result.
+
+        The number of bits used to represent the ints is computed at
+        runtime.
         """
         # bits = misc.get_required_bits(a_int, b_int)
         self._prepare_adder_circuit(1, 1, True)

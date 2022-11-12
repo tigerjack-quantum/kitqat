@@ -17,10 +17,11 @@ def get_required_bits(*ints: int,
                       signed=False,
                       ones_complement=False,
                       twos_complement=True) -> int:
-    """Get the minimum number of bits required to represent all the integers. Said
-differently, it returns the log2 of the biggest positive / smallest negative
-integer. The number of bits required depends on the enabled flags.
+    """Get the minimum number of bits required to represent all the integers.
 
+    Said differently, it returns the log2 of the biggest positive /
+    smallest negative integer. The number of bits required depends on
+    the enabled flags.
     """
     if len(ints) == 0:
         raise ValueError("number of ints must be greater than 0")

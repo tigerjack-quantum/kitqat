@@ -141,10 +141,8 @@ class GjiTestCase(CircuitTestCase):
         ("3x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]])),
     ])
     def test_iden(self, name, matrix):
-        """They should give the same results of a normal GJI and an identity matrix on
-        the left
-
-        """
+        """They should give the same results of a normal GJI and an identity
+        matrix on the left."""
         self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True)
 

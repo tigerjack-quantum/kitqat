@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Ripple adder example based on Cuccaro et al., quant-ph/0410184.
-"""
+"""Ripple adder example based on Cuccaro et al., quant-ph/0410184."""
 
 import itertools
 import logging
@@ -268,11 +266,10 @@ def high_bit_only():
 
 @build_gate("2BIT_ADDER", [])
 def two_bit_adder() -> QRoutine:
-    """
-    The out qubit should be initialized to 0.
-    Given two 1-qubit registers a and b, it returns 1 on the output qubit if
-    a > b.
+    """The out qubit should be initialized to 0.
 
+    Given two 1-qubit registers a and b, it returns 1 on the output
+    qubit if a > b.
     """
     qrout = QRoutine()
     a = qrout.new_wires(1)
@@ -289,11 +286,10 @@ def two_bit_adder() -> QRoutine:
 
 @build_gate("2BIT_COMP", [])
 def two_bit_comparator() -> QRoutine:
-    """
-    The out qubit should be initialized to 0.
-    Given two 1-qubit registers a and b, it returns 1 on the output qubit if
-    a > b.
+    """The out qubit should be initialized to 0.
 
+    Given two 1-qubit registers a and b, it returns 1 on the output
+    qubit if a > b.
     """
     qrout = QRoutine()
     a = qrout.new_wires(1)

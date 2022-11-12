@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def get_partial_applications_to_general_matrix_generator(**kwargs: float):
-    """kwargs should be theta, phi, lambd, in this order"""
+    """kwargs should be theta, phi, lambd, in this order."""
     return functools.partial(get_most_general_gate_matrix_generator(),
                              **kwargs)
 

@@ -52,10 +52,10 @@ def generate(a_qs: 'QRegister', flip_qs: 'QRegister',
 
 
 def get_generate_pattern(n, r) -> Dict[str, Any]:
-    """Given how it's built, n should be a power of 2 and, if not, it returns the
-    combination rounding up to the top power of 2. If the original n is not a
-    power of 2, you may want to adapt the circuit avoiding the use of the last
-    bits.
+    """Given how it's built, n should be a power of 2 and, if not, it returns
+    the combination rounding up to the top power of 2. If the original n is not
+    a power of 2, you may want to adapt the circuit avoiding the use of the
+    last bits.
 
     Returns a dictionary containing the:
     1. n_lines, the number of lines required; it is the rounding up of n to a

@@ -1,5 +1,4 @@
-"""This gauss-jordan procedure is specifically tailored for ISD
-"""
+"""This gauss-jordan procedure is specifically tailored for ISD."""
 import logging
 from functools import partial
 
@@ -13,12 +12,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 def get_required_ancillae(r: int):
-    """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
-the RREF.
+    """Get the number of additional (swap_ancilla, add_ancilla) qubits required
+    for the RREF.
 
     :param nrows: Rows of matrix
     :returns: (swap_ancilla, add_ancilla)
-
     """
     add_ancilla_n = r * (r - 1)
     # Add ancilla is necessary an even number, so there is no actual rounding here
@@ -44,7 +42,6 @@ def get_rref(r, n, skip_rightmost, norig):
 
     WARN: if you pass the syndrome(s) as well as columns of the matrix, you
     should put them at the end of the original matrix (i.e., after column n-1)
-
     """
     qrout = QRoutine()
     if norig < 0:
