@@ -38,7 +38,7 @@ class RProgram():
         self.ops = [
         ]  # should contain the list of operations for logging purposes
         self.rbits: bitarray = bitarray()
-        self.rregs: dict[range, str] = {}
+        self.rregs: dict[str, range] = {}
 
     def ralloc(self, n=1, name: Optional[str] = None):
         """Allocate a register of `n` reversible bits. `n` defaults to 1. You
@@ -52,7 +52,7 @@ class RProgram():
             name = str(rang)[6:].replace(', ', '_').replace(')', '')
         elif name in self.rregs:
             raise ValueError("Already another register with the same name")
-        self.rregs[rang] = name
+        self.rregs[name] = rang
         self.rbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, *rbits: int):
@@ -121,7 +121,7 @@ class RProgram():
             rgate = RGate.NOT
         else:
             raise AttributeError(
-                f"Got an unknown gate that passed the first check {gate}")
+                f"Got an unknown gate that passed the first check {gatename}")
 
         self.apply(rgate, *ctrls, *trgts)
 
@@ -130,24 +130,25 @@ class RProgram():
 
     def get_result_by_name(self):
         res = {}
-        for rang, name in self.rregs.items():
+        for name, rang in self.rregs.items():
             res[name] = self.rbits[rang.start:rang.stop]
         return res
 
     @classmethod
     def circuit_to_rprogram(
-        cls, qcirc: Circuit, reg_names: dict[range, str] = dict()) -> RProgram:
+        cls, qcirc: Circuit, reg_names: dict[str, range] = dict()) -> RProgram:
         """Convert a qat Circuit object to a reversible program :class:`~qat.external.qpus.reversible.RProgram`, applying all the operations contained.
         """
         rprogram = RProgram()
+        reg_names_inv = dict((v,k) for k, v in reg_names.items())
         for qr in qcirc.qregs:
             rang = range(qr.start, qr.start + qr.length)
-            name = reg_names.get(rang, None)
+            name = reg_names_inv.get(rang, None)
             rprogram.ralloc(qr.length, name)
         qdiff = qcirc.nbqbits - len(rprogram.rbits)
         if qdiff > 0:
-            # there are ancillae
-            rprogram.ralloc(qdiff, "ancillae")
+            # there are ancillae automatically generated from subroutines
+            rprogram.ralloc(qdiff, "auto_ancillae")
 
         rprogram.apply_gates_from_circuit(qcirc, qcirc)
         return rprogram
