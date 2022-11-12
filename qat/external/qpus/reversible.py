@@ -134,6 +134,13 @@ class RProgram():
             res[name] = self.rbits[rang.start:rang.stop]
         return res
 
+    def filter_result_by_name(self, *name: str):
+        res = {}
+        for _name, rang  in self.rregs.items():
+            if _name in name:
+                res[_name] = self.rbits[rang.start:rang.stop]
+        return res
+
     @classmethod
     def circuit_to_rprogram(
         cls, qcirc: Circuit, reg_names: dict[str, range] = dict()) -> RProgram:
