@@ -26,6 +26,12 @@ def _conditionally_initialize_qureg_given_bitarray(
     ncontrols: int,
     little_endian: bool,
 ) -> QRoutine:
+    """The input array should be in BIG ENDIAN notation; you can decide on the
+    endianness of the qubit.
+
+    :param a_arr: a sequence of bits, in BIG ENDIAN
+    :param little_endian: whether to initialize the qubits in little endian (contrarily to the input) or not
+    """
     qr = QRoutine()
     bits = qr.new_wires(len(a_arr))
     gate = X
