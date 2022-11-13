@@ -12,7 +12,6 @@ from qat.lang.AQASM.program import Program
 
 
 class PopulationCountTestCase(CircuitTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -22,13 +21,12 @@ class PopulationCountTestCase(CircuitTestCase):
                 fpc.LOGGER.addHandler(handler)
 
     def _test_fpc_common(self, bitstring):
-        nwr_dict = fpc.get_qroutine_for_qubits_weight_get_pattern(
-            len(bitstring))
+        nwr_dict = fpc.get_qroutine_for_qubits_weight_get_pattern(len(bitstring))
         self.logger.debug("nwr_dict %s", nwr_dict)
         program = Program()
 
-        a = program.qalloc(nwr_dict['n_lines'])
-        cout = program.qalloc(nwr_dict['n_couts'])
+        a = program.qalloc(nwr_dict["n_lines"])
+        cout = program.qalloc(nwr_dict["n_couts"])
         self.logger.debug("a %s", a)
         self.logger.debug("cout %s", cout)
 
@@ -43,8 +41,7 @@ class PopulationCountTestCase(CircuitTestCase):
 
         if self.REVERSIBLE_ON:
             rpr = RProgram.circuit_to_rprogram(circ)
-            res = ''.join(
-                [str(rpr.rbits[qbit.index]) for qbit in to_measure_qubits])
+            res = "".join([str(rpr.rbits[qbit.index]) for qbit in to_measure_qubits])
             # obtained = ''.join(
             #     [str(bit) for i, bit in enumerate(rpr.rbits) if i in qridxs])
             obtained = int(res[::-1], 2)
@@ -52,33 +49,37 @@ class PopulationCountTestCase(CircuitTestCase):
             #     print(op1.gate, op1.qbits, op2)
         else:
             res = self.qpu.submit(
-                circ.to_job(qubits=[qb.index for qb in to_measure_qubits]))
+                circ.to_job(qubits=[qb.index for qb in to_measure_qubits])
+            )
             self.logger.debug("res %s", res)
             counts = len(res)
             self.assertEqual(counts, 1)
             for sample in res:
-                if self.SIMULATOR == 'linalg':
+                if self.SIMULATOR == "linalg":
                     self.assertEqual(sample.probability, 1)
             obtained = sample.state.lsb_int
         self.assertEqual(obtained, exp_w)
 
-    @parameterized.expand([
-        ("0000"),
-        ("0101"),
-        ("0001"),
-        ("1101"),
-        ("1001"),
-        ("1111"),
-        ("10110100"),
-        ("11001011"),
-        ("11010000"),
-    ])
+    @parameterized.expand(
+        [
+            "0000",
+            "0101",
+            "0001",
+            "1101",
+            "1001",
+            "1111",
+            "10110100",
+            "11001011",
+            "11010000",
+        ]
+    )
     # @unittest.skipIf(DEBUG, "already working")
     def test_fpc_weight_compute(self, name):
         self._test_fpc_common(name)
 
-    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         f"Only enabled with reversible simulation")
+    @unittest.skipUnless(
+        CircuitTestCase.REVERSIBLE_ON, f"Only enabled with reversible simulation"
+    )
     def test_fpc_weight_compute_random_big(self):
         nbits = 64
         dec = random.randrange(0, 2**nbits - 1)

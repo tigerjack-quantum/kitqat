@@ -57,33 +57,40 @@ def _conditionally_initialize_qureg_given_bitarray(
 
 def conditionally_initialize_qureg_given_bitarray(
     a_arr: Sequence[int],
-    ncontrols: 'QRegister',
+    ncontrols: "QRegister",
     little_endian,
 ) -> QRoutine:
     return _conditionally_initialize_qureg_given_bitarray(
-        a_arr, ncontrols, little_endian)
+        a_arr, ncontrols, little_endian
+    )
 
 
-def conditionally_initialize_qureg_given_bitstring(a_str, ncontrols,
-                                                   little_endian) -> QRoutine:
+def conditionally_initialize_qureg_given_bitstring(
+    a_str, ncontrols, little_endian
+) -> QRoutine:
     a_list = [int(c) for c in a_str]
     # a_list = map(int, a_str)
     return _conditionally_initialize_qureg_given_bitarray(
-        a_list, ncontrols, little_endian)
+        a_list, ncontrols, little_endian
+    )
 
 
 def conditionally_initialize_qureg_to_complement_of_bitstring(
-        a_str, ncontrols, little_endian) -> QRoutine:
+    a_str, ncontrols, little_endian
+) -> QRoutine:
     a_n_str = conversion.get_negated_bistring(a_str)
     return conditionally_initialize_qureg_given_bitstring(
-        a_n_str, ncontrols, little_endian)
+        a_n_str, ncontrols, little_endian
+    )
 
 
 def conditionally_initialize_qureg_to_complement_of_bitarray(
-        a_str, ncontrols, little_endian) -> QRoutine:
+    a_str, ncontrols, little_endian
+) -> QRoutine:
     a_n_str = conversion.get_negated_bitarray(a_str)
     return _conditionally_initialize_qureg_given_bitarray(
-        a_n_str, ncontrols, little_endian)
+        a_n_str, ncontrols, little_endian
+    )
 
 
 # @build_gate("QBIT_INIT_BITA", [Union[List, nptyping.NDArray], bool])
@@ -103,8 +110,7 @@ def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
     :return False if no operation was performed, True if at least one operation
     was performed
     """
-    return _conditionally_initialize_qureg_given_bitarray(
-        a_str, 0, little_endian)
+    return _conditionally_initialize_qureg_given_bitarray(a_str, 0, little_endian)
 
 
 def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
@@ -122,8 +128,7 @@ def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
     :return False if no operation was performed, True if at least one operation
     was performed
     """
-    return conditionally_initialize_qureg_given_bitstring(
-        a_str, 0, little_endian)
+    return conditionally_initialize_qureg_given_bitstring(a_str, 0, little_endian)
 
 
 def initialize_qureg_given_int(a_int, n_bits, little_endian):

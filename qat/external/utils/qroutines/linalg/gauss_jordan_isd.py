@@ -24,7 +24,7 @@ def get_required_ancillae(r: int):
     return swap_ancilla_n, add_ancilla_n
 
 
-@build_gate('GJISD', [int, int, bool, int])
+@build_gate("GJISD", [int, int, bool, int])
 def get_rref(r, n, skip_rightmost, norig):
     """Apply RREF to a matrix H.
 
@@ -70,8 +70,12 @@ def get_rref(r, n, skip_rightmost, norig):
         if x != r - 1:
             for i in range(x + 1, r):
                 qrout.apply(X, qregs_rows[x][x])
-                qrout.apply(rowswap(), qregs_rows[x], qregs_rows[i],
-                            swap_ancillae[swap_ancilla_idx])
+                qrout.apply(
+                    rowswap(),
+                    qregs_rows[x],
+                    qregs_rows[i],
+                    swap_ancillae[swap_ancilla_idx],
+                )
                 qrout.apply(X, qregs_rows[x][x])
                 swap_ancilla_idx += 1
 
@@ -80,13 +84,14 @@ def get_rref(r, n, skip_rightmost, norig):
             # obv, we skip the row under analysis
             if i == x:
                 continue
-            qrout.apply(rowadd(), qregs_rows[i], qregs_rows[x],
-                        add_ancillae[add_ancilla_idx])
+            qrout.apply(
+                rowadd(), qregs_rows[i], qregs_rows[x], add_ancillae[add_ancilla_idx]
+            )
             add_ancilla_idx += 1
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int, int])
+@build_gate("ROWSWAP", [int, int, int])
 def get_row_swap(r: int, n: int, pivot_idx: int):
     """WARN: the pivot element is checked against state 1 (improvement 4)
     r, n: ISD params
@@ -104,7 +109,7 @@ def get_row_swap(r: int, n: int, pivot_idx: int):
     return qrout
 
 
-@build_gate('ROWADD', [int, int, int])
+@build_gate("ROWADD", [int, int, int])
 def get_row_addition(r: int, n: int, pivot_idx: int):
     """
     r, n: ISD params

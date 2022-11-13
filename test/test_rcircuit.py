@@ -8,7 +8,7 @@ from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
 
 
-@build_gate("MGATE1", [int], lambda x: x )
+@build_gate("MGATE1", [int], lambda x: x)
 def _m_gate1(nbits: int) -> QRoutine:
     assert nbits > 1, f"{nbits}"
     qrout = QRoutine()
@@ -18,7 +18,7 @@ def _m_gate1(nbits: int) -> QRoutine:
     return qrout
 
 
-@build_gate("MGATE2", [int], lambda x: x )
+@build_gate("MGATE2", [int], lambda x: x)
 def _m_gate2(nbits: int) -> QRoutine:
     assert nbits > 3
     qrout = QRoutine()
@@ -28,6 +28,7 @@ def _m_gate2(nbits: int) -> QRoutine:
     qrout2 = _m_gate1(nbits - 2)
     qrout.apply(qrout2, qw[0], qw[2], qw[4:])
     return qrout
+
 
 def _m_gate3(nbits: int) -> QRoutine:
     assert nbits > 3
@@ -51,18 +52,18 @@ class TestRProgram(CircuitTestCase):
         super().setUp()
         self.rcr = RProgram()
         self.rcr.ralloc(self.nrbits)
-        self._test_arr = ['0'] * self.nrbits
+        self._test_arr = ["0"] * self.nrbits
 
     def test_not(self):
         self.rcr.apply(RGate.NOT, 1)
-        self._test_arr[1] = '1'
-        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
+        self._test_arr[1] = "1"
+        self.assertEqual(self.rcr.rbits.to01(), "".join(self._test_arr))
 
     def test_swap(self):
         self.rcr.apply(RGate.NOT, 3)
         self.rcr.apply(RGate.SWAP, 3, 2)
-        self._test_arr[2] = '1'
-        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
+        self._test_arr[2] = "1"
+        self.assertEqual(self.rcr.rbits.to01(), "".join(self._test_arr))
 
     def test_not_disjoints(self):
         self.rcr.rbits.invert(3)
@@ -75,11 +76,11 @@ class TestRProgram(CircuitTestCase):
         ctrls = {2, 5}
         for i in ctrls:
             self.rcr.rbits.invert(i)
-            self._test_arr[i] = '1'
+            self._test_arr[i] = "1"
         for i in trgts:
-            self._test_arr[i] = '1'
+            self._test_arr[i] = "1"
             self.rcr.apply(RGate.NOT, *ctrls, i)
-        self.assertEqual(self.rcr.rbits.to01(), ''.join(self._test_arr))
+        self.assertEqual(self.rcr.rbits.to01(), "".join(self._test_arr))
 
     def test_program_to_rprogram_error(self):
         pr = Program()
@@ -174,8 +175,7 @@ class TestRProgram(CircuitTestCase):
         qrout = _m_gate3(len(tgt_qbits))
         pr.apply(qrout, tgt_qbits)
         cr = pr.to_circ()
-        self.rcr.apply_gates_from_qroutine(qrout,
-                                           [qb.index for qb in tgt_qbits])
+        self.rcr.apply_gates_from_qroutine(qrout, [qb.index for qb in tgt_qbits])
 
         res = self.qpu.submit(cr.to_job())
         sample = None

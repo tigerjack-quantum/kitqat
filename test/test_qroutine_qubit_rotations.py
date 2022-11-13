@@ -7,7 +7,6 @@ from qat.lang.AQASM.program import Program
 
 
 class TestRotations(CircuitTestCase):
-
     @parameterized.expand(["1011", "0101", "100110", "110010", "000100111"])
     def test_left_rotate(self, bitstring):
         pr = Program()

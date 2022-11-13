@@ -29,32 +29,33 @@ def initialize_qureg_to_binary_matrix(matrix):
         qrout = qregs_init.initialize_qureg_given_bitarray(
             # tolist to avoid typing errors
             matrix[row_idx, :].tolist(),
-            False)
+            False,
+        )
         qfun.apply(qrout, qreg)
 
     return qfun
 
 
-def get_rows_as_qubit_list(nrows: int, ncols: int,
-                           qreg: 'QRegister') -> List[List['Qbit']]:
+def get_rows_as_qubit_list(
+    nrows: int, ncols: int, qreg: "QRegister"
+) -> List[List["Qbit"]]:
     rows_qbits = []
     for row_idx in range(nrows):
-        rows_qbits.append(list(qreg[row_idx * ncols:row_idx * ncols + ncols]))
+        rows_qbits.append(list(qreg[row_idx * ncols : row_idx * ncols + ncols]))
     return rows_qbits
 
 
 def get_rows_as_index_list(nrows: int, ncols: int, qreg) -> List[List[int]]:
     rows_qbits = []
     for row_idx in range(nrows):
-        row = [
-            qb.index for qb in qreg[row_idx * ncols:row_idx * ncols + ncols]
-        ]
+        row = [qb.index for qb in qreg[row_idx * ncols : row_idx * ncols + ncols]]
         rows_qbits.append(row)
     return rows_qbits
 
 
-def get_columns_as_qubit_list(nrows: int, ncols: int,
-                              qreg: 'QRegister') -> List[List['Qbit']]:
+def get_columns_as_qubit_list(
+    nrows: int, ncols: int, qreg: "QRegister"
+) -> List[List["Qbit"]]:
     cols_qbits = []
     for col_idx in range(ncols):
         lis = [qreg[i] for i in range(col_idx, nrows * ncols, ncols)]
@@ -62,8 +63,9 @@ def get_columns_as_qubit_list(nrows: int, ncols: int,
     return cols_qbits
 
 
-def get_columns_as_index_list(nrows: int, ncols: int,
-                              qreg: 'QRegister') -> List[List[int]]:
+def get_columns_as_index_list(
+    nrows: int, ncols: int, qreg: "QRegister"
+) -> List[List[int]]:
     cols_qbits = []
     for col_idx in range(ncols):
         lis = [qreg[i].index for i in range(col_idx, nrows * ncols, ncols)]
@@ -71,16 +73,17 @@ def get_columns_as_index_list(nrows: int, ncols: int,
     return cols_qbits
 
 
-def build_matrix_from_sample(sample: 'Sample', qreg_range: Set[int],
-                             shape: Tuple[int, int]) -> np.ndarray:
+def build_matrix_from_sample(
+    sample: "Sample", qreg_range: Set[int], shape: Tuple[int, int]
+) -> np.ndarray:
     return build_matrix_from_bitstring(sample.state.bitstring, qreg_range, shape)
 
-def build_matrix_from_bitstring(bitstring: str, qreg_range: Set[int],
-                             shape: Tuple[int, int]) -> np.ndarray:
+
+def build_matrix_from_bitstring(
+    bitstring: str, qreg_range: Set[int], shape: Tuple[int, int]
+) -> np.ndarray:
     matrix = np.zeros(shape, dtype=np.ubyte)
-    interesting_bits = [
-        val for i, val in enumerate(bitstring) if i in qreg_range
-    ]
+    interesting_bits = [val for i, val in enumerate(bitstring) if i in qreg_range]
     for i, val in enumerate(interesting_bits):
         row = i // shape[1]
         col = i % shape[1]
@@ -108,9 +111,9 @@ def buildg_swap_rows(ncols: int):
 
 def move_columns_end_data(nrows: int, ncols: int):
     data = sn.get_pattern_sorter(ncols)
-    data['n_rows'] = nrows
-    data['n_cols'] = data['n_lines']
-    data['n_cols_orig'] = ncols
+    data["n_rows"] = nrows
+    data["n_cols"] = data["n_lines"]
+    data["n_cols_orig"] = ncols
     return data
 
 
@@ -133,9 +136,9 @@ def move_columns_end_gate(data: dict) -> QRoutine:
     #. a qreg (COMP) containing the qubits that will be used for the swaps. All qbits
     must be 0.
     """
-    ncols: int = data['n_cols']
-    comp_len: int = data['n_comps']
-    nrows: int = data['n_rows']
+    ncols: int = data["n_cols"]
+    comp_len: int = data["n_comps"]
+    nrows: int = data["n_rows"]
 
     routine = QRoutine()
     row_wires = []
@@ -152,7 +155,8 @@ def move_columns_end_gate(data: dict) -> QRoutine:
     routine.apply(sort_net, comb, comp)
 
     qrout = buildg_swap_columns(nrows)
-    for pattern in data['swaps_pattern']:
-        routine.apply(qrout.ctrl(), comp[pattern[0]], col_wires[pattern[1]],
-                      col_wires[pattern[2]])
+    for pattern in data["swaps_pattern"]:
+        routine.apply(
+            qrout.ctrl(), comp[pattern[0]], col_wires[pattern[1]], col_wires[pattern[2]]
+        )
     return routine

@@ -7,7 +7,7 @@ from qat.lang.AQASM.program import Program
 
 
 class NrootxTest(CircuitTestCase):
-    @parameterized.expand([(1, ), (2, ), (3, ), (4, ), (5, )])
+    @parameterized.expand([(1,), (2,), (3,), (4,), (5,)])
     def test_xequivalence(self, n):
         for global_phase in (True, False):
             with self.subTest(global_phase=global_phase):
@@ -27,7 +27,7 @@ class NrootxTest(CircuitTestCase):
                         self.assertAlmostEqual(sample.amplitude, 1)
                     break
 
-    @parameterized.expand([(1, ), (2, ), (3, ), (4, ), (5, )])
+    @parameterized.expand([(1,), (2,), (3,), (4,), (5,)])
     def test_yequivalence(self, n):
         for global_phase in (True, False):
             with self.subTest(global_phase=global_phase):
@@ -49,7 +49,7 @@ class NrootxTest(CircuitTestCase):
                         self.assertAlmostEqual(sample.amplitude.imag, -1)
                     break
 
-    @parameterized.expand([(1, ), (2, ), (3, ), (4, ), (5, )])
+    @parameterized.expand([(1,), (2,), (3,), (4,), (5,)])
     def test_zequivalence(self, n):
         for global_phase in (True, False):
             with self.subTest(global_phase=global_phase):

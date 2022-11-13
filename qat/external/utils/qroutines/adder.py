@@ -78,16 +78,14 @@ def _maj_chain(qfun, a, b, cin, mrange):
     for j in mrange:
         LOGGER.debug("j is %d", j)
         LOGGER.debug("MAJ %d, %d, %d", a[j], b[j + 1], a[j + 1])
-        qfun.apply(_majority(f"a{j}, b{j+1}, a{j+1}"), a[j], b[j + 1],
-                   a[j + 1])
+        qfun.apply(_majority(f"a{j}, b{j+1}, a{j+1}"), a[j], b[j + 1], a[j + 1])
 
 
 def _maj_chain_dag(qfun, a, b, cin, mrange):
     for j in reversed(mrange):
         LOGGER.debug("j is %d", j)
         LOGGER.debug("MAJD %d, %d, %d", a[j], b[j + 1], a[j + 1])
-        qfun.apply(
-            _majority(f"a{j}, b{j+1}, a{j+1}").dag(), a[j], b[j + 1], a[j + 1])
+        qfun.apply(_majority(f"a{j}, b{j+1}, a{j+1}").dag(), a[j], b[j + 1], a[j + 1])
     LOGGER.debug("MAJD %d, %d, %d", cin[0], b[0], a[0])
     qfun.apply(_majority(f"cin, b{0}, a{0}").dag(), cin[0], b[0], a[0])
 
@@ -115,7 +113,7 @@ def _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger):
         # present in Cuccaro
         outbit = cout[0] if overflow_qbit else b[-1]
         LOGGER.debug("b is bigger")
-        nslice = b[end + 2:b_l:1]
+        nslice = b[end + 2 : b_l : 1]
         LOGGER.debug("nslice %s", nslice)
         chain = itertools.chain(nslice, cout) if overflow_qbit else nslice
         LOGGER.debug("CNOT %d, %d", a[end], b[end + 1])
@@ -137,8 +135,7 @@ def _unmaj_chain(qfun, a, b, cin, mrange):
     for j in reversed(mrange):
         LOGGER.debug("j is %d", j)
         LOGGER.debug("UNM %d, %d, %d", a[j], b[j + 1], a[j + 1])
-        qfun.apply(_unmajority(f"a{j}, b{j+1}, a{j+1}"), a[j], b[j + 1],
-                   a[j + 1])
+        qfun.apply(_unmajority(f"a{j}, b{j+1}, a{j+1}"), a[j], b[j + 1], a[j + 1])
     LOGGER.debug("UNM %d, %d, %d", cin[0], b[0], a[0])
     qfun.apply(_unmajority(f"cin, b{0}, a{0}"), cin[0], b[0], a[0])
 
@@ -147,7 +144,8 @@ def _unmaj_chain(qfun, a, b, cin, mrange):
 def comparator(a_l: int, b_l: int, little_endian=True):
     overflow_qbit = True
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
-        a_l, b_l, overflow_qbit, little_endian)
+        a_l, b_l, overflow_qbit, little_endian
+    )
     for qb in a:
         qfun.apply(X, qb)
 
@@ -166,7 +164,8 @@ def comparator(a_l: int, b_l: int, little_endian=True):
 @build_gate("MSUB", [int, int, bool, bool])
 def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
-        a_l, b_l, overflow_qbit, little_endian)
+        a_l, b_l, overflow_qbit, little_endian
+    )
     for qb in a:
         qfun.apply(X, qb)
 
@@ -184,12 +183,10 @@ def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
 
 
 @build_gate("MADD", [int, int, bool, bool])
-def adder(a_l: int,
-          b_l: int,
-          overflow_qbit=False,
-          little_endian=True) -> QRoutine:
+def adder(a_l: int, b_l: int, overflow_qbit=False, little_endian=True) -> QRoutine:
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
-        a_l, b_l, overflow_qbit, little_endian)
+        a_l, b_l, overflow_qbit, little_endian
+    )
     mrange, end, ends = _common(qfun, a, b, cout, bits, overflow_qbit)
     if mrange is None:
         return qfun
@@ -200,7 +197,7 @@ def adder(a_l: int,
     return qfun
 
 
-@build_gate("MAJ", [str], arity= lambda _: 3)
+@build_gate("MAJ", [str], arity=lambda _: 3)
 def _majority(name):
     """Majority gate."""
     LOGGER.debug("name %s", name)
@@ -214,7 +211,7 @@ def _majority(name):
     return qfun
 
 
-@build_gate("UMA", [str], arity= lambda _: 3)
+@build_gate("UMA", [str], arity=lambda _: 3)
 def _unmajority(name):
     """Unmajority gate."""
     LOGGER.debug("name %s", name)

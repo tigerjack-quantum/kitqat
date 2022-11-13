@@ -1,4 +1,3 @@
-
 from qat.external.utils.synthesis.roots.paulis import nrootx
 from qat.lang.AQASM import CCNOT, CNOT, AbstractGate, H, QRoutine, S, T, X
 from qat.lang.AQASM.misc import build_gate
@@ -6,7 +5,8 @@ from qat.lang.AQASM.misc import build_gate
 MCMTX = AbstractGate("MCMTX", [int, int, int], arity=lambda x, y, _: x + y)
 MTCCNOT = AbstractGate("MTCCNOT", [int, bool], arity=lambda x, _: x + 2)
 
-@build_gate("X", [], arity=lambda : 1)
+
+@build_gate("X", [], arity=lambda: 1)
 def x():
     """Transform an X gate into HSSH.
 
@@ -20,7 +20,8 @@ def x():
     qfun.apply(H, wires[0])
     return qfun
 
-@build_gate("CCNOT", [], arity=lambda : 3)
+
+@build_gate("CCNOT", [], arity=lambda: 3)
 def ccnot():
     """CCNOT implemented with CNOT, H and T gates."""
     qfun = QRoutine()
@@ -45,6 +46,7 @@ def ccnot():
     qfun.apply(T.dag(), wires[1])
     qfun.apply(CNOT, wires[0], wires[1])
     return qfun
+
 
 @build_gate("MTCCNOT", [int, bool])
 def mccnot_sqrroot(n_tgts, global_phase_enabled):
@@ -145,9 +147,7 @@ def _common(qfun, ctrls, tgts, max_unsplitted_ctrls):
 
 # def mcmtx(n_ctrls: int,
 @build_gate("MCMTX", [int, int, int])
-def mcmtx_vshape(n_ctrls: int,
-                 n_tgts: int,
-                 max_unsplitted_ctrls=2) -> QRoutine:
+def mcmtx_vshape(n_ctrls: int, n_tgts: int, max_unsplitted_ctrls=2) -> QRoutine:
     qfun = QRoutine()
     ctrls = qfun.new_wires(n_ctrls)
     tgts = qfun.new_wires(n_tgts)
@@ -177,9 +177,9 @@ def _vshape_chain(qfun, ctrls, tgts):
     for tqb in tgts:
         qfun.apply(CCNOT, ctrls[-1], ancs[-1], tqb)
 
-    for cidx, aidx in zip(reversed(range(2,
-                                         len(ctrls) - 1)),
-                          reversed(range(len(ancs) - 1))):
+    for cidx, aidx in zip(
+        reversed(range(2, len(ctrls) - 1)), reversed(range(len(ancs) - 1))
+    ):
         qfun.apply(CCNOT, ctrls[cidx], ancs[aidx], ancs[aidx + 1])
     qfun.apply(CCNOT, ctrls[0], ctrls[1], ancs[0])
 

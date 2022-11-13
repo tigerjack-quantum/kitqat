@@ -3,20 +3,16 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-def assert_enough_bits(a_int: int,
-                       bits: int,
-                       signed=False,
-                       ones_complement=False,
-                       twos_complement=True):
-    bits_required = get_required_bits(a_int, signed, ones_complement,
-                                      twos_complement)
+def assert_enough_bits(
+    a_int: int, bits: int, signed=False, ones_complement=False, twos_complement=True
+):
+    bits_required = get_required_bits(a_int, signed, ones_complement, twos_complement)
     assert bits >= bits_required, "Not enough bits."
 
 
-def get_required_bits(*ints: int,
-                      signed=False,
-                      ones_complement=False,
-                      twos_complement=True) -> int:
+def get_required_bits(
+    *ints: int, signed=False, ones_complement=False, twos_complement=True
+) -> int:
     """Get the minimum number of bits required to represent all the integers.
 
     Said differently, it returns the log2 of the biggest positive /

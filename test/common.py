@@ -12,14 +12,15 @@ class BasicTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.logger = logging.getLogger(cls.__name__)
         cls.draw = False
-        level = getenv('LOG_LEVEL')
+        level = getenv("LOG_LEVEL")
         if level:
             print(f"Got level {level}")
-            logging_level = logging._nameToLevel.get(level, 'ERROR')
+            logging_level = logging._nameToLevel.get(level, "ERROR")
             print(f"log level is {logging_level}")
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
-                '%(module)-4s %(levelname)-8s %(funcName)-12s %(message)s')
+                "%(module)-4s %(levelname)-8s %(funcName)-12s %(message)s"
+            )
             handler.setFormatter(formatter)
             cls.logger.addHandler(handler)
             cls.logger.setLevel(logging_level)

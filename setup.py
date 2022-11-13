@@ -13,8 +13,8 @@ install_requirements = [
 ]
 
 tests_requirements = [
-        "parameterized",
-        "sympy",
+    "parameterized",
+    "sympy",
 ]
 
 setup(
@@ -34,7 +34,7 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     keywords="qat atos quantum qlm",
-    packages=find_packages(exclude=['test*', 'experiments*']),
+    packages=find_packages(exclude=["test*", "experiments*"]),
     install_requires=install_requirements,
     tests_requires=tests_requirements,
     test_suite="unittest",

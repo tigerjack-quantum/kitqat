@@ -24,7 +24,7 @@ def get_required_ancillae(r: int):
     return swap_ancilla_n, add_ancilla_n
 
 
-@build_gate('GJISD', [int, int, bool, int])
+@build_gate("GJISD", [int, int, bool, int])
 def get_rref(r, n, skip_rightmost, norig):
     """Apply RREF to a matrix H.
 
@@ -85,8 +85,12 @@ def get_rref(r, n, skip_rightmost, norig):
                 # else:
                 #     pivot_last = i == r - 1
                 pivot_last = i == r - 1
-                qrout.apply(rowswap(pivot_last), qregs_rows[x], qregs_rows[i],
-                            swap_ancillae[swap_ancilla_idx])
+                qrout.apply(
+                    rowswap(pivot_last),
+                    qregs_rows[x],
+                    qregs_rows[i],
+                    swap_ancillae[swap_ancilla_idx],
+                )
                 swap_ancilla_idx += 1
             # improvement 3, X after finishing all phases 1
             qrout.apply(X, qregs_rows[x][x])
@@ -96,16 +100,16 @@ def get_rref(r, n, skip_rightmost, norig):
             # obv, we skip the row under analysis
             if i == x:
                 continue
-            qrout.apply(rowadd(), qregs_rows[i], qregs_rows[x],
-                        add_ancillae[add_ancilla_idx])
+            qrout.apply(
+                rowadd(), qregs_rows[i], qregs_rows[x], add_ancillae[add_ancilla_idx]
+            )
             add_ancilla_idx += 1
 
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int, int, set, bool])
-def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set,
-                 pivot_last: bool):
+@build_gate("ROWSWAP", [int, int, int, set, bool])
+def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set, pivot_last: bool):
     """WARN: the pivot element is checked against state 1 (improvement 4)
     r, n: ISD params
     pivot_idx: index of pivot under analysis (in the matrix, it has position M_{pivot_idx, pivot_idx})
@@ -133,7 +137,7 @@ def get_row_swap(r: int, n: int, pivot_idx: int, skip_cols: set,
     return qrout
 
 
-@build_gate('ROWADD', [int, int, int, set])
+@build_gate("ROWADD", [int, int, int, set])
 def get_row_addition(r: int, n: int, pivot_idx: int, skip_cols: set):
     """
     r, n: ISD params

@@ -18,13 +18,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
-    a_len: int = net_data['n_lines']
-    comp_len: int = net_data['n_comps']
+    a_len: int = net_data["n_lines"]
+    comp_len: int = net_data["n_comps"]
     routine = QRoutine()
     a_wires = routine.new_wires(a_len)
     comp_wires = routine.new_wires(comp_len)
 
-    for swap_pattern in net_data['swaps_pattern']:
+    for swap_pattern in net_data["swaps_pattern"]:
         a_qb = a_wires[swap_pattern[1]]
         b_qb = a_wires[swap_pattern[2]]
         ctrl_qb = comp_wires[swap_pattern[0]]
@@ -64,19 +64,20 @@ def get_pattern_bitonic_sorter(n) -> Dict[str, Any]:
     """
     net_data = {}
     steps = int(np.ceil(np.log2(n)))
-    net_data['n_lines'] = 2**steps
-    net_data['swaps_pattern'] = []
-    initial_swaps = int(net_data['n_lines'] / 2)
+    net_data["n_lines"] = 2**steps
+    net_data["swaps_pattern"] = []
+    initial_swaps = int(net_data["n_lines"] / 2)
 
-    _get_pattern_bitonic_sorter(0, initial_swaps, int(net_data['n_lines'] / 2),
-                                0, net_data)
-    net_data['n_comps'] = len(net_data['swaps_pattern'])
+    _get_pattern_bitonic_sorter(
+        0, initial_swaps, int(net_data["n_lines"] / 2), 0, net_data
+    )
+    net_data["n_comps"] = len(net_data["swaps_pattern"])
     return net_data
 
 
 def _get_pattern_bitonic_sorter(start, end, swap_step, comp_q_idx, net_data):
     _LOGGER.debug("Start: %d, end: %d, swap_step: %d", start, end, swap_step)
-    if (swap_step == 0 or start >= end):
+    if swap_step == 0 or start >= end:
         _LOGGER.debug("Base case recursion")
         return comp_q_idx
 
@@ -84,23 +85,34 @@ def _get_pattern_bitonic_sorter(start, end, swap_step, comp_q_idx, net_data):
     for i in range(start, end):
         for_iter += 1
         _LOGGER.info("cswap(%d, %d, %d)", comp_q_idx, i, i + swap_step)
-        net_data['swaps_pattern'].append((comp_q_idx, i, i + swap_step))
+        net_data["swaps_pattern"].append((comp_q_idx, i, i + swap_step))
         comp_q_idx += 1
 
     for_iter_next = min(for_iter, int(swap_step / 2))
     _LOGGER.debug(
         "Before rec1, start: %d, end: %d, swap_step: %d, for_iter_next %d",
-        start, end, swap_step, for_iter_next)
-    comp_q_idx = _get_pattern_bitonic_sorter(start, start + for_iter_next,
-                                             int(swap_step / 2), comp_q_idx,
-                                             net_data)
+        start,
+        end,
+        swap_step,
+        for_iter_next,
+    )
+    comp_q_idx = _get_pattern_bitonic_sorter(
+        start, start + for_iter_next, int(swap_step / 2), comp_q_idx, net_data
+    )
     _LOGGER.debug(
         "Before rec, start: %d, end: %d, swap_step: %d, for_iter_next %d",
-        start, end, swap_step, for_iter_next)
-    comp_q_idx = _get_pattern_bitonic_sorter(start + swap_step,
-                                             start + swap_step + for_iter_next,
-                                             int(swap_step / 2), comp_q_idx,
-                                             net_data)
+        start,
+        end,
+        swap_step,
+        for_iter_next,
+    )
+    comp_q_idx = _get_pattern_bitonic_sorter(
+        start + swap_step,
+        start + swap_step + for_iter_next,
+        int(swap_step / 2),
+        comp_q_idx,
+        net_data,
+    )
     return comp_q_idx
 
 
@@ -113,30 +125,31 @@ def get_pattern_merger(n):
     net_data = {}
     comp_q_idx = _get_pattern_merger_support(n, net_data, 0)
 
-    net_data['n_comps'] = len(net_data['swaps_pattern'])
+    net_data["n_comps"] = len(net_data["swaps_pattern"])
     return net_data
 
 
 def _get_pattern_merger_support(n, net_data, comp_q_idx, start_shift=0):
     steps = int(np.ceil(np.log2(n)))
-    net_data['n_lines'] = 2**steps
-    net_data['swaps_pattern'] = net_data.get('swaps_pattern', [])
-    initial_swaps = int(net_data['n_lines'] / 2)
+    net_data["n_lines"] = 2**steps
+    net_data["swaps_pattern"] = net_data.get("swaps_pattern", [])
+    initial_swaps = int(net_data["n_lines"] / 2)
 
     for i in range(initial_swaps):
-        net_data['swaps_pattern'].append(
-            (comp_q_idx, i + start_shift,
-             net_data['n_lines'] - i - 1 + start_shift))
+        net_data["swaps_pattern"].append(
+            (comp_q_idx, i + start_shift, net_data["n_lines"] - i - 1 + start_shift)
+        )
         comp_q_idx += 1
 
     # the second half of the circuit is identical to the bitonic sorter
     start = start_shift
     swap_step = int(initial_swaps / 2)
-    comp_q_idx = _get_pattern_bitonic_sorter(start, start + swap_step,
-                                             swap_step, comp_q_idx, net_data)
-    comp_q_idx = _get_pattern_bitonic_sorter(start + swap_step * 2,
-                                             start + swap_step * 3, swap_step,
-                                             comp_q_idx, net_data)
+    comp_q_idx = _get_pattern_bitonic_sorter(
+        start, start + swap_step, swap_step, comp_q_idx, net_data
+    )
+    comp_q_idx = _get_pattern_bitonic_sorter(
+        start + swap_step * 2, start + swap_step * 3, swap_step, comp_q_idx, net_data
+    )
     return comp_q_idx
 
 
@@ -154,11 +167,10 @@ def get_pattern_sorter(n):
     comp_q_idx = 0
     # Note that, since the last pattern to be analyzed is the greatest one, we
     # obtain as side effect the right number of 'n_lines'
-    for (start, end) in reversed(lis):
+    for start, end in reversed(lis):
         n = len(range(start, end))
-        comp_q_idx = _get_pattern_merger_support(n, net_data, comp_q_idx,
-                                                 start)
-        net_data['n_comps'] = len(net_data['swaps_pattern'])
+        comp_q_idx = _get_pattern_merger_support(n, net_data, comp_q_idx, start)
+        net_data["n_comps"] = len(net_data["swaps_pattern"])
     return net_data
 
 
@@ -168,7 +180,7 @@ def _get_pattern_sorter_support(start, end, acc, depth=0):
     # print(f"{rec_string}merger [{start}-{end})")
     pattern = (start, end)
     acc.append(pattern)
-    if (start + 2 >= end):
+    if start + 2 >= end:
         # input(f"{rec_string}base case")
         return
 
