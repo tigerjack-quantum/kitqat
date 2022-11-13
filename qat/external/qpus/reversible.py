@@ -203,7 +203,8 @@ class RProgram():
                         gatename = top_circ.gateDic[gatename].subgate
                     else:
                         raise AttributeError(
-                            "Reversible gates accepted: X, SWAP and their controlled versions"
+                            "Reversible gates accepted: X, SWAP and their controlled"
+                            f" versions, got {gatename}"
                         )
                 self._apply_gate_from_name(gatename, op.qbits)
 
