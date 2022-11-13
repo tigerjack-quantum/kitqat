@@ -7,15 +7,17 @@ from qat.lang.AQASM.misc import build_gate
 
 logger = logging.getLogger(__name__)
 
+
 @build_gate("_BARTSCHI_I", [float])
 def _igate(angle: float) -> QRoutine:
     qf = QRoutine()
     wires = qf.new_wires(2)
-    # n-2 -> 0, n-1 -> 1 
+    # n-2 -> 0, n-1 -> 1
     qf.apply(CNOT, wires[0], wires[1])
     qf.apply(RY(angle).ctrl(), wires[1], wires[0])
     qf.apply(CNOT, wires[0], wires[1])
     return qf
+
 
 @build_gate("_BARTSCHI_II", [float])
 def _iigate(angle: float) -> QRoutine:
@@ -26,6 +28,7 @@ def _iigate(angle: float) -> QRoutine:
     qf.apply(RY(angle).ctrl(2), wires[2], wires[1], wires[0])
     qf.apply(CNOT, wires[0], wires[2])
     return qf
+
 
 def _scs(n: int, k: int) -> QRoutine:
     qf = QRoutine()

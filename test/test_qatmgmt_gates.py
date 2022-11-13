@@ -1,7 +1,10 @@
 from numpy import testing as nptesting
 from qat.external.utils.qatmgmt.gates import (
-    GATE_SET_QAT, from_circuit_to_program, generate_gate_from_circuit_op,
-    generate_np_matrix_from_circuit_by_op)
+    GATE_SET_QAT,
+    from_circuit_to_program,
+    generate_gate_from_circuit_op,
+    generate_np_matrix_from_circuit_by_op,
+)
 from qat.lang.AQASM.gates import CNOT, H, X, Y
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.program import Program
@@ -32,7 +35,6 @@ def _m_gate2(nbits: int) -> QRoutine:
 
 
 class TestQatmgmtGates(CircuitTestCase):
-
     def test_generate_np_matrix_from_op(self):
         p = Program()
         q = p.qalloc(3)
@@ -46,7 +48,8 @@ class TestQatmgmtGates(CircuitTestCase):
             matrix = generate_np_matrix_from_circuit_by_op(c, op, {})
             self.assertIsNotNone(matrix)
             nptesting.assert_array_equal(
-                matrix, GATE_SET_QAT[op.gate].matrix_generator())
+                matrix, GATE_SET_QAT[op.gate].matrix_generator()
+            )
 
     def test_generate_np_matrix_from_op_submatrices_only(self):
         p = Program()
@@ -55,13 +58,7 @@ class TestQatmgmtGates(CircuitTestCase):
         p.apply(Y.ctrl(), q[0], q[1])
         c = p.to_circ(submatrices_only=True)
         c2 = p.to_circ(submatrices_only=False)
-        expected = [{
-            'subgate': H,
-            'nb_ctrls': 2
-        }, {
-            'subgate': Y,
-            'nb_ctrls': 1
-        }]
+        expected = [{"subgate": H, "nb_ctrls": 2}, {"subgate": Y, "nb_ctrls": 1}]
 
         for op, op2, expgate in zip(c, c2, expected):
             matrix = generate_np_matrix_from_circuit_by_op(c, op, {})
@@ -70,8 +67,8 @@ class TestQatmgmtGates(CircuitTestCase):
             nptesting.assert_array_equal(matrix, matrix2)
             gate, _ = generate_gate_from_circuit_op(c, op, {})
             self.assertIsNotNone(gate)
-            self.assertEqual(gate.subgate, expgate['subgate'])
-            self.assertEqual(gate.nb_ctrls, expgate['nb_ctrls'])
+            self.assertEqual(gate.subgate, expgate["subgate"])
+            self.assertEqual(gate.nb_ctrls, expgate["nb_ctrls"])
 
     def test_circuit_conversion_with_param(self):
         p = Program()
@@ -87,10 +84,10 @@ class TestQatmgmtGates(CircuitTestCase):
         res = self.qpu.submit(c.to_job())
         res2 = self.qpu.submit(c2.to_job())
 
-        self.assertEqual([(sample.state.state, sample._amplitude)
-                          for sample in res],
-                         [(sample.state.state, sample._amplitude)
-                          for sample in res2])
+        self.assertEqual(
+            [(sample.state.state, sample._amplitude) for sample in res],
+            [(sample.state.state, sample._amplitude) for sample in res2],
+        )
 
     def test_circuit_conversion_with_qrout(self):
         p = Program()
@@ -106,10 +103,10 @@ class TestQatmgmtGates(CircuitTestCase):
         c2 = p2.to_circ()
         res2 = self.qpu.submit(c2.to_job())
 
-        self.assertEqual([(sample.state.state, sample._amplitude)
-                          for sample in res],
-                         [(sample.state.state, sample._amplitude)
-                          for sample in res2])
+        self.assertEqual(
+            [(sample.state.state, sample._amplitude) for sample in res],
+            [(sample.state.state, sample._amplitude) for sample in res2],
+        )
 
     def test_circuit_conversion_with_buildgate(self):
         p = Program()
@@ -123,10 +120,10 @@ class TestQatmgmtGates(CircuitTestCase):
         c2 = p2.to_circ()
         res2 = self.qpu.submit(c2.to_job())
 
-        self.assertEqual([(sample.state.state, sample._amplitude)
-                          for sample in res],
-                         [(sample.state.state, sample._amplitude)
-                          for sample in res2])
+        self.assertEqual(
+            [(sample.state.state, sample._amplitude) for sample in res],
+            [(sample.state.state, sample._amplitude) for sample in res2],
+        )
 
     def test_circuit_conversion_with_buildgate_rec(self):
         p = Program()
@@ -140,7 +137,7 @@ class TestQatmgmtGates(CircuitTestCase):
         c2 = p2.to_circ()
         res2 = self.qpu.submit(c2.to_job())
 
-        self.assertEqual([(sample.state.state, sample._amplitude)
-                          for sample in res],
-                         [(sample.state.state, sample._amplitude)
-                          for sample in res2])
+        self.assertEqual(
+            [(sample.state.state, sample._amplitude) for sample in res],
+            [(sample.state.state, sample._amplitude) for sample in res2],
+        )

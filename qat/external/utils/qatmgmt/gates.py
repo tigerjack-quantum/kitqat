@@ -23,15 +23,39 @@ from typing import TYPE_CHECKING, Sequence, Union
 
 import numpy as np
 from qat.core.circuit_builder.builder import default_gate_set
-from qat.core.circuit_builder.matrix_util import (get_param_generator,
-                                                  get_predef_generator)
+from qat.core.circuit_builder.matrix_util import (
+    get_param_generator,
+    get_predef_generator,
+)
 from qat.external.utils.numpy.qstate_manipulation import (
-    get_conjugate_from_matrix, get_ctrl_from_matrix, get_dagger_from_matrix,
-    get_transpose_from_matrix)
+    get_conjugate_from_matrix,
+    get_ctrl_from_matrix,
+    get_dagger_from_matrix,
+    get_transpose_from_matrix,
+)
 from qat.external.utils.qatmgmt import variables
-from qat.lang.AQASM.gates import (CCNOT, CNOT, CSIGN, ISWAP, PH, RX, RY, RZ,
-                                  SQRTSWAP, SWAP, AbstractGate, Gate, H, I,
-                                  ParamGate, S, T, X, Y, Z)
+from qat.lang.AQASM.gates import (
+    CCNOT,
+    CNOT,
+    CSIGN,
+    ISWAP,
+    PH,
+    RX,
+    RY,
+    RZ,
+    SQRTSWAP,
+    SWAP,
+    AbstractGate,
+    Gate,
+    H,
+    I,
+    ParamGate,
+    S,
+    T,
+    X,
+    Y,
+    Z,
+)
 from qat.lang.AQASM.misc import generate_gate_set
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
@@ -46,31 +70,30 @@ LOGGER = logging.getLogger(__name__)
 
 GATE_SET_QAT = default_gate_set().gate_signatures
 GATE_SET_TO_GATE = {
-    'H': H,
-    'X': X,
-    'Y': Y,
-    'Z': Z,
-    'I': I,
-    'S': S,
-    'T': T,
-    'CNOT': CNOT,
-    'CCNOT': CCNOT,
-    'CSIGN': CSIGN,
-    'SWAP': SWAP,
-    'SQRTSWAP': SQRTSWAP,
-    'ISWAP': ISWAP,
-    'RX': RX,
-    'RY': RY,
-    'RZ': RZ,
-    'PH': PH,
+    "H": H,
+    "X": X,
+    "Y": Y,
+    "Z": Z,
+    "I": I,
+    "S": S,
+    "T": T,
+    "CNOT": CNOT,
+    "CCNOT": CCNOT,
+    "CSIGN": CSIGN,
+    "SWAP": SWAP,
+    "SQRTSWAP": SQRTSWAP,
+    "ISWAP": ISWAP,
+    "RX": RX,
+    "RY": RY,
+    "RZ": RZ,
+    "PH": PH,
 }
 
 
 ###
 # Only fun taking Program as input
 ###
-def extract_custom_gates_from_program(
-        program: 'Program') -> Sequence['AbstractGate']:
+def extract_custom_gates_from_program(program: "Program") -> Sequence["AbstractGate"]:
     lst = []
     """Return a list of gates not belonging to the default gate set"""
     for op in program.op_list:
@@ -94,8 +117,8 @@ def extract_custom_gates_from_program(
 ###
 
 
-def from_circuit_to_program(circ: 'Circuit') -> Program:
-    """Returns a program built starting from circuit operations"""
+def from_circuit_to_program(circ: "Circuit") -> Program:
+    """Returns a program built starting from circuit operations."""
     pr = Program()
     pr_qregs = []
     all_qbits = []
@@ -107,9 +130,12 @@ def from_circuit_to_program(circ: 'Circuit') -> Program:
     return pr
 
 
-def apply_gates_from_circuit(toplevel_circ: 'Circuit',
-                             scanning_circ: Union['Circuit', 'Subcircuit'],
-                             pr: Program, qbits: list[int]):
+def apply_gates_from_circuit(
+    toplevel_circ: "Circuit",
+    scanning_circ: Union["Circuit", "Subcircuit"],
+    pr: Program,
+    qbits: list[int],
+):
     for op in scanning_circ.ops:
         gatename = op.gate
         subcirc = toplevel_circ.gateDic[gatename].circuit_implementation
@@ -125,14 +151,14 @@ def apply_gates_from_circuit(toplevel_circ: 'Circuit',
 # Gate extraction
 ###
 def generate_gate_from_circuit_op(
-    circuit: 'Circuit',
-    operation: 'Op',
-    variables_map: dict[str, 'Variable'],
+    circuit: "Circuit",
+    operation: "Op",
+    variables_map: dict[str, "Variable"],
     generate_variables_if_missing=False,
     apply_gatedef_ops=True,
-) -> tuple['Gate', dict[str, 'Variable']]:
-    """Returns a gate and, if it depends on a variable (f.e. parametrized gates) the
- name of that variable
+) -> tuple["Gate", dict[str, "Variable"]]:
+    """Returns a gate and, if it depends on a variable (f.e. parametrized
+    gates) the name of that variable.
 
     :param Circuit circuit: the top-level circuit
     :param Op operation: the operation of teh circuit
@@ -142,15 +168,21 @@ def generate_gate_from_circuit_op(
     """
     name = operation.gate
     try:
-        tup = get_gate_from_gate_name(circuit, name, variables_map,
-                                      generate_variables_if_missing,
-                                      apply_gatedef_ops)
+        tup = get_gate_from_gate_name(
+            circuit,
+            name,
+            variables_map,
+            generate_variables_if_missing,
+            apply_gatedef_ops,
+        )
         return tup
     except AttributeError:
         gate_matrix = generate_np_matrix_from_circuit_by_op(
-            circuit, operation, variables_map)
-        gate = build_paramgate_from_nparray(operation.gate, gate_matrix,
-                                            len(operation.qbits))
+            circuit, operation, variables_map
+        )
+        gate = build_paramgate_from_nparray(
+            operation.gate, gate_matrix, len(operation.qbits)
+        )
         tup = (gate, {})
     # if tup is None or tup[0] is None:
     #     # This fails (???) if the circuit has been generated without
@@ -161,24 +193,23 @@ def generate_gate_from_circuit_op(
 
 # The list of variables returned contains the newly generated variables
 def get_gate_from_gate_name(
-    circuit: 'Circuit',
+    circuit: "Circuit",
     name: str,
-    variables_map: dict[str, 'Variable'],
+    variables_map: dict[str, "Variable"],
     generate_variables_if_missing=False,
     apply_gatedef_ops=True,
-) -> tuple['Gate', dict[str, 'Variable']]:
+) -> tuple["Gate", dict[str, "Variable"]]:
     """Get a gate from its name inspecting all the relevant datastructures
-    contained in the circuit
+    contained in the circuit.
 
     :param Circuit circuit: the top-level circuit
     :param str name: the name of the gate
     :param dict[str, Variable] variables_map: a map of variable names
     :param bool apply_gatedef_ops: specify if you want to apply all the final
     :param bool operations, like ctrl, dagger, conjugate and transpose
-
     """
     LOGGER.debug("name is %s", name)
-    vname_to_var: dict[str, 'Variable'] = {}
+    vname_to_var: dict[str, "Variable"] = {}
     if not name.startswith("_"):
         # standard gate
         # gate = globals()[name]
@@ -202,7 +233,8 @@ def get_gate_from_gate_name(
                         gate = gate(variables_map[parameter.string_p])
                     elif generate_variables_if_missing:
                         var = variables.generate_variable_from_circuit(
-                            circuit, parameter.string_p)
+                            circuit, parameter.string_p
+                        )
                         vname_to_var[parameter.string_p] = var
                         gate = gate(var)
                     else:
@@ -221,7 +253,8 @@ def get_gate_from_gate_name(
             subname = gatedef.subgate
             LOGGER.debug("subname is %s", subname)
             gate, subvname_to_vars = get_gate_from_gate_name(
-                circuit, subname, variables_map, generate_variables_if_missing)
+                circuit, subname, variables_map, generate_variables_if_missing
+            )
             vname_to_var.update(subvname_to_vars)
         else:
             raise AttributeError("Unknown flow")
@@ -249,23 +282,26 @@ def callback_matrix_lambda(matrix: np.ndarray):
     return lambda: matrix
 
 
-def build_paramgate_from_nparray(name: str, gate_matrix: np.ndarray,
-                                 arity: int) -> Union[AbstractGate, ParamGate]:
-    gate = AbstractGate(name, [],
-                        matrix_generator=callback_matrix_lambda(gate_matrix),
-                        arity=arity)
+def build_paramgate_from_nparray(
+    name: str, gate_matrix: np.ndarray, arity: int
+) -> Union[AbstractGate, ParamGate]:
+    gate = AbstractGate(
+        name, [], matrix_generator=callback_matrix_lambda(gate_matrix), arity=arity
+    )
     return gate()
 
 
 def get_paramgate_from_circuit_op(
-    circuit: 'Circuit',
-    operation: 'Op',
-    variables_map: dict[str, 'Variable'],
+    circuit: "Circuit",
+    operation: "Op",
+    variables_map: dict[str, "Variable"],
 ) -> Union[AbstractGate, ParamGate]:
     gate_matrix = generate_np_matrix_from_circuit_by_op(
-        circuit, operation, variables_map)
-    gate = build_paramgate_from_nparray(operation.gate, gate_matrix,
-                                        len(operation.qbits))
+        circuit, operation, variables_map
+    )
+    gate = build_paramgate_from_nparray(
+        operation.gate, gate_matrix, len(operation.qbits)
+    )
     return gate
 
 
@@ -276,14 +312,14 @@ def get_paramgate_from_circuit_op(
 def mat2nparray(matrix):
     A = np.zeros((matrix.nRows, matrix.nCols), dtype=np.complex256)
     for cnt, (i, j) in enumerate(
-            itertools.product(range(matrix.nRows), range(matrix.nCols))):
+        itertools.product(range(matrix.nRows), range(matrix.nCols))
+    ):
         A[i, j] = matrix.data[cnt].re + 1j * matrix.data[cnt].im
     return A
 
 
 def get_np_matrix_from_gate_definition(
-    gate: 'GateDefinition',
-    variables: Sequence[Union[int, float, 'Variable']] = ()
+    gate: "GateDefinition", variables: Sequence[Union[int, float, "Variable"]] = ()
 ) -> np.ndarray:
     try:
         matrix = get_np_matrix_from_standard_gates(gate.name)
@@ -312,7 +348,7 @@ def get_np_matrix_from_standard_gates(gate_name: str) -> np.ndarray:
 
 def get_np_matrix_from_generator(
     gate: Union[AbstractGate, ParamGate],
-    variables: Sequence[Union[int, float, 'Variable']] = ()
+    variables: Sequence[Union[int, float, "Variable"]] = (),
 ) -> np.ndarray:
     if isinstance(gate, ParamGate):
         agate = gate.abstract_gate
@@ -323,29 +359,32 @@ def get_np_matrix_from_generator(
     return agate.matrix_generator(*variables)
 
 
-def get_np_matrix_from_circuit_by_op(circuit: 'Circuit',
-                                     operation: 'Op') -> np.ndarray:
+def get_np_matrix_from_circuit_by_op(circuit: "Circuit", operation: "Op") -> np.ndarray:
     return get_np_matrix_from_circuit_by_name(circuit, operation.gate)
 
 
-def get_np_matrix_from_circuit_by_name(circuit: 'Circuit',
-                                       gate_name: str) -> np.ndarray:
+def get_np_matrix_from_circuit_by_name(
+    circuit: "Circuit", gate_name: str
+) -> np.ndarray:
     """Return the matrix associated to a gate by looking at the circuit object.
-    Raise an exception if the matrix is not found"""
+
+    Raise an exception if the matrix is not found
+    """
     gate_def = circuit.gateDic[gate_name]
     gate_matrix_qlm = gate_def.matrix
     if gate_matrix_qlm is None:
         raise AttributeError(
-            "No np matrix in circuit, maybe you used include_matrices=False at circuit generation time?"
+            "No np matrix in circuit, maybe you used include_matrices=False at circuit"
+            " generation time?"
         )
     gate_matrix = mat2nparray(gate_matrix_qlm)
     return gate_matrix
 
 
 def generate_np_matrix_from_circuit_by_op(
-    circuit: 'Circuit',
-    op: 'Op',
-    variables_map: dict[str, 'Variable'],
+    circuit: "Circuit",
+    op: "Op",
+    variables_map: dict[str, "Variable"],
 ) -> np.ndarray:
     gate, _ = generate_gate_from_circuit_op(circuit, op, variables_map)
     matrix = get_np_matrix_from_gate_definition(gate)
@@ -358,8 +397,8 @@ def generate_np_matrix_from_circuit_by_op(
 
 
 def extend_default_gate_set_from_custom_gates(
-        gates: Sequence[Union[AbstractGate, ParamGate,
-                              QRoutine]]) -> 'GateSet':
+    gates: Sequence[Union[AbstractGate, ParamGate, QRoutine]]
+) -> "GateSet":
     gds = default_gate_set()
     signatures = []
     for gate in gates:
@@ -376,5 +415,6 @@ def extend_default_gate_set_from_custom_gates(
 
 
 def generate_gate_set_from_abstract_gates(
-        abstract_gates: Sequence[AbstractGate]) -> 'GateSet':
+    abstract_gates: Sequence[AbstractGate],
+) -> "GateSet":
     return generate_gate_set(*abstract_gates)

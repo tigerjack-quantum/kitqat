@@ -5,9 +5,7 @@ CHP_BIN = "/home_local/simone/git_repos/aaronson-chp/chp.out"
 
 
 def to_chp(aqasm_filepath: str, output_filepath: str):
-    """
-    Convert to Aaronson CHP stabilizer simulator
-    """
+    """Convert to Aaronson CHP stabilizer simulator."""
 
     with open(aqasm_filepath, 'r') as inp:
         with open(output_filepath, 'w') as out:

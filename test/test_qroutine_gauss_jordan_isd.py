@@ -11,7 +11,6 @@ from sympy import Matrix
 
 
 class GjiTestCase(CircuitTestCase):
-
     def _prepare_circuit(self, matrix):
         pr = Program()
         nrows, ncols = matrix.shape
@@ -47,12 +46,17 @@ class GjiTestCase(CircuitTestCase):
         ncols = n + 1
         # concatenate the syndrome to the original matrix
         matrix_ext = np.hstack((matrix, syndrome))
-        skip_rightmost_val = (False, ) if r == n else (False, True)
+        skip_rightmost_val = (False,) if r == n else (False, True)
 
         for skip_rightmost in skip_rightmost_val:
             with self.subTest(skip_rightmost=skip_rightmost):
-                pr, qregs_rows, add_qregs, swap_qregs, qbit_range = self._prepare_circuit(
-                    matrix_ext)
+                (
+                    pr,
+                    qregs_rows,
+                    add_qregs,
+                    swap_qregs,
+                    qbit_range,
+                ) = self._prepare_circuit(matrix_ext)
                 gji_gate = gji.get_rref(nrows, ncols, skip_rightmost, n)
                 if add_qregs:
                     pr.apply(gji_gate, qregs_rows, swap_qregs, add_qregs)
@@ -67,8 +71,7 @@ class GjiTestCase(CircuitTestCase):
                         bitstring = rpr.rbits.to01()
                     else:
                         # ... otw only the qubits containing the matrix
-                        bitstring = ''.join(
-                            [rpr.rbits[qb.index] for qb in qbit_range])
+                        bitstring = "".join([rpr.rbits[qb.index] for qb in qbit_range])
                 else:
                     if test_u:
                         # we measure all the qubits
@@ -86,7 +89,8 @@ class GjiTestCase(CircuitTestCase):
                     bitstring = sample.state.bitstring
 
                 mat_gji = qmatrix.build_matrix_from_bitstring(
-                    bitstring, qbit_range, (nrows, ncols))
+                    bitstring, qbit_range, (nrows, ncols)
+                )
                 mat_gji_diag = mat_gji.diagonal()
                 mat_gji_sim = Matrix(matrix_ext).rref(pivots=False) % 2
                 mat_gji_sim_diag = mat_gji_sim.diagonal()
@@ -105,8 +109,9 @@ class GjiTestCase(CircuitTestCase):
                         # Additionally, if we didn't skip operations on the
                         # rightmost r*k matrix, the results on this portion
                         # should be equal.
-                        np.testing.assert_array_equal(mat_gji[:, r:n],
-                                                      mat_gji_sim[:, r:n])
+                        np.testing.assert_array_equal(
+                            mat_gji[:, r:n], mat_gji_sim[:, r:n]
+                        )
                     # # check as well that we can reconstruct the matrix U s.t. U @ matrix = matrix_reduced
                     # if add_qregs and test_u:
                     #     raise Exception("Impossible")
@@ -134,50 +139,59 @@ class GjiTestCase(CircuitTestCase):
                     self.assertFalse(all(mat_gji_diag))
                     self.assertFalse(all(mat_gji_sim_diag))
 
-    @parameterized.expand([
-        # ("3x3", np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])),
-        ("3x3", np.array([[0, 1, 1], [1, 0, 1], [0, 0, 1]])),
-        ("3x4", np.array([[1, 1, 0, 0], [1, 0, 0, 0], [0, 1, 1, 1]])),
-        ("3x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]])),
-    ])
+    @parameterized.expand(
+        [
+            # ("3x3", np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])),
+            ("3x3", np.array([[0, 1, 1], [1, 0, 1], [0, 0, 1]])),
+            ("3x4", np.array([[1, 1, 0, 0], [1, 0, 0, 0], [0, 1, 1, 1]])),
+            ("3x4", np.array([[0, 1, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1]])),
+        ]
+    )
     def test_iden(self, name, matrix):
-        """They should give the same results of a normal GJI and an identity matrix on
-        the left
-
-        """
+        """They should give the same results of a normal GJI and an identity
+        matrix on the left."""
         self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True)
 
-    @parameterized.expand([
-        ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]])),
-        ("3x4", np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 0, 1]])),
-        ("3x4", np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0]])),
-        ("3x4", np.array([[0, 0, 0, 1], [1, 1, 1, 0], [1, 0, 0, 1]])),
-    ])
+    @parameterized.expand(
+        [
+            ("3x3", np.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]])),
+            ("3x4", np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 0, 1]])),
+            ("3x4", np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0]])),
+            ("3x4", np.array([[0, 0, 0, 1], [1, 1, 1, 0], [1, 0, 0, 1]])),
+        ]
+    )
     def test_no_iden(self, name, matrix):
         self.logger.debug("test with %s", name)
         self._common_test(matrix, True, False)
 
-    @parameterized.expand([
-        ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
-        ("3x6",
-         np.array([[0, 1, 1, 1, 1, 0], [0, 0, 1, 0, 0, 0], [1, 1, 0, 1, 0,
-                                                            1]])),
-    ])
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON
-                         or CircuitTestCase.REVERSIBLE_ON,
-                         CircuitTestCase.SLOW_TEST_ON_REASON)
+    @parameterized.expand(
+        [
+            ("3x5", np.array([[0, 1, 1, 1, 0], [0, 1, 0, 0, 0], [1, 1, 0, 0, 1]])),
+            (
+                "3x6",
+                np.array([[0, 1, 1, 1, 1, 0], [0, 0, 1, 0, 0, 0], [1, 1, 0, 1, 0, 1]]),
+            ),
+        ]
+    )
+    @unittest.skipUnless(
+        CircuitTestCase.SLOW_TEST_ON or CircuitTestCase.REVERSIBLE_ON,
+        CircuitTestCase.SLOW_TEST_ON_REASON,
+    )
     def test_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
         self._common_test(matrix, True, True)
 
-    @parameterized.expand([
-        ("3x5", np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0], [0, 1, 1, 0, 1]])),
-        ("3x5", np.array([[1, 0, 0, 1, 0], [0, 0, 0, 0, 0], [1, 1, 0, 1, 1]])),
-    ])
-    @unittest.skipUnless(CircuitTestCase.SLOW_TEST_ON
-                         or CircuitTestCase.REVERSIBLE_ON,
-                         CircuitTestCase.SLOW_TEST_ON_REASON)
+    @parameterized.expand(
+        [
+            ("3x5", np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0], [0, 1, 1, 0, 1]])),
+            ("3x5", np.array([[1, 0, 0, 1, 0], [0, 0, 0, 0, 0], [1, 1, 0, 1, 1]])),
+        ]
+    )
+    @unittest.skipUnless(
+        CircuitTestCase.SLOW_TEST_ON or CircuitTestCase.REVERSIBLE_ON,
+        CircuitTestCase.SLOW_TEST_ON_REASON,
+    )
     def test_no_iden_slow(self, name, matrix):
         self.logger.debug("test with %s", name)
         self._common_test(matrix, True, False)

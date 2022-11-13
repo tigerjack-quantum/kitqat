@@ -1,5 +1,7 @@
-"""This gauss-jordan procedure is specifically tailored for ISD
-It contains optimization 5 only w.r.t. the other one, which does not seem t provide any benefit
+"""This gauss-jordan procedure is specifically tailored for ISD It contains
+optimization 5 only w.r.t.
+
+the other one, which does not seem t provide any benefit
 """
 import logging
 
@@ -13,13 +15,12 @@ FAKE = H
 
 
 def get_required_ancillae(r: int):
-    """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
-the RREF.
+    """Get the number of additional (swap_ancilla, add_ancilla) qubits required
+    for the RREF.
 
     :param nrows: Rows of matrix
     :param ncols: Cols of matrix
     :returns: (swap_ancilla, add_ancilla)
-
     """
     add_ancilla_n = r * (r - 1)
     # Add ancilla is necessary an even number
@@ -27,7 +28,7 @@ the RREF.
     return swap_ancilla_n, add_ancilla_n
 
 
-@build_gate('GJISD', [int, int])
+@build_gate("GJISD", [int, int])
 def get_rref(r, n, skip_rightmost=True):
     """Apply RREF to a matrix H.
 
@@ -41,7 +42,6 @@ def get_rref(r, n, skip_rightmost=True):
 
     The number of swap and add ancillae required can be obtained through the
     get_ancillae function.
-
     """
     qrout = QRoutine()
 
@@ -74,23 +74,28 @@ def get_rref(r, n, skip_rightmost=True):
                 # ctrl = swap_ancillae[swap_ancilla_idx]
                 # qrout.apply(rowswap, qregs_rows[x], qregs_rows[i], ctrl)
                 #
-                qrout.apply(X.ctrl(), qregs_rows[x][x],
-                            swap_ancillae[swap_ancilla_idx])
+                qrout.apply(X.ctrl(), qregs_rows[x][x], swap_ancillae[swap_ancilla_idx])
                 qrout_xor = get_cell_xor(2)
                 _skip_cols_c = skip_cols.copy()
                 nxors = 0
                 for c in range(n):
                     # skip  not only columsn, but also pivot element. We postpone it to last op for impr. 5
                     if c not in _skip_cols_c and c != x:
-                        ctrl = swap_ancillae[
-                            swap_ancilla_idx] if nxors % 2 else qregs_rows[x][x]
+                        ctrl = (
+                            swap_ancillae[swap_ancilla_idx]
+                            if nxors % 2
+                            else qregs_rows[x][x]
+                        )
                         # qrout.apply(X.ctrl(2), anc, other_row[c], pivot_row[c])
-                        qrout.apply(qrout_xor, ctrl, qregs_rows[i][c],
-                                    qregs_rows[x][c])
+                        qrout.apply(qrout_xor, ctrl, qregs_rows[i][c], qregs_rows[x][c])
                         nxors += 1
                     # last xor on the pivot element
-                qrout.apply(qrout_xor, swap_ancillae[swap_ancilla_idx],
-                            qregs_rows[i][x], qregs_rows[x][x])
+                qrout.apply(
+                    qrout_xor,
+                    swap_ancillae[swap_ancilla_idx],
+                    qregs_rows[i][x],
+                    qregs_rows[x][x],
+                )
                 swap_ancilla_idx += 1
 
             # improvement 3, X after finishing all phases 1
@@ -101,28 +106,26 @@ def get_rref(r, n, skip_rightmost=True):
                 continue
 
             _skip_cols_c = skip_cols.copy()
-            qrout.apply(X.ctrl(), qregs_rows[i][x],
-                        add_ancillae[add_ancilla_idx])
+            qrout.apply(X.ctrl(), qregs_rows[i][x], add_ancillae[add_ancilla_idx])
             qrout_xor1 = get_cell_xor(1)
             qrout_xor2 = get_cell_xor(2)
             nxors = 0
             for c in range(n):
                 if c not in skip_cols and c != x:
-                    ctrl = add_ancillae[
-                        add_ancilla_idx] if nxors % 2 else qregs_rows[i][x]
-                    qrout.apply(qrout_xor2, ctrl, qregs_rows[x][c],
-                                qregs_rows[i][c])
+                    ctrl = (
+                        add_ancillae[add_ancilla_idx] if nxors % 2 else qregs_rows[i][x]
+                    )
+                    qrout.apply(qrout_xor2, ctrl, qregs_rows[x][c], qregs_rows[i][c])
 
             # impr. 2 and 5
-            qrout.apply(qrout_xor1, add_ancillae[add_ancilla_idx],
-                        qregs_rows[i][x])
+            qrout.apply(qrout_xor1, add_ancillae[add_ancilla_idx], qregs_rows[i][x])
 
             add_ancilla_idx += 1
 
     return qrout
 
 
-@build_gate('CELLXOR', [int])
+@build_gate("CELLXOR", [int])
 def get_cell_xor(nctrls: int):
     qrout = QRoutine()
     ctrls = qrout.new_wires(nctrls)
@@ -131,10 +134,9 @@ def get_cell_xor(nctrls: int):
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int, set])
+@build_gate("ROWSWAP", [int, int, set])
 def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
-    """WARN: the pivot element is checked agains state 1 (improvement 3)
-    """
+    """WARN: the pivot element is checked agains state 1 (improvement 3)"""
     qrout = QRoutine()
     pivot_row = qrout.new_wires(n)
     other_row = qrout.new_wires(n)
@@ -150,7 +152,7 @@ def get_row_swap(n: int, pivot_idx: int, skip_cols: set):
     return qrout
 
 
-@build_gate('ROWADD', [int, int, set])
+@build_gate("ROWADD", [int, int, set])
 def get_row_addition(n, pivot_idx: int, skip_cols: set):
     qrout = QRoutine()
     other_row = qrout.new_wires(n)

@@ -9,13 +9,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 def get_required_ancillae(nrows: int, ncols: int):
-    """Get the number of additional (swap_ancilla, add_ancilla) qubits required for
-the RREF.
+    """Get the number of additional (swap_ancilla, add_ancilla) qubits required
+    for the RREF.
 
     :param nrows: Rows of matrix
     :param ncols: Cols of matrix
     :returns: (swap_ancilla, add_ancilla)
-
     """
     nsquare = min(nrows, ncols)
     add_ancilla_n = nsquare * (nsquare - 1)
@@ -25,13 +24,14 @@ the RREF.
 
 
 def build_u_matrix_from_sample(sample, nsquare):
-    """Build the matrix of transformations applied to obtain the RREF. I.e., if
+    """Build the matrix of transformations applied to obtain the RREF. I.e.,
+    if.
+
     original matrix was A and its RREF is B, we have U * B = A.
 
     This function will return the U matrix by analyzing the intermediate
     measurements on the ancilla (swap and add) qubits produced by the RREF
     gate.
-
     """
     if len(sample.intermediate_measurements) != 2:
         return
@@ -39,23 +39,23 @@ def build_u_matrix_from_sample(sample, nsquare):
     inter_meas_aout, inter_meas_bout = [
         i.cbits for i in sample.intermediate_measurements
     ]
-    return build_u_matrix_from_bitlists(inter_meas_aout, inter_meas_bout,
-                                          nsquare)
+    return build_u_matrix_from_bitlists(inter_meas_aout, inter_meas_bout, nsquare)
+
 
 def build_u_matrix_from_bitstrings(swaps: str, adds: str, nsquare):
     return build_u_matrix_from_bitlists(
-        [int(i) for i in swaps],
-        [int(i) for i in adds],
-        nsquare
+        [int(i) for i in swaps], [int(i) for i in adds], nsquare
     )
 
+
 def build_u_matrix_from_bitlists(swaps: list, adds: list, nsquare):
-    """Build the matrix of transformations applied to obtain the RREF. I.e., if
+    """Build the matrix of transformations applied to obtain the RREF. I.e.,
+    if.
+
     original matrix was A and its RREF is B, we have U * B = A.
 
     This function will return the U matrix by analyzing the ancilla qubits
     produced by the RREF gate.
-
     """
     swap_idx = 0
     add_idx = 0
@@ -63,21 +63,23 @@ def build_u_matrix_from_bitlists(swaps: list, adds: list, nsquare):
     for i in range(nsquare):
         for j in range(i + 1, nsquare):
             if swaps[swap_idx]:
-                u[i, ] += u[j, ]
+                u[i,] += u[j,]
             swap_idx += 1
         for j in range(nsquare):
             if j == i:
                 continue
             if adds[add_idx]:
-                u[j, ] += u[i, ]
+                u[j,] += u[i,]
             add_idx += 1
     u = u % 2
     return u
 
 
-@build_gate('RREF_OPS', [int, int])
+@build_gate("RREF_OPS", [int, int])
 def gate_same_ops_for_vector(nrows: int, ncols: int):
-    """Apply the same operations applied to obtain the matrix RREF to a vector. The
+    """Apply the same operations applied to obtain the matrix RREF to a vector.
+    The.
+
     idea is that if originally we had A*x = y, now we'll have A_rref * x =
     y_rref.
 
@@ -104,14 +106,13 @@ def gate_same_ops_for_vector(nrows: int, ncols: int):
     for i in range(nrows):
         for j in range(nrows):
             if i != j:
-                qfun.apply(X.ctrl(2), add_wires[idx], vec_wires[i],
-                           vec_wires[j])
+                qfun.apply(X.ctrl(2), add_wires[idx], vec_wires[i], vec_wires[j])
                 idx += 1
 
     return qfun
 
 
-@build_gate('RREF', [int, int])
+@build_gate("RREF", [int, int])
 def get_rref(nrows, ncols):
     """Apply RREF to a matrix A.
 
@@ -124,7 +125,6 @@ def get_rref(nrows, ncols):
 
     The number of swap and add ancillae required can be obtained through the
     get_ancillae function.
-
     """
     qrout = QRoutine()
 
@@ -150,23 +150,29 @@ def get_rref(nrows, ncols):
             # print(f"Row {i}")
             # print(f"qregs {[j for j in qregs_rows[i]]}")
             qrout.apply(
-                swap_gate, *qregs_rows,
-                swap_ancillae[swap_ancilla_idx:swap_ancilla_idx + swap_len])
+                swap_gate,
+                *qregs_rows,
+                swap_ancillae[swap_ancilla_idx : swap_ancilla_idx + swap_len],
+            )
             swap_ancilla_idx += swap_len
 
         add_len = nrows - 1
         bgate = get_row_addition(nrows, ncols, i)
-        qrout.apply(bgate, *qregs_rows,
-                    add_ancillae[add_ancilla_idx:add_ancilla_idx + add_len])
+        qrout.apply(
+            bgate,
+            *qregs_rows,
+            add_ancillae[add_ancilla_idx : add_ancilla_idx + add_len],
+        )
         add_ancilla_idx += add_len
 
     return qrout
 
 
-@build_gate('ROWSWAP', [int, int, int])
+@build_gate("ROWSWAP", [int, int, int])
 def get_row_swap(nrows, ncols, row_src_idx: int):
-    """In reality just add to the source row the first row with non-zero element.
-    F.e., suppose:
+    """In reality just add to the source row the first row with non-zero
+    element. F.e., suppose:
+
     - row_src_idx = 0
     - rows = [[0, 1, 0], [1, 0, 0], [0, 1, 1]]
 
@@ -177,7 +183,6 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
 
     Note that the element of rows are qregister, each one representing a row.
     Each qregister should have the same length, otw the result is undefined.
-
     """
     LOGGER.debug(f"nrows {nrows}, ncols {ncols}")
     qfun = QRoutine()
@@ -220,8 +225,7 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
         # idea is that all previous idx are already at 0 bcz of previous row
         # operations.
         for col_idx in range(col_src_idx, ncols):
-            LOGGER.debug(
-                f"CCNOT {anc}, {row_oth[col_idx]} -> {row_src[col_idx]} ")
+            LOGGER.debug(f"CCNOT {anc}, {row_oth[col_idx]} -> {row_src[col_idx]} ")
             qfun.apply(X.ctrl(2), anc, row_oth[col_idx], row_src[col_idx])
 
     LOGGER.debug(f"X src {row_src[col_src_idx]} ")
@@ -229,7 +233,7 @@ def get_row_swap(nrows, ncols, row_src_idx: int):
     return qfun
 
 
-@build_gate('ROWADD', [int, int, int])
+@build_gate("ROWADD", [int, int, int])
 def get_row_addition(nrows, ncols, row_src_idx: int):
     qfun = QRoutine()
     # nrows, ncols = len(matrix), len(matrix[0])
@@ -273,8 +277,7 @@ def get_row_addition(nrows, ncols, row_src_idx: int):
         # operations.
         # WIP, diff, CCNOT src and tgt
         for col_idx in range(col_src_idx, ncols):
-            LOGGER.debug(
-                f"CCNOT {anc}, {row_oth[col_idx]} -> {row_src[col_idx]} ")
+            LOGGER.debug(f"CCNOT {anc}, {row_oth[col_idx]} -> {row_src[col_idx]} ")
             qfun.apply(X.ctrl(2), anc, row_src[col_idx], row_oth[col_idx])
 
     LOGGER.debug("----")
