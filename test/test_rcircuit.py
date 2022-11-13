@@ -37,7 +37,9 @@ def _m_gate3(nbits: int) -> QRoutine:
         qrout.apply(SWAP.ctrl(), qw[0], qw[i], qw[i + 1])
     # to access the qroutine itself (and not the abstract/param gate generated
     # through the build gate), we need to use ~
-    qrout2 = (~_m_gate1)(nbits - 2)
+    # qrout2 = (~_m_gate1)(nbits - 2)
+    # SAME of tilde operator (line above), but does not interfere with LSP
+    qrout2 = _m_gate1.circuit_generator(nbits - 2)
     qrout.apply(qrout2, qw[0], qw[2], qw[4:])
     return qrout
 
