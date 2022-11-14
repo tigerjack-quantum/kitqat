@@ -84,7 +84,7 @@ def _mod_red_common(nn: int, d: int, ress_exp: dict, inline: bool):
     qbit_names["anc"] = range(3 * d, 4 * d)
     _debug_circ_status(progB, qbit_names)
     if not inline:
-        qfun = marith.mul_mod2.circuit_generator(nbitstr)
+        qfun = marith.mul_mod.circuit_generator(nbitstr)
         progB.apply(qfun, areg, breg, creg, anc_reg)
     else:
         # INLINE
