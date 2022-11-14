@@ -89,6 +89,24 @@ class TestRProgram(CircuitTestCase):
         part = functools.partial(RProgram.circuit_to_rprogram, pr.to_circ())
         self.assertRaises(AttributeError, part)
 
+    def test_qcircuit_to_rprogram_with_controlled(self):
+        progC = Program()
+        qr = progC.qalloc(4)
+        progC.apply(X, qr[0])
+        progC.apply(X, qr[1])
+        progC.apply(X, qr[2])
+        progC.apply(CCNOT.ctrl(1), qr)
+        circC = progC.to_circ()
+        res = self.qpu.submit(circC.to_job())
+        sample = None
+        for sample in res:
+            pass
+        assert sample is not None
+        rpr = RProgram.circuit_to_rprogram(circC)
+        self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
+
+
+
     def test_qcircuit_to_rprogram_with_custom_gates(self):
         pr = Program()
         qr = pr.qalloc(5)
