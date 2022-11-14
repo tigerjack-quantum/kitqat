@@ -14,6 +14,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _common_init(a_l, b_l, overflow_qbit, little_endian):
+    """We are performing |a>|b> -> |a>|a+b> (or smthg similar, depending on the calling function). If len(b) > 1, then it allocates a new qubit for the carry-in, as per cuccaro scheme
+    :param a_l, b_l: length of registers a and b, resp.
+    :param overflow_qbit: if True, we need another additional ancilla containing the outcome of the (possible) overflow of the addition
+    :little_endian: if a and b are expected to be in BIG ENDIAN or LITTLE ENDIAN format"""
     bits = min(a_l, b_l)
     # b_l contains the result
     b_is_bigger = b_l > bits
