@@ -111,23 +111,22 @@ class RProgram:
             ctrls = set(rbits[:-2])
             trgts = set(rbits[-2:])
             rgate = RGate.SWAP
-        elif gatename == "X" or gatename == "NOT":
-            if len(rbits) == 2:
-                return self._apply_gate_from_name("CNOT", rbits)
-            elif len(rbits) == 3:
-                return self._apply_gate_from_name("CCNOT", rbits)
-            else:
-                rgate = RGate.NOT
-                trgts = {rbits[-1]}
-                ctrls = set(rbits[:-1])
-        elif gatename in ("CNOT", "C-NOT", "C-X", "CX"):
-            ctrls = {rbits[0]}
-            trgts = {rbits[1]}
+        elif gatename in (
+            "X",
+            "NOT",
+            "CNOT",
+            "C-NOT",
+            "C-X",
+            "CX",
+            "C-C-NOT",
+            "CCNOT",
+            "C-CNOT",
+            "C-C-X",
+            "CCX",
+        ):
             rgate = RGate.NOT
-        elif gatename in ("CCNOT", "C-C-NOT", "C-C-X", "CCX"):
-            ctrls = {rbits[0], rbits[1]}
-            trgts = {rbits[2]}
-            rgate = RGate.NOT
+            trgts = {rbits[-1]}
+            ctrls = set(rbits[:-1])
         else:
             raise AttributeError(
                 f"Got an unknown gate that passed the first check {gatename}"
