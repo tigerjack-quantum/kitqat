@@ -7,15 +7,21 @@ def _get_max_depth_qbits(vec, qblist):
     return maxd
 
 
-def compute_circuit_depth(cr, include_intermediate=False):
+def compute_circuit_depth(cr, include_intermediate=False) -> tuple[int, list[int], dict[str, int]]:
+    """ Compute depth of the circuit using dynamic programming.
+
+    :param cr: qat Circuit object
+    :param include_intermediate: boolean value, set to True to also include the intermediate depth
+
+    :return the maximum depth;
+            the list of qubits having that depth;
+            a dictionary of intermediate results, whose keys are strings containing indexes, the gate name and the qubits positions and whose values is the (intermediate) depth after the operation
+    """
     vec = [0] * cr.nbqbits
     dic = {}
     # for op in pr.op_list
     for idx, op in enumerate(cr):
-        # if include_intermediate:
-        #     print(op)
         maxd = _get_max_depth_qbits(vec, op.qbits)
-        # print(maxd)
         for qb in op.qbits:
             vec[qb] = maxd + 1
         if include_intermediate:
