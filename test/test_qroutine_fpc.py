@@ -4,8 +4,8 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.external.qpus.reversible import RProgram
-from qat.external.utils.qroutines import qregs_init as qregs
-from qat.external.utils.qroutines.hamming_weight_compute import fpc
+from qat.external.qroutines import qregs_init as qregs
+from qat.external.qroutines.hamming_weight_compute import fpc
 from qat.lang.AQASM.program import Program
 
 # DEBUG = False

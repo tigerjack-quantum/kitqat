@@ -4,8 +4,8 @@ from test.common_circuit import CircuitTestCase
 import numpy as np
 from parameterized import parameterized
 from qat.external.qpus.reversible import RProgram
-from qat.external.utils.qroutines.linalg import gauss_jordan_isd4 as gji
-from qat.external.utils.qroutines.linalg import matrix as qmatrix
+from qat.external.qroutines.linalg import gauss_jordan_isd4 as gji
+from qat.external.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 

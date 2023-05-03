@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, List, Set, Tuple
 
 # import nptyping
 import numpy as np
-from qat.external.utils.qroutines import qregs_init
-from qat.external.utils.qroutines import sorting_network as sn
+from qat.external.qroutines import qregs_init
+from qat.external.qroutines import sorting_network as sn
 from qat.lang.AQASM.gates import SWAP
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine

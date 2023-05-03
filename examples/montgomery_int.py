@@ -4,9 +4,9 @@ from copy import deepcopy
 import numpy as np
 from qat.external.qpus.reversible import RProgram
 from qat.external.utils.qatmgmt import statistics as estats
-from qat.external.utils.qroutines import adder as cuccadd
-from qat.external.utils.qroutines.algebraic.gfp import montgomery_arith as marith
-from qat.external.utils.qroutines.qregs_init import initialize_qureg_given_int
+from qat.external.qroutines import adder as cuccadd
+from qat.external.qroutines.algebraic.gfp import montgomery_arith as marith
+from qat.external.qroutines.qregs_init import initialize_qureg_given_int
 from qat.external.utils.statistics.depth import compute_circuit_depth
 from qat.lang.AQASM import classarith
 from qat.lang.AQASM.arithmetic import add_mod

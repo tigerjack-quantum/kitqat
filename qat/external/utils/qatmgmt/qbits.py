@@ -2,7 +2,7 @@ import functools
 import operator
 from typing import TYPE_CHECKING, Dict, List
 
-from qat.external.utils.qroutines.fake import fake_gate
+from qat.external.qroutines.fake import fake_gate
 
 if TYPE_CHECKING:
     from qat.lang.AQASM import Circuit, Program

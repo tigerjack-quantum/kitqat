@@ -1,4 +1,4 @@
-from qat.external.utils.qroutines.hamming_weight_generate import bartschiE19
+from qat.external.qroutines.hamming_weight_generate import bartschiE19
 from qat.lang.AQASM.program import Program
 from qat.core.util import statistics
 # from qat.core.console import display

@@ -1,8 +1,8 @@
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.utils.qroutines import qregs_init as qrinit
-from qat.external.utils.qroutines.qubitrotate import mine
+from qat.external.qroutines import qregs_init as qrinit
+from qat.external.qroutines.qubitrotate import mine
 from qat.lang.AQASM.program import Program
 
 

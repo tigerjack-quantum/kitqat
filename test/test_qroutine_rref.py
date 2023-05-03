@@ -4,8 +4,8 @@ from test.common_circuit import CircuitTestCase
 
 import numpy as np
 from parameterized import parameterized
-from qat.external.utils.qroutines.linalg import matrix as qmatrix
-from qat.external.utils.qroutines.linalg import rref
+from qat.external.qroutines.linalg import matrix as qmatrix
+from qat.external.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 

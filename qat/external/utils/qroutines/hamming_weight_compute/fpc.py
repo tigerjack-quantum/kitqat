@@ -7,8 +7,8 @@ from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.misc import build_gate
 
 from qat.external.utils.bits import conversion
-from qat.external.utils.qroutines import adder
-from qat.external.utils.qroutines import qregs_init as qregs
+from qat.external.qroutines import adder
+from qat.external.qroutines import qregs_init as qregs
 
 if TYPE_CHECKING:
     from qat.lang.AQASM.bits import QRegister

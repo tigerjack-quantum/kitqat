@@ -1,7 +1,7 @@
 from qat.lang.AQASM import H, Program
 
-from qat.external.utils.qroutines import qregs_init as qregs
-from qat.external.utils.qroutines.hamming_weight_compute import fpc
+from qat.external.qroutines import qregs_init as qregs
+from qat.external.qroutines.hamming_weight_compute import fpc
 from qat.core.util import statistics
 from qat.core.console import display
 

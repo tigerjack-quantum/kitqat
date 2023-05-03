@@ -4,7 +4,7 @@ from test.common_circuit import CircuitTestCase
 from parameterized import parameterized
 from qat.lang.AQASM import Program
 
-from qat.external.utils.qroutines.hamming_weight_generate import benes_network
+from qat.external.qroutines.hamming_weight_generate import benes_network
 
 import unittest
 

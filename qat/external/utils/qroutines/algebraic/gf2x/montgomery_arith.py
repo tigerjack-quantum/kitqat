@@ -121,7 +121,7 @@ def mmul2(k: int) -> QRoutine:
 
 @build_gate("M_MUL", [int], arity=lambda x: x * 4 - 1)
 def mmul3(k: int) -> QRoutine:
-    """TODO Version from Jang et al. 2021 of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
+    """TODO Version from Jang et al. 2021 of func:`qat.external.qroutines.montgomery.arith.mmul2`.
     Without ancillae.
 
     It performs |a>|b>|0...0> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
@@ -158,7 +158,7 @@ def mmul_fixed_n(k: int, modulus: str) -> QRoutine:
     modulus n, expected to be a bitstring of length k+1. Sizes should be
     |k+1>|k+1>|k+1>|k>.
 
-    Check :func:`qat.external.utils.qroutines.montgomery.arith.mmul`
+    Check :func:`qat.external.qroutines.montgomery.arith.mmul`
 
 
     """
@@ -187,7 +187,7 @@ def mmul_fixed_n(k: int, modulus: str) -> QRoutine:
 
 @build_gate("M_MUL_FIXED_N", [int, str], arity=lambda x, _: x * 4)
 def mmul_fixed_n2(k: int, modulus: str) -> QRoutine:
-    """Optimized version of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
+    """Optimized version of func:`qat.external.qroutines.montgomery.arith.mmul2`.
     It performs |a>|b>|0...0>|anc> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
     modulus n. Even if n is a bitstring of length k+1, we already know that
     n[k] (the MSB, = x^k) is 1. For this reason, we expect the n qreg to be of
@@ -219,7 +219,7 @@ def mmul_fixed_n2(k: int, modulus: str) -> QRoutine:
 
 @build_gate("M_MUL_FIXED_N", [str], arity=lambda x: (len(x) + 1) * 3)
 def mmul_fixed_n3(modulus: str) -> QRoutine:
-    """TODO Version from Jang et al. 2021 of func:`qat.external.utils.qroutines.montgomery.arith.mmul2`.
+    """TODO Version from Jang et al. 2021 of func:`qat.external.qroutines.montgomery.arith.mmul2`.
     It performs |a>|b>|0...0>|anc> -> |a>|b>|a*b*r^{-1}>|anc> using a fixed
     modulus n. Even if n is a bitstring of length k+1, we already know that
     n[k] (the MSB, = x^k) is 1; same for n[0]. For this reason, we expect the n qreg to be of

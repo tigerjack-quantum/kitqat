@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union
 
 import numpy as np
 from qat.external.interop.quirk import parse
-from qat.external.utils.qroutines.qubitrotate import mine
+from qat.external.qroutines.qubitrotate import mine
 from qat.lang.AQASM import gates
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
