@@ -16,6 +16,7 @@ GRTAGS
 *.circ
 *.aqasm
 *.chp
+*.swp
 #########
 ### PYTHON
 ##########

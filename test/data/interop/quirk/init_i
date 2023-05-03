@@ -1,0 +1,24 @@
+{
+ "time_parameter": 0.5246249999999999,
+ "circuit": {
+  "cols": [],
+  "init": [
+   "i"
+  ]
+ },
+ "chance_of_surviving_to_each_column": [],
+ "computed_bloch_vectors_by_column_then_wire": [
+  [
+   {
+    "x": 0,
+    "y": 1,
+    "z": 0
+   }
+  ]
+ ],
+ "displays": [],
+ "output_amplitudes": [
+  {"r":0.7071067690849304,"i":0},
+  {"r":0,"i":0.7071067690849304}
+ ]
+}

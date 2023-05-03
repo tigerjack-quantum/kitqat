@@ -1,0 +1,33 @@
+{
+ "time_parameter": 0.9741249999999889,
+ "circuit": {
+  "cols": [
+   [
+    {
+     "id": "Ryft",
+     "arg": "pi/2"
+    }
+   ]
+  ]
+ },
+ "chance_of_surviving_to_each_column": [
+  1
+ ],
+ "computed_bloch_vectors_by_column_then_wire": [
+  [
+   null
+  ],
+  [
+   {
+    "x": 1,
+    "y": 0,
+    "z": 0
+   }
+  ]
+ ],
+ "displays": [],
+ "output_amplitudes": [
+  {"r":0.7071067690849304,"i":0},
+  {"r":0.7071067690849304,"i":0}
+ ]
+}
