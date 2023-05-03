@@ -1,11 +1,15 @@
-"""Implementations were taken from.
+"""Note that the add_const and add_mod requires a proper implementation of their gates
 
+Implementations were taken from.
+
+[1]
 [2] Lecture notes not_04 from Crypto course
+[3]
 """
 from collections import deque
 
 from qat.external.utils.qroutines import adder as cuccadd
-from qat.lang.AQASM.classarith import add_const
+from qat.lang.AQASM.arithmetic import add_const, add_mod
 from qat.lang.AQASM.gates import CNOT
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
@@ -66,3 +70,4 @@ def mul_mod(nbitstr: str) -> QRoutine:
     c_dq.rotate(-1)
     # print(f"rotate {[qb.index for qb in c_dq]}")
     return qf
+
