@@ -4,7 +4,7 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.external.utils.bits import conversion, misc
-from qat.external.qroutines import tkk_adder as adder
+from qat.external.qroutines.arith import tkk_adder as adder
 from qat.external.qroutines import qregs_init as qregs
 from qat.lang.AQASM.program import Program
 

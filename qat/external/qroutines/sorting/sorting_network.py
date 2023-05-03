@@ -9,7 +9,7 @@ import logging
 from typing import Any, Dict
 
 import numpy as np
-from qat.external.qroutines.adder import two_bit_comparator
+from qat.external.qroutines.arith.cuccaro_adder import two_bit_comparator
 from qat.lang.AQASM.gates import SWAP, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
