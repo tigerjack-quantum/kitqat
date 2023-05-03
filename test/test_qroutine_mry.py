@@ -3,7 +3,7 @@ from copy import deepcopy
 from math import pi
 from random import random
 
-from qat.external.utils.synthesis.mctrls import mry
+from qat.external.synthesis.mctrls import mry
 from qat.lang.AQASM.gates import RY, H
 from qat.lang.AQASM.program import Program
 

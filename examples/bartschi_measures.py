@@ -3,7 +3,7 @@ from qat.lang.AQASM.program import Program
 from qat.core.util import statistics
 # from qat.core.console import display
 # from qat.lang.aqasm.gates import paramgate
-from qat.external.utils.synthesis.mctrls.mry2 import MRY
+from qat.external.synthesis.mctrls.mry2 import MRY
 
 def _generate_program(n, k):
     pr = Program()

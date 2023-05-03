@@ -1,7 +1,7 @@
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.utils.synthesis.roots.paulis import nrootx, nrooty, nrootz
+from qat.external.synthesis.roots.paulis import nrootx, nrooty, nrootz
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
 

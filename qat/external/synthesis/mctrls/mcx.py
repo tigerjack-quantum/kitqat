@@ -1,4 +1,4 @@
-from qat.external.utils.synthesis.roots.paulis import nrootx
+from qat.external.synthesis.roots.paulis import nrootx
 from qat.lang.AQASM import CCNOT, CNOT, AbstractGate, H, QRoutine, S, T, X
 from qat.lang.AQASM.misc import build_gate
 
