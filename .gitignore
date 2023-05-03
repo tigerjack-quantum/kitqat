@@ -1,16 +1,22 @@
-*.swp
+###
+# pdb history file
+.pdb-pyhist
+# local python version
+.python-version
+# internal dirs
+tmp/
+out/
+experiments/measures
+examples/
+# others
+requirements-core.txt
 GPATH
 GTAGS
 GRTAGS
 *.circ
 *.aqasm
 *.chp
-tmp/
-experiments/*
-*.jpg
-*.gv
-*.dot
-*.png
+*.swp
 #########
 ### PYTHON
 ##########
