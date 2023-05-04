@@ -1,3 +1,11 @@
+"""Notes on endianness convention. Most quantum toolkits use little-endianness;
+that is, a 3 qubit register |a \otimes b \otimes c> has qreg[0] = c, qreg[1] =
+b, qreg[2] = a.
+
+In myqlm, on the other hand, if qreg[0]=1, qreg[1]=0, qreg[2]=0, the output
+will be |100>. So it can be thougth as big-endianness.
+
+"""
 import functools
 import logging
 from typing import TYPE_CHECKING, List, Sequence
@@ -26,11 +34,15 @@ def _conditionally_initialize_qureg_given_bitarray(
     ncontrols: int,
     little_endian: bool,
 ) -> QRoutine:
-    """The input array should be in BIG ENDIAN notation; you can decide on the
-    endianness of the qubit.
+    """The input array should be in BIG ENDIAN notation, meaning that an array
+    with 4 elements, say 'abcd', has array[0]=a, array[1]=b, .... On the other
+    hand, you can decide on the endianness of the qubit, i.e., how the values
+    will be stored inside qureg. If you choose big-endian, qreg[0] = a, qreg[1]
+    = b, ...; if you choose little-endian, qreg[0] = d, qreg[1] = c, ...
 
     :param a_arr: a sequence of bits, in BIG ENDIAN
-    :param little_endian: whether to initialize the qubits in little endian (contrarily to the input) or not
+    :param little_endian: whether to initialize the qubits in little endian or not
+
     """
     qr = QRoutine()
     bits = qr.new_wires(len(a_arr))
@@ -96,12 +108,11 @@ def conditionally_initialize_qureg_to_complement_of_bitarray(
 # @build_gate("QBIT_INIT_BITA", [Union[List, nptyping.NDArray], bool])
 # @build_gate("QBIT_INIT_BITA", [List, bool])
 def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
-    """Given a binary string, initialize the qreg to the proper value
-    corresponding to it. Basically, if a_str is 1011, the function negate bits
-    0, 1 and 3 of the qreg. # 3->0; 2->1; 1->2; 0;3 Note that the qreg has the
-    most significant bit in the rightmost part (little endian) of the qreg,
-    i.e. the most significant bit is on qreg 0. In the circuit, it means that
-    the most significant bits are the lower ones of the qreg.
+    """Given a binary string (in BIG ENDIAN), initialize the qreg to the proper
+    value corresponding to it. Basically, if a_str is 1011, meaning a_str[0] =
+    1, a_str[1] = 0, ..., and little_endian is False, the function negate bits
+    0, 2 and 3. If little_endian is True, it negates bits 0, 1 and 3.
+
 
     :param a_str: the binary digits bit string
     :param qreg: the QuantumRegister on which the integer should be set
@@ -109,6 +120,7 @@ def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
 
     :return False if no operation was performed, True if at least one operation
     was performed
+
     """
     return _conditionally_initialize_qureg_given_bitarray(a_str, 0, little_endian)
 
