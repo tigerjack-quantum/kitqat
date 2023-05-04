@@ -25,6 +25,7 @@ class RGate(Enum):
     NOT = auto()
     SWAP = auto()
     RESET = auto()
+    I = auto()
 
 
 class RProgram:
@@ -34,7 +35,7 @@ class RProgram:
     reversible gate is immediately applied onto the reversible bit.
     """
 
-    rev_gate_names = ("X", "NOT", "SWAP")
+    rev_gate_names = ("X", "NOT", "SWAP", "I")
 
     def __init__(self):
         self.ops = []  # should contain the list of operations for logging purposes
@@ -68,6 +69,8 @@ class RProgram:
             ntrgts = 2
         elif gate == RGate.RESET:
             ntrgts = 1
+        elif gate == RGate.I:
+            ntrgts = 1
         else:
             raise ValueError(f"Unknown gate {gate}")
         trgts = rbits[-1 : -1 * ntrgts - 1 : -1]
@@ -97,6 +100,8 @@ class RProgram:
             )
         elif gate == RGate.RESET:
             self.rbits[trgts[0]] = 0
+        elif gate == RGate.I:
+            pass
         else:
             raise ValueError(f"Unknown gate {gate}")
 
@@ -111,6 +116,10 @@ class RProgram:
             ctrls = set(rbits[:-2])
             trgts = set(rbits[-2:])
             rgate = RGate.SWAP
+        elif gatename == "I":
+            rgate = RGate.I
+            trgts = {rbits[-1]}
+            ctrls = set(rbits[:-1])
         elif gatename in (
             "X",
             "NOT",
