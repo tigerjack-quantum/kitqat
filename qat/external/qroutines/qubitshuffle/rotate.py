@@ -12,34 +12,19 @@ rotate = AbstractGate("ROT_D", [int, int], arity=lambda n, _: n)
 
 @build_gate("ROT_D", [int, int], arity=lambda n, _: n)
 def reversal(nqubits: int, d: int):
-    """Totate a set of nqbubits by d position to the left"""
+    """Rotate a set of nqbubits by d position. If d is >0, then it's a left
+    rotation; if it's < 0, it's a right rotation."""
     qrout = QRoutine()
-    d = d % nqubits
     wires = qrout.new_wires(nqubits)
-    if d == 0 or d == nqubits:
+    d1 = abs(d) % nqubits
+    if d1 == 0 or d1 == nqubits:
         qrout.apply(I, wires[0])
         return qrout
     qrout.apply(reverse(nqubits), wires)
-    qrout.apply(reverse(d), wires[nqubits-d:])
-    qrout.apply(reverse(nqubits-d), wires[:nqubits-d])
+    if d > 0:
+        qrout.apply(reverse(d1), wires[nqubits-d1:])
+        qrout.apply(reverse(nqubits-d1), wires[:nqubits-d1])
+    else:
+        qrout.apply(reverse(d1), wires[:d1])
+        qrout.apply(reverse(nqubits-d1), wires[d1:])
     return qrout
-
-
-# @build_gate("LROT", [int, int], arity=lambda n, _: n)
-# def rotate(nqubits: int, nrotations: int) -> QRoutine:
-#     """Totate for single qubits. If > 0, left rotate, """
-#     qrout = QRoutine()
-#     for i in range(nqubits - 1, 0, -1):
-#         qrout.apply(SWAP, i, i - 1)
-#     return qrout
-
-
-# @build_gate("LROT_REG", [int, int], arity=lambda n1, n2: n1 * n2)
-# def left_rotate(nregs: int, regsize: int) -> QRoutine:
-#     """Left rotate for nregs register, each composed of regsize qubits"""
-#     qrout = QRoutine()
-
-#     for i in range(nregs - 1, 0, -1):
-#         for j in range(regsize - 1, 0, -1):
-#             qrout.apply(SWAP, i*regsize + j, (i*regsize + j) - 1)
-#     return qrout
