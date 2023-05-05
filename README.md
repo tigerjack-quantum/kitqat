@@ -151,8 +151,23 @@ Society 2021. [Accepted on July 31th, 2021] [bibtex](TODO)
     * [x] Moving columns to the start/end of the matrix
   * Arithmetic
     * [x] Cuccaro arithmetic
+      * [x] Adder/subtractor
+      * [x] different length registers
+      * [x] Comparator
+      * [x] no overflow
+      * [x] little/big endian
+      * [ ] no carry in
     * [x] TKK arithmetic
+      * [x] Adder
+      * [ ] Subtractor
+      * [ ] Comparator
+      * [ ] no carry in
+      * [ ] different length registers
+      * [ ] no overflow
+      * [ ] little/big endian
     * [x] My arithmetic
+      * [x] 2bit adder
+      * [x] 2bit comparator
   * Qreg management
     * [x] Qreg reversal
     * [x] Qreg shift (left/right)
