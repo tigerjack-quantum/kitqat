@@ -88,8 +88,8 @@ Most quantum toolkits use little-endianness to represent the quantum state. That
 is, a 3 qubit register $|a \otimes b \otimes c\rangle$ has $qreg[0] = c$,
 $qreg[1] = b$, $qreg[2] = a$.
 
-In myqlm, on the other hand, the same quantum state corresponds to $qreg[0] =
-a$, $qreg[1] = b$, $qreg[2] = c$, and therefore the notation can be thought as
+In myqlm, on the other hand, the same quantum state corresponds to $qreg[0]=a$,
+$qreg[1] = b$, $qreg[2] = c$, and therefore the notation can be thought as
 big-endian.
 
 
@@ -147,8 +147,15 @@ Society 2021. [Accepted on July 31th, 2021] [bibtex](TODO)
   * Linear algebra
     * [x] Matrix init
     * [x] Row/Column swap
-    * [x] RREF through Gaussian elimination
+    * [x] Gauss-Jordan Elimination (useful to compute the inverse of a matrix)
     * [x] Moving columns to the start/end of the matrix
+  * Arithmetic
+    * [x] Cuccaro arithmetic
+    * [x] TKK arithmetic
+    * [x] My arithmetic
+  * Qreg management
+    * [x] Qreg reversal
+    * [x] Qreg shift (left/right)
   * Various
     * [x] Computing Hamming Weight of a subset of qubits
     * [x] Check Hamming Weight of a subset of qubits
