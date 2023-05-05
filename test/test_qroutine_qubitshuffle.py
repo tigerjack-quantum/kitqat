@@ -2,12 +2,14 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines import qregs_init as qregs
+from qat.external.qroutines import qregs_init
 from qat.external.qroutines.qubitshuffle import reverse, rotate
 from qat.lang.AQASM.program import Program
 
+# from qat.lang.AQASM.aqasm_util import InvalidGateArguments
 
-class QubitShuffle(CircuitTestCase):
+
+class QubitShuffleTestCase(CircuitTestCase):
     @parameterized.expand(
         [
             "0111",
@@ -26,7 +28,7 @@ class QubitShuffle(CircuitTestCase):
         pr = Program()
         qr = pr.qalloc(n)
 
-        qfun = qregs.initialize_qureg_given_bitstring(bitstring, False)
+        qfun = qregs_init.initialize_qureg_given_bitstring(bitstring, False)
         pr.apply(qfun, qr)
 
         qfun = reverse.reverse(n)
@@ -34,6 +36,8 @@ class QubitShuffle(CircuitTestCase):
 
         circ = pr.to_circ()
         exp = bitstring[::-1]
+
+        obtained = None
         if self.REVERSIBLE_ON:
             rpr = RProgram.circuit_to_rprogram(circ)
             obtained = rpr.rbits.to01()
@@ -45,7 +49,7 @@ class QubitShuffle(CircuitTestCase):
             for sample in res:
                 if self.SIMULATOR == "linalg":
                     self.assertEqual(sample.probability, 1)
-            obtained = sample.state.bitstring
+                obtained = sample.state.bitstring
         self.assertEqual(obtained, exp)
 
     @parameterized.expand(
@@ -61,14 +65,14 @@ class QubitShuffle(CircuitTestCase):
             ("111001011", 6),
         ]
     )
-    def test_rotate(self, bitstring, dshift):
+    def test_rotate_qubits(self, bitstring, dshift):
         n = len(bitstring)
         for d in (-dshift, dshift):
             with self.subTest(bitstring=bitstring, d=d):
                 pr = Program()
                 qr = pr.qalloc(n)
 
-                qfun = qregs.initialize_qureg_given_bitstring(bitstring, False)
+                qfun = qregs_init.initialize_qureg_given_bitstring(bitstring, False)
                 pr.apply(qfun, qr)
 
                 qfun = rotate.reversal(n, d)
@@ -83,6 +87,7 @@ class QubitShuffle(CircuitTestCase):
                     # right rotate
                     exp = bitstring[n - d1 :] + bitstring[: n - d1]
 
+                obtained = None
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(circ)
                     obtained = rpr.rbits.to01()
@@ -94,5 +99,59 @@ class QubitShuffle(CircuitTestCase):
                     for sample in res:
                         if self.SIMULATOR == "linalg":
                             self.assertEqual(sample.probability, 1)
-                    obtained = sample.state.bitstring
+                        obtained = sample.state.bitstring
+                self.assertEqual(obtained, exp)
+
+    @parameterized.expand(
+        [
+            (["0111", "0001", "0110"], 1),
+            (["0111", "0001", "0110"], 2),
+            (["0111", "0001", "0110"], 3),
+            (["0111", "0001", "0110"], 4),
+            # (["011", "0001", "0110"], 4), # different sizes, should fail
+            (["10011", "11100", "11000", "10010", "10011"], 3),
+            # (["10011", "11100", "11000", "10010", "10011"], 8),
+        ]
+    )
+    def test_rotate_qregs(self, bitstrings: list[str], dshift: int):
+        nstrings = len(bitstrings)
+        # for the rotate routine to work, every string should be of the same size
+        lstrings = len(bitstrings[0])
+
+        for d in (-dshift, dshift):
+            with self.subTest(bitstrings=bitstrings, d=d):
+                pr = Program()
+                qregs = []
+                for bitstring in bitstrings:
+                    qr = pr.qalloc(lstrings)
+                    qfun = qregs_init.initialize_qureg_given_bitstring(bitstring, False)
+                    pr.apply(qfun, qr)
+                    qregs.append(qr)
+
+                qfun = rotate.reg_reversal(nstrings, lstrings, d)
+                pr.apply(qfun, *qregs)
+                circ = pr.to_circ()
+
+                d1 = abs(d) % nstrings
+                if d > 0:
+                    # left rotate
+                    exp = bitstrings[d1:] + bitstrings[:d1]
+                else:
+                    # right rotate
+                    exp = bitstrings[nstrings - d1 :] + bitstrings[: nstrings - d1]
+                # Since the result is a unique, long string
+                exp = "".join([str(i) for i in exp])
+
+                obtained = None
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(circ)
+                    obtained = rpr.rbits.to01()
+                else:
+                    res = self.qpu.submit(circ.to_job())
+                    counts = len(res)
+                    self.assertEqual(counts, 1)
+                    for sample in res:
+                        if self.SIMULATOR == "linalg":
+                            self.assertEqual(sample.probability, 1)
+                        obtained = sample.state.bitstring
                 self.assertEqual(obtained, exp)
