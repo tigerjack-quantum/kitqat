@@ -2,7 +2,7 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.external.qroutines import qregs_init as qregs
-from qat.external.qroutines.arith import s_arith
+from qat.external.qroutines.arith import perriello_arith
 from qat.lang.AQASM.program import Program
 
 
@@ -20,9 +20,9 @@ class SArithTestCase(CircuitTestCase):
     def setUpClass(cls):
         super().setUpClass()
         if cls.logger.level != 0:
-            s_arith.LOGGER.setLevel(cls.logger.level)
+            perriello_arith.LOGGER.setLevel(cls.logger.level)
             for handler in cls.logger.handlers:
-                s_arith.LOGGER.addHandler(handler)
+                perriello_arith.LOGGER.addHandler(handler)
 
     @parameterized.expand(
         [
@@ -48,7 +48,7 @@ class SArithTestCase(CircuitTestCase):
         qfun = qregs.initialize_qureg_given_int(b_int, len(self.b), True)
         self.qc.apply(qfun, self.b)
 
-        qfun = (~s_arith.two_bit_adder)()
+        qfun = (~perriello_arith.two_bit_adder)()
         self.qc.apply(qfun, self.a, self.b, self.cout)
         to_measure_qbits = [self.cout[0].index]
         # self.draw_circuit(self.qc)
@@ -98,7 +98,7 @@ class SArithTestCase(CircuitTestCase):
         qfun = qregs.initialize_qureg_given_int(b_int, len(self.b), True)
         self.qc.apply(qfun, self.b)
 
-        qfun = (~s_arith.two_bit_comparator)()
+        qfun = (~perriello_arith.two_bit_comparator)()
         self.qc.apply(qfun, self.a, self.b, self.cout)
 
         self.logger.debug("a % s", [qbit.index for qbit in self.a])
