@@ -69,13 +69,6 @@ def get_qreg_to_bitstring_from_sample(register: "QRegister", sample: "Sample") -
     return sample.state.bitstring[register.start : register.start + register.length]
 
 
-# TODO same as before, idk why it's here; check which program is using it
-# def get_qreg_bitstring_from_sample(qreg: 'QRegister', sample: 'Sample') -> str:
-#     """Given a Sample object, returns the bitstring for the register.
-#     """
-#     return sample.state.bitstring[qreg.start:qreg.start + qreg.length]
-
-
 def get_qbits_to_bitstring_from_sample(qbit_idxs: List[int], sample: "Sample") -> str:
     interesting_vals = [
         val for i, val in enumerate(sample.state.bitstring) if i in qbit_idxs
