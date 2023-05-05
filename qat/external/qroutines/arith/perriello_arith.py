@@ -7,6 +7,11 @@ from qat.lang.AQASM.routines import QRoutine
 def add_one(n: int, overflow_qubit = False, little_endian = False) -> QRoutine:
     """Add one to a qreg.
     If  overflow_qubit is True, """
+    pass
+    # qrout = QRoutine()
+    # qrout.apply(X, 0)
+    # for i in range(n-1):
+    #     qrout.apply(CNOT, i, i+1)
 
 
 @build_gate("2BIT_ADDER", [])
