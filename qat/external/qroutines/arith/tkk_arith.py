@@ -11,9 +11,11 @@ from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
 
-@build_gate("MADD", [int])
-def adder(rlen: int) -> QRoutine:
+@build_gate("MADD", [int, int, bool, bool])
+def adder(a_len: int, b_len: int, overflow_qubit = False, little_endian=False) -> QRoutine:
     # assuming same length for now
+    assert a_len == b_len
+    rlen = a_len
     qrout = QRoutine()
     a = qrout.new_wires(rlen)
     b = qrout.new_wires(rlen)

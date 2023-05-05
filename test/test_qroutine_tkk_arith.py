@@ -55,7 +55,7 @@ class AdderTestCase(CircuitTestCase):
         self.pr.apply(qfun, self.b)
 
         # qfun = (~adder.adder)(len(self.a), len(self.b), overflow, little_endian)
-        qfun = (~adder.adder)(bits)
+        qfun = (~adder.adder)(bits, bits)
         self.pr.apply(qfun, self.a, self.b, self.cout)
         if overflow:
             self.logger.debug("overflow")
