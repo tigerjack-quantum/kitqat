@@ -32,11 +32,15 @@ class BixTestCase(CircuitTestCase):
         n = len(bitstring)
         # the additional + 1 is required since we want indexes starting from 1
         # to n (and not the traditional 0 to n-1)
-        l2n = ceil(log2(n + 1 + 1))
-        # ones = [i+1 for i, j in enumerate(bitstring) if j == '1']
-        # zeros = [i+1 for i, j in enumerate(bitstring) if j == '0']
-        ones = [bin(i+1)[2:].zfill(l2n) for i, j in enumerate(bitstring) if j == '1']
-        zeros = [bin(i+1)[2:].zfill(l2n) for i, j in enumerate(bitstring) if j == '0']
+        # add should be 0 for not idx_start_at_one
+        add = 1
+        l2n = int(ceil(log2(n + add)))
+        ones = [
+            bin(i + add)[2:].zfill(l2n) for i, j in enumerate(bitstring) if j == "1"
+        ]
+        zeros = [
+            bin(i + add)[2:].zfill(l2n) for i, j in enumerate(bitstring) if j == "0"
+        ]
         weight = len(ones)
         reg_names = {}
 
@@ -48,18 +52,22 @@ class BixTestCase(CircuitTestCase):
         for i in range(weight):
             qr = pr.qalloc(l2n)
             oregs.append(qr)
-            reg_names[f"oregs_{i}"] = range(qr.start, qr.start+ qr.length)
+            reg_names[f"oregs_{i}"] = range(qr.start, qr.start + qr.length)
         for i in range(n - weight):
             qr = pr.qalloc(l2n)
             zregs.append(qr)
             reg_names[f"zregs_{i}"] = range(qr.start, qr.start + qr.length)
 
-        pr.apply(qregs_init.initialize_qureg_given_bitstring(bitstring, little_endian=False), wreg)
+        pr.apply(
+            qregs_init.initialize_qureg_given_bitstring(bitstring, little_endian=False),
+            wreg,
+        )
 
-        qfun = bix.bix_fixed_weight(n, weight)
+        qfun = bix.bix_fixed_weight(n, weight, True)
         pr.apply(qfun, wreg, *oregs, *zregs)
 
         circ = pr.to_circ(link=[cuccaro_arith.adder])
+        # circ = pr.to_circ(link=[tkk_arith.adder])
 
         obtained = None
         if self.REVERSIBLE_ON:
@@ -80,4 +88,3 @@ class BixTestCase(CircuitTestCase):
         print(obtained)
         self.draw_circuit(circ, max_depth=2)
         # self.assertEqual(obtained, exp)
-
