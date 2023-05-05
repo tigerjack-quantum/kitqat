@@ -57,11 +57,11 @@ contained in.
 
 # Structure #
 
-  * The actual code is below `qat.external.utils`.
+  * The actual code is below `qat.external`.
   * `experiments` directory contains some experiments that have been made. 
   * The `notebooks` directory contains some jupyter notebooks explaining usage
   of most commonly used routines.
-  * `tests` directory contains all the tests for all the implemented routines.
+  * `test` directory contains all the tests for all the implemented routines.
 
 # Tests #
 The tests can be run using `python -m unittest` (all tests) or `python -m
@@ -76,9 +76,22 @@ When launching tests, you can provide some optional environment variables
 utilities. E.g. `LOG_LEVEL=DEBUG python -m unittest test.test_qroutine_rref`.
   * `SLOW_TEST_ON=1` to enable also time consuming tests 
   * `QLM_ON=1` to use the QLM instead of myQLM
-  * `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
+  * [x] `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
     simulator is actually available. For QLM, there are a variety of available
     simulators depending on the version.
+    
+# General Notes #
+
+## Endianness ##
+
+Most quantum toolkits use little-endianness to represent the quantum state. That
+is, a 3 qubit register $|a \otimes b \otimes c\rangle$ has $qreg[0] = c$,
+$qreg[1] = b$, $qreg[2] = a$.
+
+In myqlm, on the other hand, the same quantum state corresponds to $qreg[0] =
+a$, $qreg[1] = b$, $qreg[2] = c$, and therefore the notation can be thought as
+big-endian.
+
 
 # Contribution Guidelines #
 If you would like to contribute to the code, please open a [GitHub
