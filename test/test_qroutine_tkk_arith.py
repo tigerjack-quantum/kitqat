@@ -1,12 +1,12 @@
-import itertools
-from qat.external.qpus.reversible import RProgram
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.utils.bits import conversion, misc
-from qat.external.qroutines.arith import tkk_adder as adder
+from qat.external.qpus.reversible import RProgram
 from qat.external.qroutines import qregs_init as qregs
+from qat.external.qroutines.arith import tkk_arith as adder
+from qat.external.utils.bits import misc
 from qat.lang.AQASM.program import Program
+
 
 class AdderTestCase(CircuitTestCase):
     def _prepare_adder_circuit(self, a_bits, b_bits, overflow=True):

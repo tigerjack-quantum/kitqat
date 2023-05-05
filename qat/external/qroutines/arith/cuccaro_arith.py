@@ -14,7 +14,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _common_init(a_l, b_l, overflow_qbit, little_endian):
-    """We are performing |a>|b> -> |a>|a+b> (or smthg similar, depending on the calling function). If len(b) > 1, then it allocates a new qubit for the carry-in, as per cuccaro scheme
+    """We are performing |a>|b> -> |a>|a+b> (or smthg similar, depending on the
+    calling function). If len(b) > 1, then it allocates a new qubit for the carry-in, as per cuccaro scheme
+
     :param a_l, b_l: length of registers a and b, resp.
     :param overflow_qbit: if True, we need another additional ancilla containing the outcome of the (possible) overflow of the addition
     :little_endian: if a and b are expected to be in BIG ENDIAN or LITTLE ENDIAN format"""
@@ -35,14 +37,10 @@ def _common_init(a_l, b_l, overflow_qbit, little_endian):
     #     qfun.apply(fake(f"b{i}"), bq)
     LOGGER.debug("a %s", a)
     LOGGER.debug("b %s", b)
-    if b_l > 1:
-        cin = qfun.new_wires(1)
-        # This will always be reset to 0 according to cuccaro scheme; however, it is not required when we use our 2-bit adder
-        qfun.set_ancillae(cin)
-        # qfun.apply(fake("cin"), cin[0])
-        LOGGER.debug("cin %s", cin)
-    else:
-        cin = None
+    # When Cuccaro adder is used, we need an additional cin, that will be restored to 0 after the addition.
+    cin = qfun.new_wires(1)
+    qfun.set_ancillae(cin)
+    LOGGER.debug("cin %s", cin)
 
     if overflow_qbit:
         cout = qfun.new_wires(1)
@@ -178,8 +176,6 @@ def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
         _maj_chain(qfun, a, b, cin, mrange)
         _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger)
         _unmaj_chain(qfun, a, b, cin, mrange)
-    # out = (b, cout) if cout is not None else (b, )
-    # for qb in itertools.chain(a, *out):
     for qb in itertools.chain(a, b):
         qfun.apply(X, qb)
 
@@ -237,69 +233,3 @@ def _unmajority(name):
 def high_bit_only():
     pass
 
-
-# @build_gate("2BIT_COMP", [])
-# def two_bit_comparator_cuccaro():
-#     """
-#     The out qubit should be initialized to 0.
-#     Given two 1-qubit registers a and b, it returns 1 on the output qubit if
-#     a > b.
-
-#     """
-#     qrout = QRoutine()
-#     a = qrout.new_wires(1)
-#     b = qrout.new_wires(1)
-#     if overflow_qbit:
-#         out = qfun.new_wires(1)
-#     # out = qrout.new_wires(1)
-#     c = qrout.new_wires(1)
-#     qrout.set_ancillae(c)
-
-#     # b must be negated since we want to have a + (-b)
-#     qrout.apply(X, b)
-#     qrout.apply(_majority(""), c, b, a)
-#     qrout.apply(CNOT, a, out)
-#     qrout.apply(_majority("").dag(), c, b, a)
-#     qrout.apply(X, b)
-
-#     return qrout
-
-
-@build_gate("2BIT_ADDER", [])
-def two_bit_adder() -> QRoutine:
-    """The out qubit should be initialized to 0.
-
-    Given two 1-qubit registers a and b, it returns 1 on the output
-    qubit if a > b.
-    """
-    qrout = QRoutine()
-    a = qrout.new_wires(1)
-    b = qrout.new_wires(1)
-    c = qrout.new_wires(1)
-
-    qrout.apply(CNOT, a, b)
-    qrout.apply(X, b)
-    qrout.apply(CCNOT, a, b, c)
-    qrout.apply(X, b)
-
-    return qrout
-
-
-@build_gate("2BIT_COMP", [])
-def two_bit_comparator() -> QRoutine:
-    """The out qubit should be initialized to 0.
-
-    Given two 1-qubit registers a and b, it returns 1 on the output
-    qubit if a > b.
-    """
-    qrout = QRoutine()
-    a = qrout.new_wires(1)
-    b = qrout.new_wires(1)
-    c = qrout.new_wires(1)
-
-    # b must be negated since we want to have a + (-b)
-    qrout.apply(X, b)
-    qrout.apply(CCNOT, a, b, c)
-    qrout.apply(X, b)
-
-    return qrout

@@ -8,7 +8,7 @@ Implementations were taken from.
 """
 from collections import deque
 
-from qat.external.qroutines.arith import cuccaro_adder as cuccadd
+from qat.external.qroutines.arith import cuccaro_arith as cuccadd
 from qat.lang.AQASM.arithmetic import add_const, add_mod
 from qat.lang.AQASM.gates import CNOT
 from qat.lang.AQASM.misc import build_gate

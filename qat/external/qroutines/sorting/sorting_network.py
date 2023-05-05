@@ -9,7 +9,6 @@ import logging
 from typing import Any, Dict
 
 import numpy as np
-from qat.external.qroutines.arith.cuccaro_adder import two_bit_comparator
 from qat.lang.AQASM.gates import SWAP, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
@@ -30,7 +29,8 @@ def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
         ctrl_qb = comp_wires[swap_pattern[0]]
         # Compare qubits 1 and 2 and put the output in pattern 0
         # routine.apply(two_bit_comparator(), a_qb, b_qb, ctrl_qb)
-        # new, but equivalent with one less CCNOT and one more CNOT
+        # 
+        # New, equivalent version, with one less CCNOT and one more CNOT
         routine.apply(X, b_qb)
         routine.apply(CNOT, b_qb, ctrl_qb)
         routine.apply(X, b_qb)

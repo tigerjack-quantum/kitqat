@@ -4,7 +4,6 @@ from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.gates import AbstractGate
 from qat.external.qroutines.qubitshuffle.reverse import reverse
 
-lrot = AbstractGate("LROT", [int], arity=lambda n: n)
 rotate = AbstractGate("ROT_D", [int, int], arity=lambda n, _: n)
 
 # Reversal alg., check

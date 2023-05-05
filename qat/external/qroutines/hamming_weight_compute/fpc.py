@@ -7,7 +7,7 @@ from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.misc import build_gate
 
 from qat.external.utils.bits import conversion
-from qat.external.qroutines.arith import cuccaro_adder as adder
+from qat.external.qroutines.arith import cuccaro_arith as adder
 from qat.external.qroutines import qregs_init as qregs
 
 if TYPE_CHECKING:
