@@ -5,6 +5,7 @@ from qat.lang.AQASM.gates import AbstractGate
 from qat.external.qroutines.qubitshuffle.reverse import reverse
 
 rotate = AbstractGate("ROT_D", [int, int], arity=lambda n, _: n)
+rotate_reg = AbstractGate("ROT_REG_D", [int, int], arity=lambda n, _: n)
 
 # Reversal alg., check
 # https://www.geeksforgeeks.org/program-for-array-rotation-continued-reversal-algorithm/
@@ -26,4 +27,21 @@ def reversal(nqubits: int, d: int):
     else:
         qrout.apply(reverse(d1), wires[:d1])
         qrout.apply(reverse(nqubits-d1), wires[d1:])
+    return qrout
+
+@build_gate("ROT_REG_D", [int, int, int], arity=lambda n, n2, _: n * n2)
+def reg_reversal(nregs: int,  qreg_size: int, d: int):
+    """Rotate a set of `nregs` register by `d` positions. If d is >0, then it's
+ a left rotation; if it's < 0, it's a right rotation. All the registers must be
+ of the same size.
+
+    """
+
+    qrout = QRoutine()
+    wires = qrout.new_wires(nregs * qreg_size)
+    d2 = d * qreg_size
+
+    qrout2 = reversal(len(wires), d2)
+    qrout.apply(qrout2, wires)
+
     return qrout
