@@ -6,21 +6,18 @@ In: Quantum Information & Computation Bd. 10 (2010), Nr. 9 & 10, S. 872–890.
 
 """
 
-from qat.lang.AQASM.gates import CCNOT, CNOT
+import itertools
+import logging
+
+from qat.lang.AQASM.gates import CCNOT, CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
+LOGGER = logging.getLogger(__name__)
 
-@build_gate("MADD", [int, int, bool, bool])
-def adder(a_len: int, b_len: int, overflow_qubit = False, little_endian=False) -> QRoutine:
-    # assuming same length for now
-    assert a_len == b_len
-    rlen = a_len
-    qrout = QRoutine()
-    a = qrout.new_wires(rlen)
-    b = qrout.new_wires(rlen)
-    c_reg = qrout.new_wires(1)
+def _adder(qrout, a, b, c_reg, little_endian=False):
     a_new = a + c_reg
+    rlen = len(a)
 
     # print("*1*")
     i = None
@@ -50,4 +47,37 @@ def adder(a_len: int, b_len: int, overflow_qubit = False, little_endian=False) -
     for i in range(0, rlen):
         qrout.apply(CNOT, a[i], b[i])
 
+
+@build_gate("MADD", [int, int, bool, bool])
+def adder(a_len: int, b_len: int, overflow_qubit = False, little_endian=False) -> QRoutine:
+    # assuming same length for now
+    assert a_len == b_len
+    rlen = a_len
+    qrout = QRoutine()
+    a = qrout.new_wires(rlen)
+    b = qrout.new_wires(rlen)
+    c_reg = qrout.new_wires(1)
+    if not overflow_qubit:
+        qrout.set_ancillae(c_reg)
+
+    _adder(qrout, a, b, c_reg, little_endian)
+    return qrout
+
+@build_gate("MSUB", [int, int, bool, bool])
+def subtractor(a_len: int, b_len: int, overflow_qubit = False, little_endian=False) -> QRoutine:
+    assert a_len == b_len
+    rlen = a_len
+    qrout = QRoutine()
+    a = qrout.new_wires(rlen)
+    b = qrout.new_wires(rlen)
+    c_reg = qrout.new_wires(1)
+    if not overflow_qubit:
+        qrout.set_ancillae(c_reg)
+
+    for qb in itertools.chain(a):
+        qrout.apply(X, qb)
+    _adder(qrout, a, b, c_reg, little_endian)
+
+    for qb in itertools.chain(a, b):
+        qrout.apply(X, qb)
     return qrout
