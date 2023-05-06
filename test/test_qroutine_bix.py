@@ -1,15 +1,12 @@
+import itertools
+from math import ceil, log2
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines import qregs_init
-from qat.external.qroutines.qubitshuffle import reverse, rotate
-from qat.external.qroutines import bix
+from qat.external.qroutines import bix, qregs_init
+from qat.external.qroutines.arith import cuccaro_arith
 from qat.lang.AQASM.program import Program
-from qat.external.qroutines.arith import tkk_arith, cuccaro_arith
-from qat.external.utils.qatmgmt import results
-
-from math import ceil, log2
 
 # from qat.lang.AQASM.aqasm_util import InvalidGateArguments
 
@@ -18,14 +15,16 @@ class BixTestCase(CircuitTestCase):
     @parameterized.expand(
         [
             "0101",
-            # "0001",
-            # "1000",
-            # "1101",
-            # "10011",
-            # "1111000",
-            # "10110100",
-            # "11001011",
-            # "111001011",
+            "0001",
+            "1000",
+            "1101",
+            "10011",
+            "11011",
+            "0001101",
+            "1111000",
+            "10110100",
+            "11001011",
+            "111001011",
         ]
     )
     def test_bix_fixed_weight(self, bitstring):
@@ -35,13 +34,13 @@ class BixTestCase(CircuitTestCase):
         # add should be 0 for not idx_start_at_one
         add = 1
         l2n = int(ceil(log2(n + add)))
-        ones = [
+        onesexp = [
             bin(i + add)[2:].zfill(l2n) for i, j in enumerate(bitstring) if j == "1"
         ]
-        zeros = [
+        zerosexp = [
             bin(i + add)[2:].zfill(l2n) for i, j in enumerate(bitstring) if j == "0"
         ]
-        weight = len(ones)
+        weight = len(onesexp)
         reg_names = {}
 
         pr = Program()
@@ -66,15 +65,13 @@ class BixTestCase(CircuitTestCase):
         qfun = bix.bix_fixed_weight(n, weight, True)
         pr.apply(qfun, wreg, *oregs, *zregs)
 
-        circ = pr.to_circ(link=[cuccaro_arith.adder])
+        circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
         # circ = pr.to_circ(link=[tkk_arith.adder])
 
         obtained = None
         if self.REVERSIBLE_ON:
-            print(reg_names)
             rpr = RProgram.circuit_to_rprogram(circ, reg_names)
             obtained = rpr.rbits.to01()
-            print(rpr.get_result_by_name())
         else:
             res = self.qpu.submit(circ.to_job())
             counts = len(res)
@@ -83,8 +80,18 @@ class BixTestCase(CircuitTestCase):
                 if self.SIMULATOR == "linalg":
                     self.assertEqual(sample.probability, 1)
                 obtained = sample.state.bitstring
-        print(ones)
-        print(zeros)
-        print(obtained)
-        self.draw_circuit(circ, max_depth=2)
-        # self.assertEqual(obtained, exp)
+        ones = []
+        zeros = []
+        for k, v in reg_names.items():
+            if k.startswith("oregs_"):
+                ones.append(obtained[v.start : v.stop])
+            elif k.startswith("zregs_"):
+                zeros.append(obtained[v.start : v.stop])
+
+        self.assertEqual(obtained[wreg.start : wreg.length], bitstring)
+        for obt, exp in itertools.chain(zip(ones, onesexp), zip(zeros, zerosexp)):
+            self.assertEqual(obt, exp)
+
+        ancillae_start = zregs[-1].start + zregs[-1].length
+        for i in bitstring[ancillae_start:]:
+            self.assertEqual(i, "0")

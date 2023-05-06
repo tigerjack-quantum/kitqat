@@ -1,7 +1,7 @@
 from ctypes import ArgumentError
-from qat.external.qroutines.arith import adder
+from qat.external.qroutines.arith import adder, subtractor
 from qat.external.qroutines.qubitshuffle import rotate
-from qat.lang.AQASM.gates import X
+from qat.lang.AQASM.gates import X, SWAP
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 from qat.external.qroutines import qregs_init
@@ -59,11 +59,16 @@ def bix_fixed_weight(n: int, weight: int, idx_start_at_one: bool):
 
     #
     qset1 = qregs_init.initialize_qureg_given_int(1, l2n, little_endian=False)
-    qrout.apply(qset1, const)
     qadd = adder(l2n, l2n, False, False)
     qleftrotones = rotate.reg_reversal(len(oregs), l2n, 1)
     qleftrotzeros = rotate.reg_reversal(len(zregs), l2n, 1)
+    final_clean = n if idx_start_at_one else n-1
+    qsetfinal = qregs_init.initialize_qureg_given_int(
+        final_clean, l2n, little_endian=False
+    )
+    qsub = subtractor(l2n, l2n, False, False)
 
+    qrout.apply(qset1, const)
     for i in range(n):
         if i != 0 or (i == 0 and idx_start_at_one):
             qrout.apply(qadd, const, oregs[0])
@@ -83,15 +88,32 @@ def bix_fixed_weight(n: int, weight: int, idx_start_at_one: bool):
     # reset const register to 0
     qrout.apply(qset1.dag(), const)
 
-    final_clean = n if idx_start_at_one else n-1
-    qset1 = qregs_init.initialize_qureg_to_complement_of_int(
-        final_clean, l2n, little_endian=False
-    )
-    qrout.apply(qset1, const)
-    qrout.apply(qadd, const, oregs[0])
-    qrout.apply(qadd, const, zregs[0])
+    # set it to value n 
+    qrout.apply(qsetfinal, const)
+    for qreg in (oregs[0], zregs[0]):
+        # The topmost register, qreg, should be decreased by the constant value
+        # n, stored in the the register const. However, when we use the
+        # sub(qreg, const) circuit, the result is stored in const.
+        # 
+        # Additionally, note that val(qreg) = n + delta, delta >= 0; i.e., the
+        # topmost register is always greater than n.
+        #
+        # So first we swap the two qregs; now val(qreg) = n; val(const) = n + delta
+        for qb1, qb2 in zip(qreg, const):
+            qrout.apply(SWAP, qb1, qb2)
+        # then we negate const; val(const) = complement(n+delta)
+        for qb in const:
+            qrout.apply(X, qb)
+        # then, we add to it the constant register and complement again, obtaining
+        # val(const) = delta
+        qrout.apply(qadd, qreg, const)
+        for qb in const:
+            qrout.apply(X, qb)
+        # then, we switch again: val(qreg) = delta; val(const) = n
+        for qb1, qb2 in zip(qreg, const):
+            qrout.apply(SWAP, qb1, qb2)
     # reset const register to 0
-    qrout.apply(qset1.dag(), const)
+    qrout.apply(qsetfinal.dag(), const)
 
     if weight == 1 or weight == n-1:
         # there is an extra register
