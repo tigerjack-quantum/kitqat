@@ -143,7 +143,7 @@ def _unmaj_chain(qfun, a, b, cin, mrange):
 
 
 @build_gate("MCOMP", [int, int, bool])
-def comparator(a_l: int, b_l: int, little_endian=True) -> QRoutine:
+def comparator(a_l: int, b_l: int, little_endian=False) -> QRoutine:
     overflow_qbit = True
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
         a_l, b_l, overflow_qbit, little_endian
@@ -164,7 +164,7 @@ def comparator(a_l: int, b_l: int, little_endian=True) -> QRoutine:
 
 
 @build_gate("MSUB", [int, int, bool, bool])
-def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True) -> QRoutine:
+def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=False) -> QRoutine:
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
         a_l, b_l, overflow_qbit, little_endian
     )

@@ -18,6 +18,9 @@ LOGGER = logging.getLogger(__name__)
 def _adder(qrout, a, b, c_reg, little_endian=False):
     a_new = a + c_reg
     rlen = len(a)
+    # if not little_endian:
+    #     a_new.reverse()
+    #     b.reverse()
 
     # print("*1*")
     i = None

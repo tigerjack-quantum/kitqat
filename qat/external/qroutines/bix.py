@@ -66,7 +66,6 @@ def bix_fixed_weight(n: int, weight: int, idx_start_at_one: bool):
     qsetfinal = qregs_init.initialize_qureg_given_int(
         final_clean, l2n, little_endian=False
     )
-    qsub = subtractor(l2n, l2n, False, False)
 
     qrout.apply(qset1, const)
     for i in range(n):
