@@ -143,7 +143,7 @@ def _unmaj_chain(qfun, a, b, cin, mrange):
 
 
 @build_gate("MCOMP", [int, int, bool])
-def comparator(a_l: int, b_l: int, little_endian=True):
+def comparator(a_l: int, b_l: int, little_endian=True) -> QRoutine:
     overflow_qbit = True
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
         a_l, b_l, overflow_qbit, little_endian
@@ -164,7 +164,7 @@ def comparator(a_l: int, b_l: int, little_endian=True):
 
 
 @build_gate("MSUB", [int, int, bool, bool])
-def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True):
+def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=True) -> QRoutine:
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
         a_l, b_l, overflow_qbit, little_endian
     )
@@ -198,7 +198,7 @@ def adder(a_l: int, b_l: int, overflow_qbit=False, little_endian=True) -> QRouti
 
 
 @build_gate("MAJ", [str], arity=lambda _: 3)
-def _majority(name):
+def _majority(name: str) -> QRoutine:
     """Majority gate."""
     LOGGER.debug("name %s", name)
     qfun = QRoutine()
@@ -212,7 +212,7 @@ def _majority(name):
 
 
 @build_gate("UMA", [str], arity=lambda _: 3)
-def _unmajority(name):
+def _unmajority(name: str) -> QRoutine:
     """Unmajority gate."""
     LOGGER.debug("name %s", name)
     qfun = QRoutine()

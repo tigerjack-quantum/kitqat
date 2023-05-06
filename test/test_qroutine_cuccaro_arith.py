@@ -2,8 +2,9 @@ import itertools
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
+from qat.external.qpus.reversible import RProgram
 from qat.external.qroutines import qregs_init as qregs
-from qat.external.qroutines.arith import cuccaro_arith as adder
+from qat.external.qroutines.arith import cuccaro_arith
 from qat.external.utils.bits import conversion, misc
 from qat.lang.AQASM.program import Program
 
@@ -22,9 +23,9 @@ class AdderTestCase(CircuitTestCase):
     def setUpClass(cls):
         super().setUpClass()
         if cls.logger.level != 0:
-            adder.LOGGER.setLevel(cls.logger.level)
+            cuccaro_arith.LOGGER.setLevel(cls.logger.level)
             for handler in cls.logger.handlers:
-                adder.LOGGER.addHandler(handler)
+                cuccaro_arith.LOGGER.addHandler(handler)
 
     @parameterized.expand(
         [
@@ -64,7 +65,9 @@ class AdderTestCase(CircuitTestCase):
                 )
                 self.qc.apply(qfun, self.b)
 
-                qfun = (~adder.adder)(len(self.a), len(self.b), overflow, little_endian)
+                qfun = (~cuccaro_arith.adder)(
+                    len(self.a), len(self.b), overflow, little_endian
+                )
                 if overflow:
                     self.logger.debug("overflow")
                     self.qc.apply(qfun, self.a, self.b, self.cout)
@@ -88,16 +91,26 @@ class AdderTestCase(CircuitTestCase):
                 if overflow:
                     self.logger.debug("cout %d", self.cout[0].index)
                 self.logger.debug("to measure qubits %s", to_measure_qbits)
-                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=to_measure_qbits))
-                self.logger.debug("res %s", res)
+                cr = self.qc.to_circ()
 
-                counts = len(res)
-                self.assertEqual(counts, 1)
                 expected = a_int + b_int
                 if not overflow:
                     expected %= 2**bits
                 # expected_str = conversion.get_bitstring_from_int(
                 #     expected, len(to_measure_qbits))
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    bitstring = "".join(
+                        [str(rpr.rbits[index]) for index in to_measure_qbits]
+                    )
+                    bits = int(bitstring, 2)
+                    self.assertEqual(bits, expected)
+                    return
+
+                res = self.qpu.submit(cr.to_job(qubits=to_measure_qbits))
+                self.logger.debug("res %s", res)
+                counts = len(res)
+                self.assertEqual(counts, 1)
                 if self.SIMULATOR == "linalg":
                     # For QLM
                     for sample in res:
@@ -140,7 +153,7 @@ class AdderTestCase(CircuitTestCase):
                 )
                 self.qc.apply(qfun2, self.b)
 
-                qfun3 = (~adder.adder)(
+                qfun3 = (~cuccaro_arith.adder)(
                     len(self.a), len(self.b), overflow, little_endian
                 )
                 if overflow:
@@ -151,15 +164,21 @@ class AdderTestCase(CircuitTestCase):
                     self.logger.debug("no overflow")
                     self.qc.apply(qfun3, self.a, self.b)
                     self.qc.apply(qfun3.dag(), self.a, self.b)
-                self.qc.apply(qfun2, self.b)
-                self.qc.apply(qfun1, self.a)
+                self.qc.apply(qfun2.dag(), self.b)
+                self.qc.apply(qfun1.dag(), self.a)
 
-                res = self.qpu.submit(self.qc.to_circ().to_job())
+                cr = self.qc.to_circ()
+                expected = 0
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    bits = rpr.rbits.to01()
+                    self.assertEqual(int(bits, 2), expected)
+                    return
+                res = self.qpu.submit(cr.to_job())
                 self.logger.debug("res %s", res)
 
                 counts = len(res)
                 self.assertEqual(counts, 1)
-                expected = 0
                 state = res[0].state
 
                 self.logger.debug("expected %d, having %d", expected, state.state)
@@ -201,7 +220,9 @@ class AdderTestCase(CircuitTestCase):
                 )
                 self.qc.apply(qfun, self.b)
 
-                qfun = (~adder.adder)(len(self.a), len(self.b), overflow, little_endian)
+                qfun = (~cuccaro_arith.adder)(
+                    len(self.a), len(self.b), overflow, little_endian
+                )
                 if overflow:
                     self.logger.debug("overflow")
                     self.qc.apply(qfun, self.a, self.b, self.cout)
@@ -218,15 +239,25 @@ class AdderTestCase(CircuitTestCase):
                     self.logger.debug("big endian")
                     to_measure_qbits += [qbit.index for qbit in self.b]
 
-                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=to_measure_qbits))
-                self.logger.debug("res %s", res)
-
-                counts = len(res)
-                self.assertEqual(counts, 1)
+                cr = self.qc.to_circ()
                 expected = a_int + b_int
                 # if not overflow:
                 # It also happen with overflow
                 expected %= 2 ** len(to_measure_qbits)
+
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    bitstring = "".join(
+                        [str(rpr.rbits[index]) for index in to_measure_qbits]
+                    )
+                    bits = int(bitstring, 2)
+                    self.assertEqual(bits, expected)
+                    return
+                res = self.qpu.submit(cr.to_job(qubits=to_measure_qbits))
+                self.logger.debug("res %s", res)
+
+                counts = len(res)
+                self.assertEqual(counts, 1)
 
                 if self.SIMULATOR == "linalg":
                     # For QLM
@@ -274,7 +305,9 @@ class AdderTestCase(CircuitTestCase):
                 )
                 self.qc.apply(qfun, self.b)
 
-                qfun = (~adder.adder)(len(self.a), len(self.b), overflow, little_endian)
+                qfun = (~cuccaro_arith.adder)(
+                    len(self.a), len(self.b), overflow, little_endian
+                )
                 if overflow:
                     self.logger.debug("overflow")
                     self.qc.apply(qfun, self.a, self.b, self.cout)
@@ -291,15 +324,25 @@ class AdderTestCase(CircuitTestCase):
                     self.logger.debug("big endian")
                     to_measure_qbits += [qbit.index for qbit in self.b]
 
-                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=to_measure_qbits))
-                self.logger.debug("res %s", res)
-
-                counts = len(res)
-                self.assertEqual(counts, 1)
                 expected = a_int + b_int
                 # It also happen with overflow
                 expected %= 2 ** len(to_measure_qbits)
 
+                cr = self.qc.to_circ()
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    bitstring = "".join(
+                        [str(rpr.rbits[index]) for index in to_measure_qbits]
+                    )
+                    bits = int(bitstring, 2)
+                    self.assertEqual(bits, expected)
+                    return
+
+                res = self.qpu.submit(cr.to_job(qubits=to_measure_qbits))
+                self.logger.debug("res %s", res)
+
+                counts = len(res)
+                self.assertEqual(counts, 1)
                 if self.SIMULATOR == "linalg":
                     # For QLM
                     for sample in res:
@@ -336,7 +379,7 @@ class AdderTestCase(CircuitTestCase):
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
-                qfun = (~adder.adder)(
+                qfun = (~cuccaro_arith.adder)(
                     half_bits, bits - half_bits, overflow, little_endian
                 )
                 term1 = [self.a[i] for i in range(half_bits)]
@@ -358,12 +401,6 @@ class AdderTestCase(CircuitTestCase):
                     self.logger.debug("big endian")
                     to_measure_qbits += [qbit.index for qbit in term2]
 
-                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=to_measure_qbits))
-                self.logger.debug("res %s", res)
-
-                counts = len(res)
-                self.assertEqual(counts, 1)
-
                 a_str = conversion.get_bitstring_from_int(a_int, bits, little_endian)
                 term1_int = conversion.get_int_from_bitstring(
                     a_str[0:half_bits], little_endian
@@ -371,11 +408,28 @@ class AdderTestCase(CircuitTestCase):
                 term2_int = conversion.get_int_from_bitstring(
                     a_str[half_bits:bits], little_endian
                 )
+                expected = term1_int + term2_int
+                expected %= 2 ** len(to_measure_qbits)
+
+                cr = self.qc.to_circ()
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    bitstring = "".join(
+                        [str(rpr.rbits[index]) for index in to_measure_qbits]
+                    )
+                    bits = int(bitstring, 2)
+                    self.assertEqual(bits, expected)
+                    return
+
+                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=to_measure_qbits))
+                self.logger.debug("res %s", res)
+
+                counts = len(res)
+                self.assertEqual(counts, 1)
+
                 self.logger.debug("a_str %s", a_str)
                 self.logger.debug("a first half %s", term1_int)
                 self.logger.debug("a second half %s", term2_int)
-                expected = term1_int + term2_int
-                expected %= 2 ** len(to_measure_qbits)
                 if self.SIMULATOR == "linalg":
                     # For QLM
                     for sample in res:
@@ -427,7 +481,7 @@ class AdderTestCase(CircuitTestCase):
                 )
                 self.qc.apply(qfun, self.b)
 
-                qfun = (~adder.subtractor)(
+                qfun = (~cuccaro_arith.subtractor)(
                     len(self.a), len(self.b), overflow, little_endian
                 )
                 if overflow:
@@ -450,16 +504,28 @@ class AdderTestCase(CircuitTestCase):
                 if overflow:
                     self.logger.debug("cout %d", self.cout[0].index)
                 self.logger.debug("to measure qubits %s", to_measure_qbits)
-                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=to_measure_qbits))
-                self.logger.debug("res %s", res)
 
-                counts = len(res)
-                self.assertEqual(counts, 1)
                 expected = a_int - b_int
                 if expected < 0:
                     expected = 2 ** len(to_measure_qbits) + expected
                 if not overflow:
                     expected %= 2**bits
+
+                cr = self.qc.to_circ()
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    bitstring = "".join(
+                        [str(rpr.rbits[index]) for index in to_measure_qbits]
+                    )
+                    bits = int(bitstring, 2)
+                    self.assertEqual(bits, expected)
+                    return
+
+                res = self.qpu.submit(cr.to_job(qubits=to_measure_qbits))
+                self.logger.debug("res %s", res)
+
+                counts = len(res)
+                self.assertEqual(counts, 1)
                 if self.SIMULATOR == "linalg":
                     # For QLM
                     for sample in res:
@@ -504,14 +570,24 @@ class AdderTestCase(CircuitTestCase):
                 )
                 self.qc.apply(qfun, self.b)
 
-                qfun = (~adder.comparator)(bits, bits, little_endian)
+                qfun = (~cuccaro_arith.comparator)(bits, bits, little_endian)
                 self.qc.apply(qfun, self.a, self.b, self.cout)
 
-                res = self.qpu.submit(self.qc.to_circ().to_job(qubits=[self.cout]))
+                expected = 1 if a_int < b_int else 0
+
+                cr = self.qc.to_circ()
+                if self.REVERSIBLE_ON:
+                    rpr = RProgram.circuit_to_rprogram(cr)
+                    # bitstring = "".join([str(rpr.rbits[index]) for index in to_measure_qbits])
+                    bitstring = rpr.rbits.to01()[self.cout[0].index]
+                    bits = int(bitstring, 2)
+                    self.assertEqual(bits, expected)
+                    return
+
+                res = self.qpu.submit(cr.to_job(qubits=[self.cout]))
                 self.logger.debug("res %s", res)
                 counts = len(res)
                 self.assertEqual(counts, 1)
-                expected = 1 if a_int < b_int else 0
                 if self.SIMULATOR == "linalg":
                     # For QLM
                     for sample in res:
