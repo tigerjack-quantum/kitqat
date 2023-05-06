@@ -1,21 +1,52 @@
 import itertools
-from test.common_circuit import CircuitTestCase
 
-from parameterized import parameterized
-from qat.external.utils.bits import conversion, misc
-from qat.external.qroutines import adder
-from qat.external.qroutines import qregs_init as qregs
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.gates import X, SWAP
-import sys
-from qat.core.console import display
-from qat.qpus import PyLinalg
-from qat.lang.AQASM import build_gate
+from qat.pylinalg import PyLinalg
+from qat.external.qroutines.arith.cuccaro_arith import subtractor, adder
+from qat.external.qroutines import qregs_init
 
-# @build_gate("COMP", arity=3)
-# def comparator() -> QRoutine:
-#     qfun = QRoutine()
-#     qfun.apply()
+qpu = PyLinalg()
+
+def sub_test():
+    n = 3
+    pr = Program()
+    qr1 = pr.qalloc(n)
+    const = pr.qalloc(n)
+
+    pr.apply(qregs_init.initialize_qureg_given_int(7, n, False), qr1)
+    pr.apply(qregs_init.initialize_qureg_given_int(5, n, False), const)
+    
+
+    # ALT. 1
+    # pr.apply(subtractor(n, n, False, False), const, qr1)
+    # for qb in qr1:
+    #     pr.apply(X, qb)
+    # pr.apply(qregs_init.initialize_qureg_given_int(4, n, False), const)
+    # pr.apply(qregs_init.initialize_qureg_given_int(1, n, False), const)
+    # pr.apply(adder(n, n, False, False), const, qr1)
+
+    # ALT. 2
+    pr.apply(subtractor(n, n, False, False), qr1, const)
+    for qb1, qb2 in zip(qr1, const):
+        pr.apply(SWAP, qb1, qb2)
+    for qb in const:
+        pr.apply(X, qb)
+    pr.apply(adder(n, n, False, False), qr1, const)
+    for qb in const:
+        pr.apply(X, qb)
+    # pr.apply(subtractor(n, n, False, False), qr1, const)
+    
+
+    
+    # for qb1, qb2 in zip(qr1, const):
+    #     pr.apply(SWAP, qb1, qb2)
+
+    cr = pr.to_circ()
+    res = qpu.submit(cr.to_job())
+    for sample in res:
+        print(sample.state.bitstring)
+
 
 
 def comparator_exp(ab: bool, bb: bool, h1b: bool, h2b: bool):
@@ -88,9 +119,10 @@ def main():
     #     # print(int(ab), int(bb))
     #     print(int(h1b), int(h2b))
     #     comparator_exp(ab, bb, h1b, h2b)
-    for ab, bb, in itertools.product((False, True), (False, True)):
-        print(int(ab), int(bb))
-        comparator_exp(ab, bb, False, False)
+    sub_test()
+    # for ab, bb, in itertools.product((False, True), (False, True)):
+    #     print(int(ab), int(bb))
+    #     comparator_exp(ab, bb, False, False)
 
 
 if __name__ == '__main__':
