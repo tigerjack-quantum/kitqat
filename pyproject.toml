@@ -2,9 +2,12 @@
 requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+py-modules = ["qat"]
+
 [project]
 name = "qat-utils"
-version="1.4.2"
+version="1.9.6"
 description = "Some useful extension to Atos Qat language"
 # license = "Proprietary"
 # repository="https://github.com/tigerjack/qat-utils "
@@ -47,7 +50,7 @@ test = [
 
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py311']
 include = '\.pyi?$'
 # 'extend-exclude' excludes files or directories in addition to the defaults
 extend-exclude = '''
