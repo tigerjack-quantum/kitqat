@@ -46,7 +46,7 @@ def bix_fixed_weight_v1(n: int, weight: int, idx_start_at_one: bool):
     """
 
     if weight < 1 or weight >= n:
-        raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
+        raise ArgumentError("Weight should be >=1 and < n, given %s" % weight)
     qrout = QRoutine()
     if idx_start_at_one:
         l2n = int(ceil(log2(n + 1)))

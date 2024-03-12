@@ -1,8 +1,10 @@
 # from qat.external.qroutines.fake import fake_gate
 from qat.core.util import statistics
+
 # from qat.external.qroutines.linalg import gauss_jordan_isd as gji
 # from qat.external.qroutines.linalg import gauss_jordan_isd2 as gji
 from qat.external.qroutines.linalg import gauss_jordan_isd4 as gji
+
 # from qat.external.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
 from qat.external.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
@@ -18,10 +20,10 @@ def _prepare_circuit(r, n):
     return pr, qr_rows
 
 
-def _build_gje_circuit(r, n, n_syns, gjmod, alg='prange'):
+def _build_gje_circuit(r, n, n_syns, gjmod, alg="prange"):
     pr, qregs_rows = _prepare_circuit(r, n + n_syns)
 
-    skip_rightmost = alg == 'prange'
+    skip_rightmost = alg == "prange"
     rref_gate = gjmod.get_rref(r, n + n_syns, skip_rightmost, n)
 
     swap_ancillae_n, add_ancillae_n = gjmod.get_required_ancillae(r)
@@ -45,11 +47,13 @@ def _get_max_depth_qbits(vec, qblist):
     return maxd
 
 
-def _compute_depth(cr, include_intermediate=False):
+def _compute_depth(cr, include_intermediate=False, include_gates=set()):
     vec = [0] * cr.nbqbits
     dic = {}
     # for op in pr.op_list
     for idx, op in enumerate(cr):
+        if len(include_gates) > 0 and not op.gate in include_gates:
+            continue
         # if include_intermediate:
         #     print(op)
         maxd = _get_max_depth_qbits(vec, op.qbits)
@@ -93,40 +97,38 @@ def _trans_qbit_to_txt(r, n, n_syns, qbits, gjmod):
     return txts
 
 
-
 def main():
     circulant = True
-    alg = 'prange'
-    # alg = 'lee'
+    # alg = "prange"
+    alg = 'lee'
 
-    # for r in range(3, 4):
-    # for r in range(4, 5):
-    # for r in range(5, 6):
-    # for r in range(7, 8):
-    # for r in range(15, 16):
-    # for r in range(20, 21):
-    # for r in range(6, 101):
-    for r in range(25, 26):
-        if alg == 'prange':
-            # with prange, we do not consider the right-most k\times n submatrix
-            n = r
-        else:
-            # just a random value, more or less reasonable for McE
-            n = 4 * r
+    for r in range(30, 31):
+        if alg == "prange":
+            # with prange, we do not consider the right-most k\times n
+            # submatrix, so whatever value we use the result is equal (the only
+            # thing is that there are enforcements in other parts of the
+            # circuit for n>r)
+            k = 0
         if circulant:
             n_syns = r
+            k = r
+            # n = 2 * r # k = r
         else:
+            k = 4 * r # mceliece, more or less
             n_syns = 1
+        n = k + r
+
+        # tmp overwrite
+        n_syns = 10
 
         pr = _build_gje_circuit(r, n, n_syns, gji, alg)
         cr = pr.to_circ(include_matrices=False)
         # display(cr, max_depth=2)
         sts = statistics(cr)
         # print(sts)
-        ccnot_n = sts['gates'].get('C-C-X', 0) + sts['gates'].get('CCNOT', 0)
-        cnot_n = sts['gates'].get('C-X', 0) + sts['gates'].get('CNOT', 0)
-        depth, max_depth_qubits, dic = _compute_depth(
-            cr, include_intermediate=False)
+        ccnot_n = sts["gates"].get("C-C-X", 0) + sts["gates"].get("CCNOT", 0)
+        cnot_n = sts["gates"].get("C-X", 0) + sts["gates"].get("CNOT", 0)
+        depth, max_depth_qubits, dic = _compute_depth(cr, include_intermediate=False)
         # depth, depth_i, dic = _compute_depth(cr, include_intermediate=False)
         trans = _trans_qbit_to_txt(r, n, n_syns, max_depth_qubits, gji)
 
@@ -134,8 +136,19 @@ def main():
             print(op, dep)
 
         print(f"r: {r}, n: {n}, nsyns: {n_syns}, circulant: {circulant}")
+        print(f"CNOT: {cnot_n}, CCNOT: {ccnot_n}")
         print(
-            f"CNOT: {cnot_n}, CCNOT: {ccnot_n}, depth: {depth}, max depth qbits: {max_depth_qubits}/{cr.nbqbits}, corresponding to {trans}"
+            f"depth: {depth}, max depth qbits: {max_depth_qubits}/{cr.nbqbits},"
+            f" corresponding to {trans}"
+        )
+
+        depth, max_depth_qubits, dic = _compute_depth(
+            cr, include_intermediate=False, include_gates={"CCNOT"}
+        )
+        trans = _trans_qbit_to_txt(r, n, n_syns, max_depth_qubits, gji)
+        print(
+            f"CCNOT depth: {depth}, max depth qbits:"
+            f" {max_depth_qubits}/{cr.nbqbits}, corresponding to {trans}"
         )
 
         #################################
@@ -157,5 +170,5 @@ def main():
         # print(depth, depth_i)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
