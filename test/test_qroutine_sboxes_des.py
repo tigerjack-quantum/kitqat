@@ -57,6 +57,7 @@ class DESSboxTestCase(CircuitTestCase):
 
     @classmethod
     def generate_program(cls, inp_bits):
+
         pr = Program()
         inps = pr.qalloc(6)
         outs = pr.qalloc(4)
@@ -88,3 +89,21 @@ class DESSboxTestCase(CircuitTestCase):
 
     def test_s2(self):
         self._common(1)
+
+    def test_s3(self):
+        self._common(2)
+
+    def test_s4(self):
+        self._common(3)
+
+    def test_s5(self):
+        self._common(4)
+
+    def test_s6(self):
+        self._common(5)
+
+    def test_s7(self):
+        self._common(6)
+
+    def test_s8(self):
+        self._common(7)

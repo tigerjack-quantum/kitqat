@@ -15,6 +15,12 @@ def _helper(expr, output):
     expr.evaluate(output=output)
     return output
 
+def _helper2(expr, qr):
+    output = qr.new_wires(1, QBoolArray)
+    qr.set_ancillae(output)
+    expr.evaluate(output=output)
+    return output[0]
+
 
 @build_gate("DES_S1", [], lambda: 10)
 def s1() -> QRoutine:
@@ -99,9 +105,7 @@ def s2() -> QRoutine:
     qr = QRoutine()
     a = qr.new_wires(6, QBoolArray)
     outs = qr.new_wires(4, QBoolArray)
-    # x = qr.new_wires(63, QBoolArray)
-    # ancs = qr.new_wires(10)
-    tmps = qr.new_wires(59, QBoolArray)
+    tmps = qr.new_wires(52, QBoolArray)
     qr.set_ancillae(tmps)
 
     x0 = _helper(~a[4], tmps[0])
@@ -142,7 +146,6 @@ def s2() -> QRoutine:
     x34 = _helper(x28 ^ x33, tmps[33])
     x35 = _helper(a[3] | x34, tmps[34])
     _ = _helper(x24 ^ x35, outs[2])
-    # out2 ^= _helper(x36, tmps[])
 
     x37 = _helper(x20 & x31, tmps[35])
     x38 = _helper(x37 ^ x4, tmps[36])
@@ -172,32 +175,253 @@ def s2() -> QRoutine:
 
 @build_gate("DES_S3", [], lambda: 10)
 def s3() -> QRoutine:
-    pass
+    qr = QRoutine()
+    a = qr.new_wires(6, QBoolArray)
+    outs = qr.new_wires(4, QBoolArray)
+    tmps = qr.new_wires(53, QBoolArray)
+    qr.set_ancillae(tmps)
+
+    x0 = _helper(~a[4], tmps[0])
+    x1 = _helper(~a[5], tmps[1])
+    x2 = _helper(a[4] & a[2], tmps[2])
+    x3 = _helper(x2 ^ a[5], tmps[3])
+    x4 = _helper(a[3] & x0, tmps[4])
+    x5 = _helper(x3 ^ x4, tmps[5])
+    x6 = _helper(x5 ^ a[1], tmps[6])
+    x7 = _helper(a[2] & x0, tmps[7])
+    x8 = _helper(a[4] ^ x1, tmps[8])
+    x9 = _helper(a[3] | x8, tmps[9])
+    x10 = _helper(x7 ^ x9, tmps[10])
+    x11 = _helper(x6 & x10, tmps[11])
+    x12 = _helper(a[4] ^ x10, tmps[12])
+    x13 = _helper(x12 | x6, tmps[13])
+    x14 = _helper(a[3] & x13, tmps[14])
+    x15 = _helper(x11 ^ x14, tmps[15])
+    x16 = _helper(a[1] & x15, tmps[16])
+    x17 = _helper(x10 ^ x16, tmps[17])
+    x18 = _helper(a[0] & x17, tmps[18])
+    _ = _helper(x6 ^ x18, outs[3])
+    # *out3 ^= _helper(x19, tmps[])
+
+    x20 = _helper(a[2] ^ a[3], tmps[19])
+    x21 = _helper(x20 ^ x8, tmps[20])
+    x22 = _helper(x1 | x3, tmps[21])
+    x23 = _helper(x22 ^ x7, tmps[22])
+    x24 = _helper(a[1] | x23, tmps[23])
+    x25 = _helper(x21 ^ x24, tmps[24])
+    x26 = _helper(a[5] ^ x22, tmps[25])
+    x27 = _helper(x26 | a[3], tmps[26])
+    x28 = _helper(a[2] ^ x14, tmps[27])
+    x29 = _helper(x28 | x4, tmps[28])
+    x30 = _helper(a[1] | x29, tmps[29])
+    x31 = _helper(x27 ^ x30, tmps[30])
+    x32 = _helper(a[0] | x31, tmps[31])
+    x33 = _helper(x25 ^ x32, outs[0])
+    # *out0 ^= _helper(x33, tmps[])
+
+    x34 = _helper(a[2] ^ x8, tmps[32])
+    x35 = _helper(x34 | x4, tmps[33])
+    x36 = _helper(x3 | x28, tmps[34])
+    x37 = _helper(x36 ^ a[3], tmps[35])
+    x38 = _helper(a[1] | x37, tmps[36])
+    x39 = _helper(x35 ^ x38, tmps[37])
+    x40 = _helper(a[5] & x10, tmps[38])
+    x41 = _helper(x40 | x5, tmps[39])
+    x42 = _helper(x33 ^ x37, tmps[40])
+    x43 = _helper(x42 ^ x40, tmps[41])
+    x44 = _helper(a[1] & x43, tmps[42])
+    x45 = _helper(x41 ^ x44, tmps[43])
+    x46 = _helper(a[0] | x45, tmps[44])
+    _ = _helper(x39 ^ x46, outs[2])
+    # *out2 ^= _helper(x47, tmps[])
+
+    x48 = _helper(x1 | x37, tmps[45])
+    x49 = _helper(x48 ^ x12, tmps[46])
+    x50 = _helper(x26 ^ x27, tmps[47])
+    x51 = _helper(a[1] | x50, tmps[48])
+    x52 = _helper(x49 ^ x51, tmps[49])
+    x53 = _helper(x11 & x22, tmps[50])
+    x54 = _helper(x53 & x51, tmps[51])
+    x55 = _helper(a[0] | x54, tmps[52])
+    _ = _helper(x52 ^ x55, outs[1])
+    # *out1 ^= _helper(x56, tmps[])
+
+    return qr
 
 
 @build_gate("DES_S4", [], lambda: 10)
 def s4() -> QRoutine:
-    pass
+    qr = QRoutine()
+    a = qr.new_wires(6, QBoolArray)
+    outs = qr.new_wires(4, QBoolArray)
+    tmps = qr.new_wires(38, QBoolArray)
+    qr.set_ancillae(tmps)
+
+    x0 = _helper(~a[0], tmps[0])
+    x1 = _helper(~a[2], tmps[1])
+    x2 = _helper(a[0] | a[2], tmps[2])
+    x3 = _helper(a[4] & x2, tmps[3])
+    x4 = _helper(x0 ^ x3, tmps[4])
+    x5 = _helper(a[1] | a[2], tmps[5])
+    x6 = _helper(x4 ^ x5, tmps[6])
+    x7 = _helper(a[0] & a[4], tmps[7])
+    x8 = _helper(x7 ^ x2, tmps[8])
+    x9 = _helper(a[1] & x8, tmps[9])
+    x10 = _helper(a[4] ^ x9, tmps[10])
+    x11 = _helper(a[3] & x10, tmps[11])
+    x12 = _helper(x6 ^ x11, tmps[12])
+    x13 = _helper(x1 ^ x3, tmps[13])
+    x14 = _helper(a[1] & x13, tmps[14])
+    x15 = _helper(x8 ^ x14, tmps[15])
+    x16 = _helper(x4 & x13, tmps[16])
+    x17 = _helper(a[4] ^ x1, tmps[17])
+    x18 = _helper(a[1] | x17, tmps[18])
+    x19 = _helper(x16 ^ x18, tmps[19])
+    x20 = _helper(a[3] | x19, tmps[20])
+    x21 = _helper(x15 ^ x20, tmps[21])
+    x22 = _helper(a[5] & x21, tmps[22])
+    x23 = _helper(x12 ^ x22, outs[1])
+    # *out1 ^= _helper(x23, tmps[])
+
+    x24 = _helper(~x12, tmps[23])
+    x25 = _helper(a[5] | x21, tmps[24])
+    _ = _helper(x24 ^ x25, outs[0])
+    # *out0 ^= _helper(x26, tmps[])
+
+    x27 = _helper(a[1] & x10, tmps[25])
+    x28 = _helper(x27 ^ x16, tmps[26])
+    x29 = _helper(a[2] ^ x9, tmps[27])
+    x30 = _helper(x29 ^ x18, tmps[28])
+    x31 = _helper(a[3] & x30, tmps[29])
+    x32 = _helper(x28 ^ x31, tmps[30])
+    x33 = _helper(x24 ^ x32, tmps[31])
+    x34 = _helper(a[1] & x33, tmps[32])
+    x35 = _helper(x23 ^ x34, tmps[33])
+    x36 = _helper(a[3] | x33, tmps[34])
+    x37 = _helper(x35 ^ x36, tmps[35])
+    x38 = _helper(a[5] & x37, tmps[36])
+    x39 = _helper(x32 ^ x38, outs[3])
+    # *out3 ^= _helper(x39, tmps[])
+
+    x40 = _helper(x25 ^ x37, tmps[37])
+    _ = _helper(x40 ^ x39, outs[2])
+    # *out2 ^= _helper(x41, tmps[39])
+
+    return qr
 
 
 @build_gate("DES_S5", [], lambda: 10)
 def s5() -> QRoutine:
-    pass
+    qr = QRoutine()
+    a = qr.new_wires(6, QBoolArray)
+    outs = qr.new_wires(4, QBoolArray)
+    tmps = qr.new_wires(58, QBoolArray)
+    qr.set_ancillae(tmps)
+
+    x0 = _helper2(~a[5], qr)
+    x1 = _helper2(~a[2], qr)
+    x2 = _helper2(x0 | x1, qr)
+    x3 = _helper2(x2 ^ a[3], qr)
+    x4 = _helper2(a[0] & x2, qr)
+    x5 = _helper2(x3 ^ x4, qr)
+    x6 = _helper2(a[5] | a[3], qr)
+    x7 = _helper2(x6 ^ a[2], qr)
+    x8 = _helper2(a[2] | x6, qr)
+    x9 = _helper2(a[0] | x8, qr)
+    x10 = _helper2(x7 ^ x9, qr)
+    x11 = _helper2(a[4] & x10, qr)
+    x12 = _helper2(x5 ^ x11, qr)
+    x13 = _helper2(~x3, qr)
+    x14 = _helper2(x13 & a[5], qr)
+    x15 = _helper2(a[0] | x14, qr)
+    x16 = _helper2(x7 ^ x15, qr)
+    x17 = _helper2(a[4] | x16, qr)
+    x18 = _helper2(x9 ^ x17, qr)
+    x19 = _helper2(a[1] | x18, qr)
+    _ = _helper(x12 ^ x19, outs[2])
+    # *out2 ^= _helper2(x20, tmps[])
+
+    x21 = _helper2(x1 | x14, qr)
+    x22 = _helper2(x21 ^ a[5], qr)
+    x23 = _helper2(a[3] ^ x21, qr)
+    x24 = _helper2(a[0] & x23, qr)
+    x25 = _helper2(x22 ^ x24, qr)
+    x26 = _helper2(a[0] ^ x10, qr)
+    x27 = _helper2(x26 & x21, qr)
+    x28 = _helper2(a[4] | x27, qr)
+    x29 = _helper2(x25 ^ x28, qr)
+    x30 = _helper2(a[3] | x26, qr)
+    x31 = _helper2(~x30, qr)
+    x32 = _helper2(a[1] | x31, qr)
+    x33 = _helper(x29 ^ x32, outs[1])
+    # *out1 ^= _helper2(x33, tmps[])
+
+    x34 = _helper2(x1 ^ x14, qr)
+    x35 = _helper2(a[0] & x34, qr)
+    x36 = _helper2(x13 ^ x35, qr)
+    x37 = _helper2(x4 ^ x6, qr)
+    x38 = _helper2(x37 & x33, qr)
+    x39 = _helper2(a[4] | x38, qr)
+    x40 = _helper2(x36 ^ x39, qr)
+    x41 = _helper2(x1 ^ x4, qr)
+    x42 = _helper2(x41 & x15, qr)
+    x43 = _helper2(x3 & x26, qr)
+    x44 = _helper2(a[4] & x43, qr)
+    x45 = _helper2(x42 ^ x44, qr)
+    x46 = _helper2(a[1] | x45, qr)
+    x47 = _helper(x40 ^ x46, outs[0])
+    # *out0 ^= _helper2(x47, tmps[])
+
+    x48 = _helper2(x23 & x47, qr)
+    x49 = _helper2(x48 ^ x4, qr)
+    x50 = _helper2(x10 ^ x29, qr)
+    x51 = _helper2(x50 | x49, qr)
+    x52 = _helper2(a[4] & x51, qr)
+    x53 = _helper2(x49 ^ x52, qr)
+    x54 = _helper2(x13 ^ x18, qr)
+    x55 = _helper2(x54 ^ x33, qr)
+    x56 = _helper2(x3 ^ x15, qr)
+    x57 = _helper2(x56 & x29, qr)
+    x58 = _helper2(a[4] & x57, qr)
+    x59 = _helper2(x55 ^ x58, qr)
+    x60 = _helper2(a[1] | x59, qr)
+    _ = _helper(x53 ^ x60, outs[3])
+    # *out3 ^= _helper2(x61, qr)
+
+    return qr
 
 
 @build_gate("DES_S6", [], lambda: 10)
 def s6() -> QRoutine:
-    pass
+    qr = QRoutine()
+    a = qr.new_wires(6, QBoolArray)
+    outs = qr.new_wires(4, QBoolArray)
+    tmps = qr.new_wires(53, QBoolArray)
+    qr.set_ancillae(tmps)
+
+    return qr
 
 
 @build_gate("DES_S7", [], lambda: 10)
 def s7() -> QRoutine:
-    pass
+    qr = QRoutine()
+    a = qr.new_wires(6, QBoolArray)
+    outs = qr.new_wires(4, QBoolArray)
+    tmps = qr.new_wires(53, QBoolArray)
+    qr.set_ancillae(tmps)
+
+    return qr
 
 
 @build_gate("DES_S8", [], lambda: 10)
 def s8() -> QRoutine:
-    pass
+    qr = QRoutine()
+    a = qr.new_wires(6, QBoolArray)
+    outs = qr.new_wires(4, QBoolArray)
+    tmps = qr.new_wires(53, QBoolArray)
+    qr.set_ancillae(tmps)
+
+    return qr
 
 
 sboxes = (s1, s2, s3, s4, s5, s6, s7, s8)
