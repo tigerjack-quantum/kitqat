@@ -10,7 +10,7 @@ from qat.lang.AQASM.gates import X
 
 
 
-class DESSboxTestCasse(CircuitTestCase):
+class DESSboxTestCase(CircuitTestCase):
     # The (in)famous S-boxes, taken from https://gist.github.com/eigenein/1275094
     __sboxes = [
     	# S1
@@ -85,3 +85,6 @@ class DESSboxTestCasse(CircuitTestCase):
 
     def test_s1(self):
         self._common(0)
+
+    def test_s2(self):
+        self._common(1)
