@@ -66,6 +66,7 @@ class DESSboxTestCasse(CircuitTestCase):
         return pr, inps, outs
 
     def _common(self, idx):
+        # for i in range(27,32):
         for i in range(2**6):
             bits = bin(i)[2:].zfill(6)
             sbox = self.__sboxes[idx]
@@ -73,12 +74,12 @@ class DESSboxTestCasse(CircuitTestCase):
             with self.subTest(inp_bits = bits):
                 pr, inps, outs = self.generate_program(bits)
                 pr.apply(kws.sboxes[idx](), inps, outs)
-                # circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
                 circ = pr.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(circ)
                     obtained = rpr.rbits.to01()
-                    obtained_int = int(obtained, 2)
+                    obtained_int = int(obtained[6:10], 2)
+                    self.assertEqual(expected, obtained_int)
                 else:
                     pass
 
