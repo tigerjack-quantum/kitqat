@@ -11,7 +11,8 @@ from qat.lang.AQASM.routines import QRoutine
 
 LOGGER = logging.getLogger(__name__)
 
-def _helper(expr, qr:Optional[QRoutine] = None, output=None):
+
+def _helper(expr, qr: Optional[QRoutine] = None, output=None):
     if output is None:
         if qr is None:
             raise Exception("Either qr or output should be not None")
@@ -50,7 +51,7 @@ def s1() -> QRoutine:
     x18 = _helper(a[1] | x17, qr)
     x19 = _helper(x15 ^ x18, qr)
     x20 = _helper(a[4] | x19, qr)
-    _ = _helper(x12 ^ x20, output= outs[3])
+    _ = _helper(x12 ^ x20, output=outs[3])
 
     x22 = _helper(a[2] | x3, qr)
     x23 = _helper(~x22, qr)
@@ -66,7 +67,7 @@ def s1() -> QRoutine:
     x33 = _helper(a[1] & x32, qr)
     x34 = _helper(x30 ^ x33, qr)
     x35 = _helper(a[4] | x34, qr)
-    _ = _helper(x28 ^ x35, output = outs[0])
+    _ = _helper(x28 ^ x35, output=outs[0])
 
     x37 = _helper(a[2] & x9, qr)
     x38 = _helper(x37 | x3, qr)
@@ -81,7 +82,7 @@ def s1() -> QRoutine:
     x47 = _helper(a[1] | x46, qr)
     x48 = _helper(x44 ^ x47, qr)
     x49 = _helper(a[4] & x48, qr)
-    _ = _helper(x42 ^ x49, output = outs[1])
+    _ = _helper(x42 ^ x49, output=outs[1])
 
     x51 = _helper(x7 ^ x39, qr)
     x52 = _helper(a[2] ^ x10, qr)
@@ -94,7 +95,7 @@ def s1() -> QRoutine:
     x59 = _helper(a[1] & x58, qr)
     x60 = _helper(x57 ^ x59, qr)
     x61 = _helper(a[4] & x60, qr)
-    _ = _helper(x55 ^ x61, output = outs[2])
+    _ = _helper(x55 ^ x61, output=outs[2])
 
     return qr
 
@@ -121,7 +122,7 @@ def s2() -> QRoutine:
     x13 = _helper(a[2] | x12, qr)
     x14 = _helper(x11 ^ x13, qr)
     x15 = _helper(a[3] & x14, qr)
-    x16 = _helper(x10 ^ x15, output = outs[1])
+    x16 = _helper(x10 ^ x15, output=outs[1])
 
     x17 = _helper(a[4] | a[0], qr)
     x18 = _helper(a[5] | x17, qr)
@@ -142,7 +143,7 @@ def s2() -> QRoutine:
     x33 = _helper(a[2] & x32, qr)
     x34 = _helper(x28 ^ x33, qr)
     x35 = _helper(a[3] | x34, qr)
-    _ = _helper(x24 ^ x35, output = outs[2])
+    _ = _helper(x24 ^ x35, output=outs[2])
 
     x37 = _helper(x20 & x31, qr)
     x38 = _helper(x37 ^ x4, qr)
@@ -152,7 +153,7 @@ def s2() -> QRoutine:
     x42 = _helper(x38 ^ x41, qr)
     x43 = _helper(x27 | x40, qr)
     x44 = _helper(a[3] & x43, qr)
-    _ = _helper(x42 ^ x44, output = outs[0])
+    _ = _helper(x42 ^ x44, output=outs[0])
     # out0 ^= _helper(x45, tmps[])
 
     x46 = _helper(x18 & x20, qr)
@@ -164,7 +165,7 @@ def s2() -> QRoutine:
     x52 = _helper(x17 & x27, qr)
     x53 = _helper(x52 & x49, qr)
     x54 = _helper(a[3] | x53, qr)
-    _ = _helper(x51 ^ x54, output = outs[3])
+    _ = _helper(x51 ^ x54, output=outs[3])
     # out3 ^= _helper(x55, tmps[])
 
     return qr
@@ -195,7 +196,7 @@ def s3() -> QRoutine:
     x16 = _helper(a[1] & x15, qr)
     x17 = _helper(x10 ^ x16, qr)
     x18 = _helper(a[0] & x17, qr)
-    _ = _helper(x6 ^ x18, output = outs[3])
+    _ = _helper(x6 ^ x18, output=outs[3])
     # *out3 ^= _helper(x19, tmps[])
 
     x20 = _helper(a[2] ^ a[3], qr)
@@ -211,7 +212,7 @@ def s3() -> QRoutine:
     x30 = _helper(a[1] | x29, qr)
     x31 = _helper(x27 ^ x30, qr)
     x32 = _helper(a[0] | x31, qr)
-    x33 = _helper(x25 ^ x32, output = outs[0])
+    x33 = _helper(x25 ^ x32, output=outs[0])
     # *out0 ^= _helper(x33, tmps[])
 
     x34 = _helper(a[2] ^ x8, qr)
@@ -227,7 +228,7 @@ def s3() -> QRoutine:
     x44 = _helper(a[1] & x43, qr)
     x45 = _helper(x41 ^ x44, qr)
     x46 = _helper(a[0] | x45, qr)
-    _ = _helper(x39 ^ x46, output = outs[2])
+    _ = _helper(x39 ^ x46, output=outs[2])
     # *out2 ^= _helper(x47, tmps[])
 
     x48 = _helper(x1 | x37, qr)
@@ -238,7 +239,7 @@ def s3() -> QRoutine:
     x53 = _helper(x11 & x22, qr)
     x54 = _helper(x53 & x51, qr)
     x55 = _helper(a[0] | x54, qr)
-    _ = _helper(x52 ^ x55, output = outs[1])
+    _ = _helper(x52 ^ x55, output=outs[1])
     # *out1 ^= _helper(x56, tmps[])
 
     return qr
@@ -275,12 +276,12 @@ def s4() -> QRoutine:
     x20 = _helper(a[3] | x19, qr)
     x21 = _helper(x15 ^ x20, qr)
     x22 = _helper(a[5] & x21, qr)
-    x23 = _helper(x12 ^ x22, output = outs[1])
+    x23 = _helper(x12 ^ x22, output=outs[1])
     # *out1 ^= _helper(x23, tmps[])
 
     x24 = _helper(~x12, qr)
     x25 = _helper(a[5] | x21, qr)
-    _ = _helper(x24 ^ x25, output = outs[0])
+    _ = _helper(x24 ^ x25, output=outs[0])
     # *out0 ^= _helper(x26, tmps[])
 
     x27 = _helper(a[1] & x10, qr)
@@ -295,11 +296,11 @@ def s4() -> QRoutine:
     x36 = _helper(a[3] | x33, qr)
     x37 = _helper(x35 ^ x36, qr)
     x38 = _helper(a[5] & x37, qr)
-    x39 = _helper(x32 ^ x38, output = outs[3])
+    x39 = _helper(x32 ^ x38, output=outs[3])
     # *out3 ^= _helper(x39, tmps[])
 
     x40 = _helper(x25 ^ x37, qr)
-    _ = _helper(x40 ^ x39, output = outs[2])
+    _ = _helper(x40 ^ x39, output=outs[2])
     # *out2 ^= _helper(x41, tmps[39])
 
     return qr
@@ -392,7 +393,6 @@ def s6() -> QRoutine:
     a = qr.new_wires(6, QBoolArray)
     outs = qr.new_wires(4, QBoolArray)
 
-
     x0 = _helper(~a[1], qr)
     x1 = _helper(~a[4], qr)
     x2 = _helper(a[1] ^ a[5], qr)
@@ -414,7 +414,7 @@ def s6() -> QRoutine:
     x18 = _helper(a[3] | x17, qr)
     x19 = _helper(x13 ^ x18, qr)
     x20 = _helper(a[2] & x19, qr)
-    _ = _helper(x11 ^ x20, output = outs[1])
+    _ = _helper(x11 ^ x20, output=outs[1])
     # *out1 ^= _helper(x21, output = out[1])
 
     x22 = _helper(a[5] ^ x17, qr)
@@ -430,7 +430,7 @@ def s6() -> QRoutine:
     x32 = _helper(a[3] & x31, qr)
     x33 = _helper(x29 ^ x32, qr)
     x34 = _helper(a[2] & x33, qr)
-    _ = _helper(x28 ^ x34, output = outs[3])
+    _ = _helper(x28 ^ x34, output=outs[3])
     # *out3 ^= _helper(x35, qr)
 
     x36 = _helper(x5 ^ x33, qr)
@@ -445,7 +445,7 @@ def s6() -> QRoutine:
     x45 = _helper(a[3] | x44, qr)
     x46 = _helper(x42 ^ x45, qr)
     x47 = _helper(a[2] | x46, qr)
-    _ = _helper(x40 ^ x47, output = outs[0])
+    _ = _helper(x40 ^ x47, output=outs[0])
     # *out0 ^= _helper(x48, qr)
 
     x49 = _helper(x4 | x37, qr)
@@ -455,7 +455,7 @@ def s6() -> QRoutine:
     x53 = _helper(x50 ^ x52, qr)
     x54 = _helper(x29 & x42, qr)
     x55 = _helper(a[2] | x54, qr)
-    _ = _helper(x53 ^ x55, output = outs[2])
+    _ = _helper(x53 ^ x55, output=outs[2])
     # *out2 ^= _helper(x56, qr)
 
     return qr
@@ -487,7 +487,7 @@ def s7() -> QRoutine:
     x17 = _helper(a[5] | x16, qr)
     x18 = _helper(x15 ^ x17, qr)
     x19 = _helper(a[0] & x18, qr)
-    x20 = _helper(x10 ^ x19, output = outs[0])
+    x20 = _helper(x10 ^ x19, output=outs[0])
     # *out0 ^= _helper(x20, qr)
 
     x21 = _helper(a[1] | x20, qr)
@@ -502,7 +502,7 @@ def s7() -> QRoutine:
     x30 = _helper(a[5] & x29, qr)
     x31 = _helper(x28 ^ x30, qr)
     x32 = _helper(a[0] | x31, qr)
-    _ = _helper(x27 ^ x32, output = outs[3])
+    _ = _helper(x27 ^ x32, output=outs[3])
     # *out3 ^= _helper(x33, qr)
 
     x34 = _helper(a[3] & x15, qr)
@@ -516,7 +516,7 @@ def s7() -> QRoutine:
     x42 = _helper(a[5] | x41, qr)
     x43 = _helper(x40 ^ x42, qr)
     x44 = _helper(a[0] | x43, qr)
-    x45 = _helper(x37 ^ x44, output = outs[1])
+    x45 = _helper(x37 ^ x44, output=outs[1])
     # *out1 ^= _helper(x45, qr)
 
     x46 = _helper(x7 ^ x43, qr)
@@ -529,7 +529,7 @@ def s7() -> QRoutine:
     x53 = _helper(a[5] & x52, qr)
     x54 = _helper(x50 ^ x53, qr)
     x55 = _helper(a[0] | x54, qr)
-    _ = _helper(x49 ^ x55, output = outs[2])
+    _ = _helper(x49 ^ x55, output=outs[2])
     # *out2 ^= _helper(x56, qr)
 
     return qr
@@ -561,7 +561,7 @@ def s8() -> QRoutine:
     x17 = _helper(a[1] | x16, qr)
     x18 = _helper(x13 ^ x17, qr)
     x19 = _helper(a[5] | x18, qr)
-    _ = _helper(x12 ^ x19, output = outs[0])
+    _ = _helper(x12 ^ x19, output=outs[0])
     # *out0 ^= _helper(x20, qr)
 
     x21 = _helper(a[4] | x2, qr)
@@ -573,7 +573,7 @@ def s8() -> QRoutine:
     x27 = _helper(a[1] | x26, qr)
     x28 = _helper(x22 ^ x27, qr)
     x29 = _helper(a[5] & x28, qr)
-    _ = _helper(x12 ^ x29, output = outs[3])
+    _ = _helper(x12 ^ x29, output=outs[3])
     # *out3 ^= _helper(x30, qr)
 
     x31 = _helper(x4 ^ x5, qr)
@@ -588,7 +588,7 @@ def s8() -> QRoutine:
     x40 = _helper(a[1] & x39, qr)
     x41 = _helper(x37 ^ x40, qr)
     x42 = _helper(a[5] | x41, qr)
-    _ = _helper(x35 ^ x42, output = outs[2])
+    _ = _helper(x35 ^ x42, output=outs[2])
     # *out2 ^= _helper(x43, qr)
 
     x44 = _helper(a[0] ^ x9, qr)
@@ -600,9 +600,8 @@ def s8() -> QRoutine:
     x50 = _helper(x18 ^ x28, qr)
     x51 = _helper(x50 | x37, qr)
     x52 = _helper(a[5] & x51, qr)
-    _ = _helper(x49 ^ x52, output = outs[1])
+    _ = _helper(x49 ^ x52, output=outs[1])
     # *out1 ^= _helper(x53, qr)
-
 
     return qr
 
