@@ -3,9 +3,9 @@ from math import ceil, log2
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines import bix, qregs_init
-from qat.external.qroutines.arith import cuccaro_arith
+from qatext.qpus.reversible import RProgram
+from qatext.qroutines import bix, qregs_init
+from qatext.qroutines.arith import cuccaro_arith
 from qat.lang.AQASM.program import Program
 
 # from qat.lang.AQASM.aqasm_util import InvalidGateArguments

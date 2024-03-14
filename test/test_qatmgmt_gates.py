@@ -1,5 +1,5 @@
 from numpy import testing as nptesting
-from qat.external.utils.qatmgmt.gates import (
+from qatext.utils.qatmgmt.gates import (
     GATE_SET_QAT,
     from_circuit_to_program,
     generate_gate_from_circuit_op,

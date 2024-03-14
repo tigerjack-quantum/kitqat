@@ -2,7 +2,7 @@ import json
 import os
 from typing import NamedTuple
 
-from qat.external.interop.quirk import parse, quirk
+from qatext.interop.quirk import parse, quirk
 
 from .common_circuit import CircuitTestCase
 

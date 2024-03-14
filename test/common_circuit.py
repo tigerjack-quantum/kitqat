@@ -40,7 +40,7 @@ class CircuitTestCase(BasicTestCase):
             cls.qpu = LinAlg()
         elif cls.SIMULATOR.lower() == "stabs":
             cls.logger.info("Stabs")
-            from qat.external.synthesis.mctrls.mcx import ccnot, x
+            from qatext.synthesis.mctrls.mcx import ccnot, x
             from qat.qpus import Stabs
 
             cls.qpu = Stabs()

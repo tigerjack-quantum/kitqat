@@ -1,11 +1,11 @@
 import unittest
-from qat.external.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram
 from test.common_circuit import CircuitTestCase
 
 import numpy as np
 from parameterized import parameterized
-from qat.external.qroutines.linalg import matrix as qmatrix
-from qat.external.qroutines.linalg import rref
+from qatext.qroutines.linalg import matrix as qmatrix
+from qatext.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
 

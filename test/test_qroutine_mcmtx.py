@@ -1,8 +1,8 @@
 from copy import deepcopy
 
 from parameterized import parameterized
-from qat.external.utils.qatmgmt.qbits import add_name_to_qbits_following_pattern
-from qat.external.synthesis.mctrls import mcx
+from qatext.utils.qatmgmt.qbits import add_name_to_qbits_following_pattern
+from qatext.synthesis.mctrls import mcx
 from qat.lang.AQASM.gates import CCNOT, H, X
 from qat.lang.AQASM.program import Program
 

@@ -5,6 +5,16 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 py-modules = ["qat"]
 
+[tool.pyright]
+exclude = [
+        "**/__pycache__"
+    ],
+reportMissingImports = "error"
+reportMissingTypeStubs = "none"
+venvPath = "/mnt/internal/LinuxData/pyenv/versions"
+venv = "myqlm11"
+pythonVersion = "3.11"
+
 [project]
 name = "qat-utils"
 version="1.9.6"

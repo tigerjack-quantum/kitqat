@@ -2,9 +2,9 @@ import unittest
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines import qregs_init as qregs
-from qat.external.qroutines.sorting import sorting_network as sn
+from qatext.qpus.reversible import RProgram
+from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.sorting import sorting_network as sn
 from qat.lang.AQASM.program import Program
 
 

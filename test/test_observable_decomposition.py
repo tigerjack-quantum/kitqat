@@ -1,7 +1,7 @@
 from qat.core import Observable, Term
 from qat.lang.AQASM import H, Program, X, Y, RX, QRoutine, RZ, RY, Z, CNOT
-from qat.external.utils.qatmgmt.observables import produce_term_gates
-from qat.external.utils.qatmgmt.results import get_sample_for_basis_str_from_res
+from qatext.utils.qatmgmt.observables import produce_term_gates
+from qatext.utils.qatmgmt.results import get_sample_for_basis_str_from_res
 from copy import deepcopy
 
 from .common_circuit import CircuitTestCase

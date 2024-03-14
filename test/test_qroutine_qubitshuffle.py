@@ -1,9 +1,9 @@
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines import qregs_init
-from qat.external.qroutines.qubitshuffle import reverse, rotate
+from qatext.qpus.reversible import RProgram
+from qatext.qroutines import qregs_init
+from qatext.qroutines.qubitshuffle import reverse, rotate
 from qat.lang.AQASM.program import Program
 
 # from qat.lang.AQASM.aqasm_util import InvalidGateArguments

@@ -1,9 +1,9 @@
-from qat.external.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.utils.bits import conversion, misc
-from qat.external.qroutines import qregs_init as qregs
+from qatext.utils.bits import conversion, misc
+from qatext.qroutines import qregs_init as qregs
 from qat.lang.AQASM.program import Program
 
 

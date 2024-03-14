@@ -1,5 +1,5 @@
 from numpy import testing as nptesting
-from qat.external.utils.qatmgmt.results import (
+from qatext.utils.qatmgmt.results import (
     get_sample_for_basis_dec_from_res,
     get_state_vector_from_result,
 )

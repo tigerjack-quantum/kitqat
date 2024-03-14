@@ -1,7 +1,7 @@
 from test.common_circuit import CircuitTestCase
 
-from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines.crypto.sbox.des import kwan as kws
+from qatext.qpus.reversible import RProgram
+from qatext.qroutines.crypto.sbox.des import kwan as kws
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
 

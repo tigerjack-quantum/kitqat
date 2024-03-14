@@ -1,7 +1,7 @@
 import functools
 from test.common_circuit import CircuitTestCase
 
-from qat.external.qpus.reversible import RGate, RProgram
+from qatext.qpus.reversible import RGate, RProgram
 from qat.lang.AQASM.gates import CCNOT, SWAP, H, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.program import Program

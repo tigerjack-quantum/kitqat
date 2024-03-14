@@ -1,10 +1,10 @@
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qat.external.qpus.reversible import RProgram
-from qat.external.qroutines import qregs_init as qregs
-from qat.external.qroutines.arith import tkk_arith
-from qat.external.utils.bits import misc
+from qatext.qpus.reversible import RProgram
+from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.arith import tkk_arith
+from qatext.utils.bits import misc
 from qat.lang.AQASM.program import Program
 
 

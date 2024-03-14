@@ -57,7 +57,7 @@ contained in.
 
 # Structure #
 
-  * The actual code is below `qat.external`.
+  * The actual code is below `qatext`.
   * `experiments` directory contains some experiments that have been made. 
   * The `notebooks` directory contains some jupyter notebooks explaining usage
   of most commonly used routines.
