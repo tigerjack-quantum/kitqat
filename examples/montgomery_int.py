@@ -2,12 +2,12 @@ from collections import deque
 from copy import deepcopy
 
 import numpy as np
-from qat.external.qpus.reversible import RProgram
-from qat.external.utils.qatmgmt import statistics as estats
-from qat.external.qroutines import adder as cuccadd
-from qat.external.qroutines.algebraic.gfp import montgomery_arith as marith
-from qat.external.qroutines.qregs_init import initialize_qureg_given_int
-from qat.external.utils.statistics.depth import compute_circuit_depth
+from qatext.qpus.reversible import RProgram
+from qatext.utils.qatmgmt import statistics as estats
+from qatext.qroutines import adder as cuccadd
+from qatext.qroutines.algebraic.gfp import montgomery_arith as marith
+from qatext.qroutines.qregs_init import initialize_qureg_given_int
+from qatext.utils.statistics.depth import compute_circuit_depth
 from qat.lang.AQASM import classarith
 from qat.lang.AQASM.arithmetic import add_mod
 from qat.lang.AQASM.classarith import add_const

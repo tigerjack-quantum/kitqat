@@ -1,11 +1,11 @@
 import numpy as np
 from qat.core.console import display
 from qat.core.util import statistics
-from qat.external.utils.qatmgmt.qbits import \
+from qatext.utils.qatmgmt.qbits import \
     add_name_to_qbits_following_pattern
-# from qat.external.qroutines.fake import fake_gate
-from qat.external.qroutines.linalg import gauss_jordan_isd4 as gji
-from qat.external.qroutines.linalg import matrix as qmatrix
+# from qatext.qroutines.fake import fake_gate
+from qatext.qroutines.linalg import gauss_jordan_isd4 as gji
+from qatext.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
 # from qat.qpus import LinAlg
 from qat.pylinalg import PyLinalg as LinAlg

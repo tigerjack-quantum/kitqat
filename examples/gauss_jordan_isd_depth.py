@@ -1,12 +1,12 @@
-# from qat.external.qroutines.fake import fake_gate
+# from qatext.qroutines.fake import fake_gate
 from qat.core.util import statistics
 
-# from qat.external.qroutines.linalg import gauss_jordan_isd as gji
-# from qat.external.qroutines.linalg import gauss_jordan_isd2 as gji
-from qat.external.qroutines.linalg import gauss_jordan_isd4 as gji
+# from qatext.qroutines.linalg import gauss_jordan_isd as gji
+# from qatext.qroutines.linalg import gauss_jordan_isd2 as gji
+from qatext.qroutines.linalg import gauss_jordan_isd4 as gji
 
-# from qat.external.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
-from qat.external.qroutines.linalg import matrix as qmatrix
+# from qatext.qroutines.linalg import gauss_jordan_isd_opt5 as gji5
+from qatext.qroutines.linalg import matrix as qmatrix
 from qat.lang.AQASM.program import Program
 
 # from numpy import argmax

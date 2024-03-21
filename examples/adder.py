@@ -3,8 +3,8 @@ import itertools
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.gates import X, SWAP
 from qat.pylinalg import PyLinalg
-from qat.external.qroutines.arith.cuccaro_arith import subtractor, adder
-from qat.external.qroutines import qregs_init
+from qatext.qroutines.arith.cuccaro_arith import subtractor, adder
+from qatext.qroutines import qregs_init
 
 qpu = PyLinalg()
 
