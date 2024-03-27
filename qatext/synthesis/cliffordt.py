@@ -1,25 +1,86 @@
-from qat.lang.AQASM.gates import H, S, CNOT, T, X, Z, AbstractGate
-from qat.lang.AQASM.routines import QRoutine
-from qat.lang.AQASM.misc import build_gate
-
 from qat.core.gate_set import GateSet
+from qat.lang.AQASM.gates import CCNOT, CNOT, AbstractGate, H, S, T, X, Z
+from qat.lang.AQASM.misc import build_gate
+from qat.lang.AQASM.routines import QRoutine
 from qat.lang.linking.linker import Linker
 
-QAND = AbstractGate("AND", [], arity=3)
-QAND_DAG = AbstractGate("AND_DAG", [], arity=3)
+QAND = AbstractGate("QAND", [], arity=3)
+# QAND_DAG = AbstractGate("QAND_DAG", [], arity=3)
+TOFFOLI = AbstractGate("TOFF", [int], arity=lambda n: n)
+
 
 def get_new_cliffordt_linker():
     return Linker(gate_set=GateSet(), keep=["H", "S", "CNOT", "T"])
 
+
+class X2CnotToffoli(QRoutine):
+    """Converts C-X to CNOT and C-C-X to CCNOT"""
+
+    def __init__(self):
+        super().__init__()
+        wire = self.new_wires(1)
+        self.apply(H, wire)
+        self.apply(S, wire)
+        self.apply(S, wire)
+        self.apply(H, wire)
+
+    def ctrl(self, nbctrls=1):
+        rout = QRoutine()
+        if nbctrls == 1:
+            wires = rout.new_wires(2)
+            rout.apply(CNOT, wires)
+        elif nbctrls == 2:
+            wires = rout.new_wires(3)
+            rout.apply(CCNOT, wires)
+        else:
+            raise Exception("Cannot convert >2 ctrl X gates")
+        return rout
+
+
 @build_gate("X", [], arity=1)
-def x():
-    qfun = QRoutine()
-    wire = qfun.new_wires(1)
-    qfun.apply(H, wire)
-    qfun.apply(S, wire)
-    qfun.apply(S, wire)
-    qfun.apply(H, wire)
-    return qfun
+def x1():
+    return X2CnotToffoli()
+
+
+class X2CnotQand(QRoutine):
+    """Converts C-X to CNOT and C-C-X to QAND"""
+
+    def __init__(self):
+        super().__init__()
+        wire = self.new_wires(1)
+        self.apply(H, wire)
+        self.apply(S, wire)
+        self.apply(S, wire)
+        self.apply(H, wire)
+
+    def ctrl(self, nbctrls=1):
+        rout = QRoutine()
+        if nbctrls == 1:
+            wires = rout.new_wires(2)
+            rout.apply(CNOT, wires)
+        elif nbctrls == 2:
+            wires = rout.new_wires(3)
+            rout.apply(QAND(), wires)
+        else:
+            raise Exception("Cannot convert >2 ctrl X gates")
+        return rout
+
+
+@build_gate("X", [], arity=1)
+def x2():
+    return X2CnotQand()
+
+
+# @build_gate("X", [], arity=1)
+# def x():
+#     qfun = QRoutine()
+#     wire = qfun.new_wires(1)
+#     qfun.apply(H, wire)
+#     qfun.apply(S, wire)
+#     qfun.apply(S, wire)
+#     qfun.apply(H, wire)
+#     return qfun
+
 
 @build_gate("Z", [], arity=1)
 def z():
@@ -29,6 +90,7 @@ def z():
     qfun.apply(S, wire)
     return qfun
 
+
 @build_gate("Y", [], arity=1)
 def y():
     qfun = QRoutine()
@@ -37,20 +99,39 @@ def y():
     qfun.apply(Z, wire)
     return qfun
 
+
+@build_gate("CSIGN", [], arity=2)
+def csign():
+    return _cz()
+
+
+# There's no C-Z actually, it is automatically converted to CSIGN
+# @build_gate("C-Z", [], arity=2)
+# def cz():
+#     return _cz()
+
+
+def _cz():
+    qfun = QRoutine()
+    wires = qfun.new_wires(2)
+    H(wires[1])
+    CNOT(wires)
+    H(wires[1])
+    return qfun
+
+
 @build_gate("CCNOT", [], arity=1)
 def ccnot1():
-    return _toffoli1()
+    return _toffoli3()
 
-@build_gate("C-C-X", [], arity=1)
-def ccx1():
-    return _toffoli1()
 
-@build_gate("AND", [], arity=1)
+@build_gate("QAND", [], arity=1)
 def qand1():
-    return _and1()
+    return _qand1()
 
-# Impossible to get since classic operations are disallowed
 
+# Impossible to use since classic operations are disallowed
+#
 # @build_gate("AND_DAG", [], arity=3)
 # def qand_dag2():
 #     qfun = QRoutine()
@@ -75,35 +156,44 @@ def qand1():
 #     return qfun
 
 
-@build_gate("C-C-X", [], arity=1)
-def ccx2():
-    return _and1()
+# Impossible, a C-C-U gate is simply obtained, by default, by decomposing U and
+# applying 2 controls to all the gates of the decomposition
 
-def _toffoli1():
+# @build_gate("C-C-X", [], arity=1)
+# def ccx2():
+#     return _qand1()
+
+
+def _toffoli3():
+    """From Amy et al. 2012"""
     qfun = QRoutine()
     a = qfun.new_wires(1)
     b = qfun.new_wires(1)
     c = qfun.new_wires(1)
     H(c)
-    T(a)
+    T.dag()(a)
     T(b)
     T(c)
-    CNOT(b, a)
-    CNOT(c, a)
-    CNOT(a, c)
-    T.dag()(b)
+
     CNOT(a, b)
+    CNOT(c, a)
+    CNOT(b, c)
+    T.dag()(a)
+    CNOT(b, a)
+
     T.dag()(a)
     T.dag()(b)
-    T.dag()(c)
-    CNOT(c, b)
-    CNOT(a, c)
-    CNOT(b, a)
+    T(c)
+
+    CNOT(c, a)
+    CNOT(b, c)
+    S(a)
+    CNOT(a, b)
     H(c)
     return qfun
 
 
-def _and1():
+def _qand1():
     qfun = QRoutine()
     a = qfun.new_wires(1)
     b = qfun.new_wires(1)
@@ -116,6 +206,7 @@ def _and1():
     CNOT(c, a)
     CNOT(c, b)
     CNOT(a, d)
+    # T.dag is equivalent to SSST
     T.dag()(a)
     T.dag()(b)
     T(c)
@@ -126,35 +217,8 @@ def _and1():
     CNOT(b, d)
     H(c)
     S(c)
-    
+
     return qfun
-
-
-# class X2Clifford(QRoutine):
-#     def __init__(self):
-#         super().__init__()
-#         wire = self.new_wires(1)
-#         self.apply(H, wire)
-#         self.apply(S, wire)
-#         self.apply(S, wire)
-#         self.apply(H, wire)
-
-
-# @build_gate("X", [], arity=1)
-# def x2clifford2():
-#     return X2Clifford()
-#     qfun = QRoutine()
-#     a = qfun.new_wires(1)
-#     b = qfun.new_wires(1)
-#     c = qfun.new_wires(1)
-#     qfun.apply(H, a)
-#     qfun.apply(T, a)
-#     qfun.apply(T, b)
-#     qfun.apply(T, c)
-#     return qfun
-
-# @build_gate("C-C-X", [], arity=3)
-# def ccx2cliford():
 
 
 # @build_gate("RY", [float], arity=1)
@@ -165,14 +229,6 @@ def _and1():
 #         qfun.apply(gate, wires[0])
 #     return qfun
 
-
-# @build_gate("CNOT", [], arity=2)
-# def mcnot():
-#     qfun = QRoutine()
-#     wires = qfun.new_wires(2)
-#     qfun.apply(S, wires[0])
-#     qfun.apply(T, wires[1])
-#     return qfun
 
 # @build_gate("CRY", [], arity=2)
 # def mcry():
