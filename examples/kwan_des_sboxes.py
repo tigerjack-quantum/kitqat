@@ -1,12 +1,11 @@
-from qat.lang.AQASM.gates import X, Z
+import numpy as np
+from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import RProgram
 from qatext.qroutines.crypto.sbox.des.kwan import sboxes
 
 # from qatext.utils.statistics.depth import compute_circuit_depth
 from qatext.synthesis import cliffordt as ct
-
-import numpy as np
 
 
 def ex_s1():
@@ -84,8 +83,9 @@ def ex_stats_sboxes():
 
 
 def ex_sfirst_parallel():
-    """Measures of a single round of compute, with all the S-boxes applied in
-    parallel"""
+    """Measures of a single round of compute for a single U_E, with all the
+    S-boxes applied in parallel.
+    """
     # To check the depth after 1 layer of 8 Sboxes application, w/out undo
     # Useful to get the no. of CCX and retrieve the overall results manually.
     #
@@ -95,16 +95,16 @@ def ex_sfirst_parallel():
     r_in = pr.qalloc(48)
     r_out = pr.qalloc(32)
 
-    #
+    # the ancillary qubits
     ancss = [
-        pr.qalloc(63),
-        pr.qalloc(56),
-        pr.qalloc(57),
-        pr.qalloc(42),
-        pr.qalloc(62),
-        pr.qalloc(57),
-        pr.qalloc(57),
-        pr.qalloc(54),
+        pr.qalloc(59),
+        pr.qalloc(52),
+        pr.qalloc(53),
+        pr.qalloc(38),
+        pr.qalloc(58),
+        pr.qalloc(53),
+        pr.qalloc(53),
+        pr.qalloc(50),
     ]
 
     for idx, sbox in enumerate(sboxes):
@@ -122,53 +122,75 @@ def ex_sfirst_parallel():
 
     meas = {}
     meas["W"] = cr.nbqbits
-    meas["G"] = stats_all['gates']
+    meas["G"] = stats_all["gates"]
     meas["D"] = depth_all
     meas["D-CCNOT"] = depth_ccnot
     return meas
 
 
 def ex_retrieve(n_keys):
-    """Overall measures of the Grover oracle, and the number of grover
-    iterations, retrieved starting from the single compute measures of the previous function"""
+    """Overall measures of the Grover oracle, retrieved starting from the
+    single compute measures of the previous function, and the number of grover
+    iterations
+
+    """
     compute = ex_sfirst_parallel()
 
-    pr = Program()
-    keys = [None] * 3
-    for i in range(n_keys):
-        keys[i] = pr.qalloc(48)
-        _ = pr.qalloc(8 * n_keys)
-    for i in range(n_keys, 3):
-        keys[i] = keys[0]
-    # left
-    _ = pr.qalloc(32)
-    # right, already in meas
-    # r_in = pr.qalloc(32)
-    # r_out = pr.qalloc(32)
-
+    # number of times we have to execute the U_f unitary. It's 1 for DES and 3
+    # for 3DES(-2 or -3)
     uf_no = 1 if n_keys == 1 else 3
 
     overall = {}
-    overall["W"] = compute["W"] * uf_no + pr.qbit_count
-    overall["G"] = {k: v * 2 * 16 * 2 * uf_no for k, v in compute["G"].items()}
-    overall["D"] = compute["D"] * 2 * 16 * 2 * uf_no + np.log2(64) + np.log2(n_keys * 56)
+    # Not multiplied by uf_no since the U_F and U_F^\dagger of each U_E will
+    # leave, in the end, the ancillary qubits clean, and they can be reused. We
+    # just have to add to the qubits count the keys and the left part of the
+    # plaintext.
+    width = compute["W"] + n_keys * 56 + 32
+    # * 2 bcz U_F and U_F^\dagger of each round.
+    # * 16 bcz of no. of rounds of each U_E.
+    # * 2 bcz of compute/uncompute (that is, U_f and U_f^\dagger) of oracle.
+    # * uf_no bcz this has to be done for every U_f unitary.
+    overall["G"] = {k: v * 2 * 16 * 2 * uf_no for k, v in compute["G"].items() if v > 0}
+    # init + 2 to implement the CZ of the oracle + diffusion
+    overall["G"]["H"] = n_keys + 2 + n_keys * 2
+    # The X required at each diffusion
+    overall["G"]["X"] = overall["G"]["X"] + n_keys * 2
+
+    # The CNOT required by EP, Key mix, and the L-S xor F(R)
+    overall["G"]["CNOT"] = overall["G"]["CNOT"] + (16 + 48 + 32) * 2 * 16 * 2 * uf_no
+    # the log factors are for the reflection decompositions
+    overall["D"] = (
+        compute["D"] * 2 * 16 * 2 * uf_no + 2 * np.log2(64) + 2 * np.log2(n_keys * 56)
+    )
+    # The decomposition of the CCX for the 2 reflections will use:
+    # for DES: 1) oracle, 62 bits; 2) diffusion: 56 qubits
+    # for 3DES: 1) oracle, 62 bits; 2) diffusion: 56*2 or 56*3 qubits
+    #
+    # In all cases, we can reuse the ancillary qubits of the S-boxes, and we
+    # don't need any additional one.
+    width += 0
+    overall["W"] = width
 
     overall2 = {}
     overall2["W"] = np.log2(overall["W"])
-    overall2["G"] = {k: np.log2(v) for k, v in overall["G"].items() if v > 0}
+    overall2["G"] = {k: np.log2(v) for k, v in overall["G"].items()}
     overall2["D"] = np.log2(overall["D"])
-    overall2["iters"] = (n_keys * 55 /2) + np.log2(.58)
+    # 55 instead of 56 bcz of complimentary property of DES and 3DES
+    # logarithmic factor is the optimal no. of iterations
+    overall2["iters"] = (n_keys * 55 / 2) + np.log2(0.58)
 
     cliffordt2 = {}
-    width = overall["W"]
-    width += compute['G']['C-C-X'] if uf_no == 1 else 0
+    # for each CCX of the S-boxes, we add 1 bit to have a T-depth 1
+    # decomposition.
+    width = overall["W"] + compute["G"]["C-C-X"]
     cliffordt2["W"] = np.log2(width)
-    # Not times 4 since half of them is QAND and half is QAND^\dagger
-    cliffordt2["T"] = overall2['G']["C-C-X"] * 2
+    # Divided by 2 since half of them is QAND and half is QAND^\dagger
+    cliffordt2["T"] = overall2["G"]["C-C-X"] - 1
     # same as before, uncompute stage doesn't count
-    cliffordt2["D-T"] = np.log2(compute["D-CCNOT"] * 2 * 16 * uf_no + np.log2(64) + np.log2(n_keys * 56))
-    cliffordt2["iters"] = (n_keys * 55 /2) + np.log2(.58)
-
+    cliffordt2["D-T"] = np.log2(
+        compute["D-CCNOT"] * 2 * 16 * uf_no + 2 * np.log2(64) + 2 * np.log2(n_keys * 56)
+    )
+    cliffordt2["iters"] = overall2["iters"]
 
     return overall, overall2, cliffordt2
 
@@ -183,7 +205,7 @@ def ex_sall():
     for i in range(n_keys, 3):
         keys[i] = keys[0]
     # left
-    l_in = pr.qalloc(32)
+    _ = pr.qalloc(32)
     # right
     r_in = pr.qalloc(32)
     # right out
@@ -241,12 +263,34 @@ def main():
     print(uf_measures)
     print("*" * 79)
 
+    header = f"Variant & W & X & CX & CCX & D & D$\\times$W & W & T & T-D & T-D$\\times$W\\\\"
+    print(header)
     for n_keys in range(1, 4):
-        overall, overall2, cliffordt2 = ex_retrieve(n_keys)
-        print(overall)
-        print(overall2)
-        print(cliffordt2)
-        print("-" * 79)
+        _, overall2, cliffordt2 = ex_retrieve(n_keys)
+        # print(overall)
+        # print(overall2)
+        # print(cliffordt2)
+        # qubits
+        if n_keys == 1:
+            head = "DES"
+        elif n_keys == 2:
+            head = "3DES2"
+        elif n_keys == 3:
+            head = "3DES3"
+        iters = overall2["iters"]
+        row = f"{head} &"
+        row += f"{round(overall2['W'])} & "
+        row += f"{round(overall2['G']['X'] + iters)} & "
+        row += f"{round(overall2['G']['CNOT'] + iters)} & "
+        row += f"{round(overall2['G']['C-C-X'] + iters)} & "
+        row += f"{round(overall2['D'] + iters)} & "
+        row += f"{round(overall2['D'] + iters + overall2['W'])} & "
+
+        row += f"{round(cliffordt2['W'])} & "
+        row += f"{round(cliffordt2['T'] + iters)} & "
+        row += f"{round(cliffordt2['D-T'] + iters)} & "
+        row += f"{round(cliffordt2['D-T'] + iters + overall2['W'])}\\\\"
+        print(row)
 
     # ex_sall()
 
