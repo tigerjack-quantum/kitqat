@@ -70,6 +70,14 @@ class X2CnotQand(QRoutine):
 def x2():
     return X2CnotQand()
 
+class CCNOT2QAND(QRoutine):
+    """Converts C-X to CNOT and C-C-X to QAND"""
+
+    def __init__(self):
+        super().__init__()
+        wire = self.new_wires(3)
+        self.apply(QAND(), wire)
+
 
 # @build_gate("X", [], arity=1)
 # def x():
@@ -119,11 +127,14 @@ def _cz():
     H(wires[1])
     return qfun
 
-
 @build_gate("CCNOT", [], arity=1)
 def ccnot1():
     return _toffoli3()
 
+
+@build_gate("CCNOT", [], arity=1)
+def ccnot2():
+    return CCNOT2QAND()
 
 @build_gate("QAND", [], arity=1)
 def qand1():
