@@ -189,7 +189,47 @@ def get_sboxes_parallel_measures():
     return meas
 
 
-def get_encryption_measures(n_keys):
+def get_sboxes_sequential_measures():
+    """Measures of a single round of compute for a single U_E, with all the
+    S-boxes applied sequentially. That is, S1 (out on 4 qubits, xor of those to
+    Left), undo S1, S2 (...) undo S2, ...
+
+    """
+    # To check the depth after 1 layer of 8 Sboxes application, w/out undo
+    # Useful to get the no. of CCX and retrieve the overall results manually.
+    #
+    # print("*Only computation, no uncomputation, 1 round")
+    pr = Program()
+
+    r_in = pr.qalloc(48)
+    # only 4, because we undo each time
+    r_out = pr.qalloc(4)
+
+    # the ancillary qubits
+    ancs = pr.qalloc(59)
+
+    for idx, sbox in enumerate(sboxes):
+        pr.apply(
+            sbox(),
+            r_in[idx * 6 : idx * 6 + 6],
+            r_out[idx * 4 : idx * 4 + 4],
+            ancs,
+        )
+
+    cr = pr.to_circ()
+    stats_all = cr.statistics()
+    depth_all = cr.depth(default=1)
+    depth_ccnot = cr.depth(default=0, gate_times={"C-C-X": 1.0, "CCNOT": 1.0})
+
+    meas = {}
+    meas["W"] = cr.nbqbits
+    meas["G"] = stats_all["gates"]
+    meas["D"] = depth_all
+    meas["D-CCNOT"] = depth_ccnot
+    return meas
+
+
+def get_encryption_measures_parallel(n_keys):
     compute = get_sboxes_parallel_measures()
 
     # number of times we have to execute the U_f unitary. It's 1 for DES and 3
@@ -210,19 +250,69 @@ def get_encryption_measures(n_keys):
     # The CNOT required by EP, Key mix, and the L-S xor F(R)
     overall["G"]["CNOT"] = overall["G"]["CNOT"] + (16 + 48 + 32) * 2 * 16 * uf_no
     overall["D"] = compute["D"] * 2 * 16 * uf_no
+    overall["D-CCNOT"] = compute["D-CCNOT"] * 2 * 16 * uf_no
 
     overall2 = {}
     overall2["W"] = np.log2(overall["W"])
     overall2["G"] = {k: np.log2(v) for k, v in overall["G"].items()}
     overall2["D"] = np.log2(overall["D"])
+    overall2["D-CCNOT"] = np.log2(overall["D-CCNOT"])
 
     cliffordt = {}
-    # for each CCX of the S-boxes, we add 1 bit to have a T-depth 1
-    # decomposition.
+    # for each CCX of the S-boxes, we add 1 qubit to have a T-depth 1, T-count
+    # 4 decomposition.
     cliffordt["W"] = overall["W"] + compute["G"]["C-C-X"]
     # Divided by 2 since half of them is QAND and half is QAND^\dagger
-    cliffordt["T"] = overall["G"]["C-C-X"] / 2
+    cliffordt["T"] = overall["G"]["C-C-X"] * 4 / 2
     cliffordt["D-T"] = compute["D-CCNOT"] * 2 * 16 * uf_no
+
+    cliffordt2 = {}
+    # for each CCX of the S-boxes, we add 1 bit to have a T-depth 1
+    # decomposition.
+    cliffordt2["W"] = np.log2(cliffordt["W"])
+    # Divided by 2 since half of them is QAND and half is QAND^\dagger
+    cliffordt2["T"] = overall2["G"]["C-C-X"] - 1
+    # same as before, uncompute stage doesn't count
+    cliffordt2["D-T"] = np.log2(compute["D-CCNOT"] * 2 * 16 * uf_no)
+
+    return overall, overall2, cliffordt, cliffordt2
+
+
+def get_encryption_measures_sequential(n_keys):
+    compute = get_sboxes_sequential_measures()
+
+    # number of times we have to execute the U_f unitary. It's 1 for DES and 3
+    # for 3DES(-2 or -3)
+    uf_no = 1 if n_keys == 1 else 3
+
+    overall = {}
+    # Not multiplied by uf_no since the U_F and U_F^\dagger of each U_E will
+    # leave, in the end, the ancillary qubits clean, and they can be reused. We
+    # just have to add to the qubits count the keys and the left part of the
+    # plaintext.
+    overall["W"] = compute["W"] + n_keys * 56 + 32
+    # * 2 bcz U_F and U_F^\dagger of each round.
+    # * 16 bcz of no. of rounds of each U_E.
+    # * uf_no bcz this has to be done for every U_E unitary.
+    overall["G"] = {k: v * 2 * 16 * uf_no for k, v in compute["G"].items() if v > 0}
+    # The CNOT required by EP, Key mix, and the L-S xor F(R)
+    overall["G"]["CNOT"] = overall["G"]["CNOT"] + (16 + 48 + 32) * 2 * 16 * uf_no
+    overall["D"] = compute["D"] * 2 * 16 * uf_no
+    overall["D-CCNOT"] = compute["D-CCNOT"] * 2 * 16 * uf_no
+
+    overall2 = {}
+    overall2["W"] = np.log2(overall["W"])
+    overall2["G"] = {k: np.log2(v) for k, v in overall["G"].items()}
+    overall2["D"] = np.log2(overall["D"])
+    overall2["D-CCNOT"] = np.log2(overall["D-CCNOT"])
+
+    cliffordt = {}
+    # Decomposition based on a T-depth 2, T-count 4, no ancilla. See Meuli et
+    # al. 2022, citing others
+    cliffordt["W"] = overall["W"]
+    # Divided by 2 since half of them is QAND and half is QAND^\dagger
+    cliffordt["T"] = overall["G"]["C-C-X"] * 4 / 2
+    cliffordt["D-T"] = compute["D-CCNOT"] * 2 * 2 * 16 * uf_no
 
     cliffordt2 = {}
     # for each CCX of the S-boxes, we add 1 bit to have a T-depth 1
@@ -307,7 +397,7 @@ def print_comparison_ciphers_measures():
     # header = f"Variant & W & X & CX & CCX & D & D$\\times$W & W & T & T-D & T-D$\\times$W\\\\"
     # print(header)
     # Camellia-128
-    row = "Camellia-128 &"
+    row = "Camellia-128~\\cite{lin2023FurtherInsightsConstructing} &"
     row += " {} & {} & {} & {} & {} & {} & 416 & 10816 & 664 & 7181824 \\\\ "
     print(row)
     row = "SEED &"
@@ -315,7 +405,6 @@ def print_comparison_ciphers_measures():
 
 def main():
     # ex_s1()
-    # get_sboxes_measures()
 
     print("*" * 79)
     print("S-boxes parallel measures")
@@ -324,31 +413,49 @@ def main():
     print(uf_measures)
 
     print("*" * 79)
+    print("S-boxes sequential measures")
+    print("*" * 79)
+    uf_measures = get_sboxes_sequential_measures()
+    print(uf_measures)
+
+    print("*" * 79)
     print("Encryption circuit")
     print("*" * 79)
-    header = f"Variant & W & X & CX & CCX & D & D$\\times$W & W & T & T-D & T-D$\\times$W\\\\"
+    # header = f"Variant & W & X & CX & CCX & D & D-CCX & D-$\\times$W & W & T & T-D & T-D$\\times$W\\\\"
+    header = "Variant & W & X & CX & CCX & D & D-CCX & W & T & T-D\\\\"
     print(header)
+    print("\\midrule")
     for n_keys in range(1, 4):
-        overall, overall2, cliffordt, cliffordt2 = get_encryption_measures(n_keys)
-        if n_keys == 1:
-            head = "DES"
-        elif n_keys == 2:
-            head = "3DES2"
-        elif n_keys == 3:
-            head = "3DES3"
-        row = f"{head} &"
-        row += f"{round(overall['W'])} & "
-        row += f"{round(overall['G']['X'] )} & "
-        row += f"{round(overall['G']['CNOT'] )} & "
-        row += f"{round(overall['G']['C-C-X'] )} & "
-        row += f"{round(overall['D'] )} & "
-        row += f"{round(overall['D']  + overall2['W'])} & "
+        for suffix, res in zip(
+            ("\\TblrNote{$\\lozenge$}", "\\TblrNote{$\\blacklozenge$}"),
+            (
+                get_encryption_measures_sequential(n_keys),
+                get_encryption_measures_parallel(n_keys),
+            ),
+        ):
+            overall, overall2, cliffordt, cliffordt2 = res
+            if n_keys == 1:
+                head = f"DES{suffix}"
+            elif n_keys == 2:
+                head = f"3DES2{suffix}"
+            elif n_keys == 3:
+                head = f"3DES3{suffix}"
+            row = f"{head} &"
+            row += f"{round(overall['W'])} & "
+            row += f"{round(overall['G']['X'] )} & "
+            row += f"{round(overall['G']['CNOT'] )} & "
+            row += f"{round(overall['G']['C-C-X'] )} & "
+            row += f"{round(overall['D'] )} & "
+            row += f"{round(overall['D-CCNOT'] )} & "
+            # row += f"{round(overall['D']  + overall2['W'])} & "
 
-        row += f"{round(cliffordt['W'])} & "
-        row += f"{round(cliffordt['T'] )} & "
-        row += f"{round(cliffordt['D-T'] )} & "
-        row += f"{round(cliffordt['D-T']  + overall2['W'])}\\\\"
-        print(row)
+            row += f"{round(cliffordt['W'])} & "
+            row += f"{round(cliffordt['T'] )} & "
+            row += f"{round(cliffordt['D-T'] )} \\\\ "
+            # row += f"{round(cliffordt['D-T']  + overall2['W'])}\\\\"
+            print(row)
+    print("\\midrule")
+
     print_comparison_ciphers_measures()
 
     print("*" * 79)
