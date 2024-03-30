@@ -260,8 +260,17 @@ def get_encryption_measures_parallel(n_keys):
 
     cliffordt = {}
     # for each CCX of the S-boxes, we add 1 qubit to have a T-depth 1, T-count
-    # 4 decomposition.
+    # 4 decomposition. It also requires 10 Clifford for QAND, and 3 Clifford +
+    # 2 classically controlled Clifford for QAND^\dagger. We can just add, for
+    # the classically controlled, half of them (i.e., 1), since the classical
+    # qubit is on half of the time.
     cliffordt["W"] = overall["W"] + compute["G"]["C-C-X"]
+    # non T gates, i.e., Clifford
+    cliffordt["nT"] = (
+        overall["G"]["X"]
+        + overall["G"]["CNOT"]
+        + (overall["G"]["C-C-X"] / 2 * 10 + overall["G"]["C-C-X"] / 2 * 4)
+    )
     # Divided by 2 since half of them is QAND and half is QAND^\dagger
     cliffordt["T"] = overall["G"]["C-C-X"] * 4 / 2
     cliffordt["D-T"] = compute["D-CCNOT"] * 2 * 16 * uf_no
@@ -272,6 +281,8 @@ def get_encryption_measures_parallel(n_keys):
     cliffordt2["W"] = np.log2(cliffordt["W"])
     # Divided by 2 since half of them is QAND and half is QAND^\dagger
     cliffordt2["T"] = overall2["G"]["C-C-X"] - 1
+    # non T gates, i.e., Clifford
+    cliffordt2["nT"] = np.log2(cliffordt["nT"])
     # same as before, uncompute stage doesn't count
     cliffordt2["D-T"] = np.log2(compute["D-CCNOT"] * 2 * 16 * uf_no)
 
@@ -308,8 +319,15 @@ def get_encryption_measures_sequential(n_keys):
 
     cliffordt = {}
     # Decomposition based on a T-depth 2, T-count 4, no ancilla. See Meuli et
-    # al. 2022, citing others
+    # al. 2022, citing others. The QAND requires 10 Cliffords; the QAND^\dagger
+    # is identical to the previous.
     cliffordt["W"] = overall["W"]
+    # non T gates, i.e., Clifford
+    cliffordt["nT"] = (
+        overall["G"]["X"]
+        + overall["G"]["CNOT"]
+        + (overall["G"]["C-C-X"] / 2 * 10 + overall["G"]["C-C-X"] / 2 * 4)
+    )
     # Divided by 2 since half of them is QAND and half is QAND^\dagger
     cliffordt["T"] = overall["G"]["C-C-X"] * 4 / 2
     cliffordt["D-T"] = compute["D-CCNOT"] * 2 * 2 * 16 * uf_no
@@ -318,6 +336,7 @@ def get_encryption_measures_sequential(n_keys):
     # for each CCX of the S-boxes, we add 1 bit to have a T-depth 1
     # decomposition.
     cliffordt2["W"] = np.log2(cliffordt["W"])
+    cliffordt2["nT"] = np.log2(cliffordt["nT"])
     # Divided by 2 since half of them is QAND and half is QAND^\dagger
     cliffordt2["T"] = overall2["G"]["C-C-X"] - 1
     # same as before, uncompute stage doesn't count
@@ -394,13 +413,23 @@ def get_oracle_measures(n_keys):
 
 
 def print_comparison_ciphers_measures():
-    # header = f"Variant & W & X & CX & CCX & D & D$\\times$W & W & T & T-D & T-D$\\times$W\\\\"
-    # print(header)
-    # Camellia-128
-    row = "Camellia-128~\\cite{lin2023FurtherInsightsConstructing} &"
-    row += " {} & {} & {} & {} & {} & {} & 416 & 10816 & 664 & 7181824 \\\\ "
+    # Jaques
+    row = "AES-128~\\cite{jaques2019implementing}"
+    # Table 9 10
+    row = "Camellia-128~\\cite{lin2023FurtherInsightsConstructing}"
+    row += (
+        "& 388 & 3566 & 39600 & 10816 & - & 5284 & 2050192 & 388 & 140510 & 68320 & 22188 & 6150576 \\\\ "
+    )
     print(row)
-    row = "SEED &"
+    # Table 11
+    row = "Camellia-128~\\cite{lin2023FurtherInsightsConstructing}"
+    row += "& - & - & - & - & - & - & - & 992 & 180206 & 24960 & 92 & 91264 \\\\ "
+    print(row)
+    row = "SEED\\cite{oh2023OptimizedQuantumImplementation}"
+    row += f"& 41496 & 8116 & 409520 & 41392 & 11837 & 321 & 13320216"
+    row += f"& 41496 & 784740 & 289680 & 1284 & 53280864"
+    row += "\\\\"
+    print(row)
 
 
 def main():
@@ -421,8 +450,8 @@ def main():
     print("*" * 79)
     print("Encryption circuit")
     print("*" * 79)
-    # header = f"Variant & W & X & CX & CCX & D & D-CCX & D-$\\times$W & W & T & T-D & T-D$\\times$W\\\\"
-    header = "Variant & W & X & CX & CCX & D & D-CCX & W & T & T-D\\\\"
+    # header = f"Variant & W & X & CX & CCX & D & D-CCX & D-$\\times$W & W & Clifford & T & T-D & T-D$\\times$W\\\\"
+    header = "Variant & W & X & CX & Toffoli & Full depth & Toffoli Depth & W & Clifford & T & T Depth\\\\"
     print(header)
     print("\\midrule")
     for n_keys in range(1, 4):
@@ -440,19 +469,21 @@ def main():
                 head = f"3DES2{suffix}"
             elif n_keys == 3:
                 head = f"3DES3{suffix}"
-            row = f"{head} &"
-            row += f"{round(overall['W'])} & "
-            row += f"{round(overall['G']['X'] )} & "
-            row += f"{round(overall['G']['CNOT'] )} & "
-            row += f"{round(overall['G']['C-C-X'] )} & "
-            row += f"{round(overall['D'] )} & "
-            row += f"{round(overall['D-CCNOT'] )} & "
-            # row += f"{round(overall['D']  + overall2['W'])} & "
+            row = f"{head} "
+            row += f"& {round(overall['W'])}  "
+            row += f"& {round(overall['G']['X'] )}  "
+            row += f"& {round(overall['G']['CNOT'] )}  "
+            row += f"& {round(overall['G']['C-C-X'] )}  "
+            row += f"& {round(overall['D'] )}  "
+            row += f"& {round(overall['D-CCNOT'] )}  "
+            row += f"& {round(overall['D-CCNOT']  + overall2['W'])}  "
 
-            row += f"{round(cliffordt['W'])} & "
-            row += f"{round(cliffordt['T'] )} & "
-            row += f"{round(cliffordt['D-T'] )} \\\\ "
-            # row += f"{round(cliffordt['D-T']  + overall2['W'])}\\\\"
+            row += f"& {round(cliffordt['W'])}  "
+            row += f"& {round(cliffordt['nT'] )}  "
+            row += f"& {round(cliffordt['T'] )}  "
+            row += f"& {round(cliffordt['D-T'] )}"
+            row += f"& {round(cliffordt['D-T']  + overall2['W'])}"
+            row += "\\\\"
             print(row)
     print("\\midrule")
 
@@ -465,10 +496,6 @@ def main():
     print(header)
     for n_keys in range(1, 4):
         _, overall2, cliffordt2 = get_oracle_measures(n_keys)
-        # print(overall)
-        # print(overall2)
-        # print(cliffordt2)
-        # qubits
         if n_keys == 1:
             head = "DES"
         elif n_keys == 2:
