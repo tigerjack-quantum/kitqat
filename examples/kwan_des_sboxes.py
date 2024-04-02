@@ -414,32 +414,67 @@ def get_oracle_parallel_measures(n_keys):
 def get_oracle_sequential_measures(n_keys):
     """Overall measures of the Grover oracle, retrieved starting from the
     single compute measures of the previous function, and the number of grover
-    iterations.
+    iterations."""
+    overall, overall2, cliffordt, cliffordt2 = get_encryption_measures_sequential(n_keys)
+    # 55 instead of 56 bcz of complimentary property of DES and 3DES; the
+    # logarithmic factor is due to the optimal no. of iterations
+    iters = (n_keys * 55 / 2) + np.log2(0.58)
 
-    """
-    # The decomposition of the CCX for the oracle reflection uses 62 bits. For
+    # init + 2 to implement the CZ of the oracle + diffusion
+    overall["G"]["H"] = n_keys + 2 + n_keys * 2
+    # The X required to XOR the given ctx, estimated to be half of the ctx length
+    overall["G"]["X"] = overall["G"]["X"] + 32 * 2
+
+    # The decomposition of the CCX for the oracle reflection uses 63 bits. For
     # the sequential case, we can reuse (some of) the ancillary qubits of the
-    # S5 box, and we don't need any additional one. For the decomposition of
-    # the CCX into QAND and QAND^\dagger, the encryption function added a no.
-    # of additional qubits equal to all the CCX contained in the S boxes to
-    # allow parallelization. However, we only want the maximum of all the S
-    # boxes here (62) for the CCNOT measures, while we multiply it by 2 for the
-    # QAND measures.
+    # S5 box (that is, 59 of them), and need just 3 additional ones.
 
-    overall, overall2, cliffordt, cliffordt2 = get_oracle_parallel_measures(n_keys)
-    # n_ccnot_phaseflip_decomposition = (64 - 1) * 2
+    n_ccnot_phaseflip_decomposition = (64 - 1) * 2
+    overall["W"] += 4
+    overall["G"]["C-C-X"] = overall["G"]["C-C-X"] + n_ccnot_phaseflip_decomposition
+    overall["G-sum"] = sum(overall["G"].values())
 
-    overall["W"] -= 59 + 52 + 53 + 38 + 58 + 53 + 53 + 50
-    overall["W"] += 62
+    # the log factors are for the reflection decompositions
+    overall["D"] = overall["D"] + np.log2(64)
+    overall["D-CCNOT"] = overall["D-CCNOT"] + np.log2(64)
+
+    overall2 = {}
     overall2["W"] = np.log2(overall["W"])
+    overall2["G"] = {k: np.log2(v) + iters + 1 for k, v in overall["G"].items()}
+    overall2["G-sum"] = np.log2(overall["G-sum"]) + iters + 1
+    overall2["D"] = np.log2(overall["D"]) + iters + 1
+    overall2["D-CCNOT"] = np.log2(overall["D"]) + iters + 1
 
-    cliffordt["W"] = overall["W"] + 62
+    # Each CCX of the phase flip requires 10 Clifford for QAND, and 3 Clifford
+    # + 2 classically controlled Clifford for QAND^\dagger. We can just add,
+    # for the classically controlled, half of them (i.e., 1), since the
+    # classical qubit is on half of the time. 
+    #
+    # For the decomposition of the CCX into QAND and QAND^\dagger, we need 63
+    # QAND and the same number of dagger for the decomposition of the 64-block
+    # multi-controlled phase flips. Each QAND requires one additional qubit.
+    cliffordt["W"] = overall["W"] + 63
+    # non T gates, i.e., Clifford
+    cliffordt["nT"] += n_ccnot_phaseflip_decomposition / 2 * 14
+    # Divided by 2 since half of them is QAND and half is QAND^\dagger. The
+    # QAND requires 4 T gates.
+    cliffordt["T"] += n_ccnot_phaseflip_decomposition * 4 / 2
+    cliffordt["D-T"] += np.log2(64)
+
+    cliffordt2 = {}
+    # for each CCX of the S-boxes, we add 1 bit to have a T-depth 1
+    # decomposition.
     cliffordt2["W"] = np.log2(cliffordt["W"])
+    # Divided by 2 since half of them is QAND and half is QAND^\dagger
+    cliffordt2["nT"] = np.log2(cliffordt["nT"]) + iters + 1
+    cliffordt2["T"] = np.log2(cliffordt["T"]) + iters + 1
+    # same as before, uncompute stage doesn't count
+    cliffordt2["D-T"] = np.log2(cliffordt["D-T"]) + iters + 1
 
     return overall, overall2, cliffordt, cliffordt2
 
 
-def print_comparison_ciphers_measures():
+def print_comparison_ciphers_encryption_measures():
     # Jaques
     row = "AES-128~\\cite{jaques2019implementing}"
     row = "AES-128~\\cite{jaques2019implementing}"
@@ -459,6 +494,63 @@ def print_comparison_ciphers_measures():
 
     row = "HIGHT 64/128~\\cite{jang2022ParallelQuantumAddition}"
     row += "& 228 & 4496 & 22614 & 5824 & 2479 & - & - & - & - & - & - & - "
+    row += "\\\\"
+    print(row)
+
+
+def print_comparison_ciphers_oracle_measures():
+    # Jaques
+    row = "AES-128~\\cite{jaques2019implementing}"
+    row += f"& 12 & 83 & 75 & 88 & 157 "
+    row += f"& 12 & 79 & 71 & 83 & 151 "
+    row += "\\\\"
+    print(row)
+    # Table 9 10
+    iters = 64 + np.log2(0.58)
+    # Note that it does not uses depth, but Toffoli depth
+    row = (
+        "Camellia-128~\\cite{lin2023FurtherInsightsConstructing}\\TblrNote{$\\lozenge$}"
+    )
+    # To the Tab.9 measures, we add 128 x for the ctx; 128 * 2 for the
+    # decomposition of the multi-controlled phase flips into CCNOT; lb(lb(128)*2) ~= 4 for the depth
+    # of the phase flip operator;
+    w = round(np.log2(388))
+    g = round(np.log2(3566 + 128 + 39600 + 10816 + 128) + iters + 1)
+    d = round(np.log2(5284 + np.log2(128)) + iters + 1)
+    dw = round(np.log2(2050192+128*2) + iters + 1)
+    row += f"& {w} & {g} & {d} & {dw} & {d + g}"
+    # To the Tab.10 measures, we add 128 T gates for the QAND decomposition of Toffoli
+    # gates; lb(lb(128)) ~= 3 for the T-depth of the phase flip operator using
+    # QAND and QAND^\dagger;
+    w = round(np.log2(388))
+    g = round(np.log2(75712 + 128) + iters + 1)
+    d = round(np.log2(15852 + np.log2(128)) + iters + 1)
+    dw = round(np.log2(6150576 + np.log2(128)) + iters + 1)
+    row += f"& {w} & {g} & {d} & {dw} & {d + g}"
+    row += "\\\\"
+    print(row)
+    # To the Tab.11 measures, we add 128 T gates for the decomposition of the
+    # CCNOT phase flips in QAND; lb(lb(128)) ~= 3 for the T-depth of the phase
+    # flip operator; for
+    row = "Camellia-128~\\cite{lin2023FurtherInsightsConstructing}\\TblrNote{$\\blacklozenge$}"
+    row += "& - & - & - & - & - "
+    w = round(np.log2(992))
+    # 32 because we want to account only for 64 T gates
+    g = round(np.log2(24960 + 32) + iters + 1)
+    d = round(np.log(92 + np.log2(128)) + iters + 1)
+    dw = round(np.log2(6150576 + np.log2(128)) + iters + 1)
+    row += f"& {w} & {g} & {d} & {dw} & {d + g}"
+    row += "\\\\"
+    print(row)
+    row = "SEED\\cite{oh2023OptimizedQuantumImplementation}"
+    row += f"& 15 & 84 & 79 & 95 & 164 "
+    row += f"& - & - & - & - & - "
+    row += "\\\\"
+    print(row)
+
+    row = "HIGHT 64/128~\\cite{jang2022ParallelQuantumAddition}"
+    row += "& 9 & 82 & 75 & 85 & 158 "
+    row += f"& - & - & - & - & - "
     row += "\\\\"
     print(row)
 
@@ -518,7 +610,7 @@ def main():
             print(row)
     print("\\midrule")
 
-    print_comparison_ciphers_measures()
+    print_comparison_ciphers_encryption_measures()
 
     print("*" * 79)
     print("Full Grover")
@@ -527,6 +619,7 @@ def main():
     # header = f"Variant & W & {{Total\\\\Gates}} & {{Total\\\\Depth}} & {{Total Depth\\\\$\\cdot$Width}} & {{NIST\\\\Compl.}} & W & {{T}} & {{T-D}} & {{T-D\\\\$\\cdot$W}} & {{NIST\\\\Compl.}} \\\\"
     header = f"Variant & W & G & D & D$\\cdot$W & {{NIST\\\\Compl.}} & W & T & T-D & T-D$\\cdot$W & {{NIST\\\\Compl.}} \\\\"
     print(header)
+    print("\\midrule")
     for n_keys in range(1, 4):
         for suffix, res in zip(
             ("\\TblrNote{$\\lozenge$}", "\\TblrNote{$\\blacklozenge$}"),
@@ -559,7 +652,7 @@ def main():
             row += f"& {round(cliffordt2['D-T'] + overall2['G-sum'])}\\\\"
             print(row)
 
-    # ex_sall()
+    print_comparison_ciphers_oracle_measures()
 
 
 if __name__ == "__main__":
