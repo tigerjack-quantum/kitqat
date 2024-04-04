@@ -348,6 +348,10 @@ def get_encryption_measures_sequential(n_keys):
     return overall, overall2, cliffordt, cliffordt2
 
 
+def get_iters(n_keys):
+    return (n_keys * 55 / 2) + np.log2(0.58)
+
+
 def get_oracle_parallel_measures(n_keys):
     """Overall measures of the Grover oracle, retrieved starting from the
     single compute measures of the previous function, and the number of grover
@@ -357,7 +361,7 @@ def get_oracle_parallel_measures(n_keys):
     overall, overall2, cliffordt, cliffordt2 = get_encryption_measures_parallel(n_keys)
     # 55 instead of 56 bcz of complimentary property of DES and 3DES; the
     # logarithmic factor is due to the optimal no. of iterations
-    iters = (n_keys * 55 / 2) + np.log2(0.58)
+    iters = get_iters(n_keys)
 
     # init + 2 to implement the CZ of the oracle + diffusion
     overall["G"]["H"] = n_keys + 2 + n_keys * 2
@@ -415,7 +419,9 @@ def get_oracle_sequential_measures(n_keys):
     """Overall measures of the Grover oracle, retrieved starting from the
     single compute measures of the previous function, and the number of grover
     iterations."""
-    overall, overall2, cliffordt, cliffordt2 = get_encryption_measures_sequential(n_keys)
+    overall, overall2, cliffordt, cliffordt2 = get_encryption_measures_sequential(
+        n_keys
+    )
     # 55 instead of 56 bcz of complimentary property of DES and 3DES; the
     # logarithmic factor is due to the optimal no. of iterations
     iters = (n_keys * 55 / 2) + np.log2(0.58)
@@ -448,7 +454,7 @@ def get_oracle_sequential_measures(n_keys):
     # Each CCX of the phase flip requires 10 Clifford for QAND, and 3 Clifford
     # + 2 classically controlled Clifford for QAND^\dagger. We can just add,
     # for the classically controlled, half of them (i.e., 1), since the
-    # classical qubit is on half of the time. 
+    # classical qubit is on half of the time.
     #
     # For the decomposition of the CCX into QAND and QAND^\dagger, we need 63
     # QAND and the same number of dagger for the decomposition of the 64-block
@@ -517,7 +523,7 @@ def print_comparison_ciphers_oracle_measures():
     w = round(np.log2(388))
     g = round(np.log2(3566 + 128 + 39600 + 10816 + 128) + iters + 1)
     d = round(np.log2(5284 + np.log2(128)) + iters + 1)
-    dw = round(np.log2(2050192+128*2) + iters + 1)
+    dw = round(np.log2(2050192 + 128 * 2) + iters + 1)
     row += f"& {w} & {g} & {d} & {dw} & {d + g}"
     # To the Tab.10 measures, we add 128 T gates for the QAND decomposition of Toffoli
     # gates; lb(lb(128)) ~= 3 for the T-depth of the phase flip operator using
@@ -651,6 +657,52 @@ def main():
             row += f"& {round(cliffordt2['D-T']  + overall2['W'])}"
             row += f"& {round(cliffordt2['D-T'] + overall2['G-sum'])}\\\\"
             print(row)
+
+    n_keys = 2
+    for suffix2, mem_cost_access in zip(
+        ("$\\sqrt[3]{M}$", "$\\sqrt[2]{M}$"), (np.power(2, 56 / 3), np.power(2, 56 / 2))
+    ):
+        for suffix, res in zip(
+            ("\\TblrNote{$\\lozenge$}", "\\TblrNote{$\\blacklozenge$}"),
+            (
+                get_oracle_sequential_measures(n_keys),
+                get_oracle_parallel_measures(n_keys),
+            ),
+        ):
+            head = f"3DES3{suffix}-{suffix2}"
+            overall, overall2, cliffordt, cliffordt2 = res
+            # MITM strategy, with a QRACM of size M=2^56
+            # sqrt[3]{M} depth
+            iters = get_iters(2)
+            # get the depth of a single compute
+            depth_compute = overall2["D"] - (iters + 1)
+            # add the mem cost access
+            depth_compute_new = (
+                np.log2(2**depth_compute + mem_cost_access) + iters + 1
+            )
+            overall2["D"] = depth_compute_new
+            depth_diff = depth_compute_new - depth_compute
+            cliffordt2["D-T"] += depth_diff
+
+            row = f"{head} "
+            row += f"& {round(overall2['W'])} "
+            # row += f"& {round(overall2['G']['X'] )}"
+            # row += f"& {round(overall2['G']['CNOT'] )}"
+            # row += f"& {round(overall2['G']['C-C-X'] )}"
+            row += f"& {round(overall2['G-sum'] )} "
+            row += f"& {round(overall2['D'] )} "
+            row += f"& {round(overall2['D']  + overall2['W'])} "
+            row += f"& {round(overall2['D'] + overall2['G-sum'])}"
+
+            row += f"& {round(cliffordt2['W'])} "
+            row += f"& {round(cliffordt2['T'] )} "
+            row += f"& {round(cliffordt2['D-T'] )} "
+            row += f"& {round(cliffordt2['D-T']  + overall2['W'])}"
+            row += f"& {round(cliffordt2['D-T'] + overall2['G-sum'])}\\\\"
+            print(row)
+
+    # Others
+    print("\\midrule")
 
     print_comparison_ciphers_oracle_measures()
 
