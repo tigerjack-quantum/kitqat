@@ -550,13 +550,23 @@ def print_comparison_ciphers_oracle_measures():
     print(row)
     row = "SEED\\cite{oh2023OptimizedQuantumImplementation}"
     row += f"& 15 & 84 & 79 & 95 & 164 "
-    row += f"& - & - & - & - & - "
+    # Tab. 2
+    _t = np.log2(289680)
+    _td = np.log2(1284)
+    _w = np.log2(41496)
+    _fix = 1.65 # 2*2*pi/4
+    row += f"& {round(_w)} & {round(_t + _fix + 64)} & {round(_td + _fix + 64)} & {round(_td  + _fix + 64 + _w)} & {round(_td  + _fix + 64 + _t)} "
     row += "\\\\"
     print(row)
 
     row = "HIGHT 64/128~\\cite{jang2022ParallelQuantumAddition}"
     row += "& 9 & 82 & 75 & 85 & 158 "
-    row += f"& - & - & - & - & - "
+    # Tab. 3
+    _w = np.log2(457)
+    _t = np.log2(294808)
+    _td = np.log2(4959)
+    _fix = 1.65 # 2*2*pi/4
+    row += f"& {round(_w)} & {round(_t + _fix + 64)} & {round(_td + _fix + 64)} & {round(_td  + _fix + 64 + _w)} & {round(_td  + _fix + 64 + _t)} "
     row += "\\\\"
     print(row)
 
