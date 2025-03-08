@@ -10,9 +10,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
-    "qat-comm",
-    "qat-core",
-    "qat-lang",
+    # "myqlm", # can't add it as a dependency, bcz it conflics when installed on QLM
+    "qat-comm>=1.4.0",
+    "qat-core>=1.6",
+    "qat-lang>=2.2.0",
     "typing",
     "numpy>=1.15",
     "bitarray>=3.0.0",

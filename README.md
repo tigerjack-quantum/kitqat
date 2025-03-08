@@ -7,6 +7,19 @@ simulator](https://atos.net/en/solutions/quantum-learning-machine), both
 provided by Atos.
 
 # Installation #
+## Library usage
+If you would like to use the code, a possible way is to install it through git
+using either
+
+```
+pip install git+ssh://git@github.com/tigerjack/qat-utils.git
+```
+
+
+ and you do not have access to a QLM, you can
+install the open source
+[myQLM](https://myqlm.github.io/myqlm_specific/install.html).
+## Development
 If you would like to test the code and you do not have access to a QLM, you can
 install the open source
 [myQLM](https://myqlm.github.io/myqlm_specific/install.html).
@@ -17,11 +30,11 @@ The best way to install the code would be through
 guides on how to install them. After both of them are installed, you can run.
 
 ```
-pyenv install 3.9.7
-pyenv virtualenv 3.9.7 myqlm_env
+pyenv install 3.12.9
+pyenv virtualenv 3.12.9 myqlm_env
 ```
 
-where `3.9.7` is the python version used for this code and `myqlm_env` is the
+where `3.12.9` is the python version used for this code and `myqlm_env` is the
 name of the virtual environment (you can change whatever name you like). You can
 also try for different python version, but the code has not been tested with
 them. You can check the python versions available for myQLM on their
