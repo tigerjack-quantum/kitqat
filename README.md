@@ -9,16 +9,23 @@ provided by Atos.
 # Installation #
 ## Library usage
 If you would like to use the code, a possible way is to install it through git
-using either
+is by using
 
 ```
 pip install git+ssh://git@github.com/tigerjack/qat-utils.git
 ```
 
+Note that this will not install
+[myQLM](https://myqlm.github.io/myqlm_specific/install.html) itself, that should
+be manually installed by 
 
- and you do not have access to a QLM, you can
-install the open source
-[myQLM](https://myqlm.github.io/myqlm_specific/install.html).
+```
+pip install myqlm
+```
+
+The reason to not make myqlm a dependency is that the code can also be used on 
+the proprietary QLM.
+
 ## Development
 If you would like to test the code and you do not have access to a QLM, you can
 install the open source
