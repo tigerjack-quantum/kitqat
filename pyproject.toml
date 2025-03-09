@@ -20,6 +20,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+myqlm = [
+    "myqlm"
+]
+    
 dev = [
     "black",
     "mypy",
@@ -30,6 +34,7 @@ dev = [
 ]
 test = [
     "pytest",
+    "sympy",
      "parameterized",
 ]
 
