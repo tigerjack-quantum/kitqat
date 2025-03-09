@@ -15,16 +15,15 @@ is by using
 pip install git+ssh://git@github.com/tigerjack/qat-utils.git
 ```
 
-Note that this will not install
-[myQLM](https://myqlm.github.io/myqlm_specific/install.html) itself, that should
-be manually installed by 
+You can additionally install 
+[myQLM](https://myqlm.github.io/myqlm_specific/install.html) with
 
 ```
-pip install myqlm
+pip install 'qatext[myqlm] @ git+ssh://git@github.com/tigerjack/qat-utils.git'
 ```
 
-The reason to not make myqlm a dependency is that the code can also be used on 
-the proprietary QLM.
+The reason to make myqlm an optional dependency is that the `qatext` library
+can also be run on the QLM machines.
 
 ## Development
 If you would like to test the code and you do not have access to a QLM, you can
