@@ -1,4 +1,5 @@
 import itertools
+import unittest
 from math import ceil, log2
 from test.common_circuit import CircuitTestCase
 
@@ -12,22 +13,7 @@ from qat.lang.AQASM.program import Program
 
 
 class BixTestCase(CircuitTestCase):
-    @parameterized.expand(
-        [
-            "0101",
-            "0001",
-            "1000",
-            "1101",
-            "10011",
-            "11011",
-            "0001101",
-            "1111000",
-            "10110100",
-            "11001011",
-            "111001011",
-        ]
-    )
-    def test_bix_fixed_weight(self, bitstring):
+    def _test_bix_fixed_weight_common(self, bitstring):
         n = len(bitstring)
         # the additional + 1 is required since we want indexes starting from 1
         # to n (and not the traditional 0 to n-1)
@@ -90,6 +76,7 @@ class BixTestCase(CircuitTestCase):
                         obtained = sample.state.bitstring
                 ones = []
                 zeros = []
+                assert obtained is not None
                 for k, v in reg_names.items():
                     if k.startswith("oregs_"):
                         ones.append(obtained[v.start : v.stop])
@@ -105,3 +92,25 @@ class BixTestCase(CircuitTestCase):
                 ancillae_start = zregs[-1].start + zregs[-1].length
                 for i in bitstring[ancillae_start:]:
                     self.assertEqual(i, "0")
+
+
+    @parameterized.expand(
+        [
+            "0101",
+            "0001",
+            "1000",
+            "1101",
+            "10011",
+            "11011",
+            "0001101",
+            "1111000",
+            "10110100",
+            "11001011",
+            "111001011",
+        ]
+    )
+    @unittest.skipUnless(
+        CircuitTestCase.REVERSIBLE_ON, f"Only enabled with reversible simulation"
+    )
+    def test_bix_fixed_weight_large(self, bitstring):
+        self._test_bix_fixed_weight_common(bitstring)
