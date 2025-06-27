@@ -16,7 +16,9 @@ def get_bitstring_from_int(i: int, max_bits: int, littleEndian=False) -> str:
     return bitstr if not littleEndian else bitstr[::-1]
 
 
-def get_bitarray_from_int(i: int, max_bits: int, littleEndian=False) -> List[int]:
+def get_bitarray_from_int(i: int,
+                          max_bits: int,
+                          littleEndian=False) -> List[int]:
     return [int(x) for x in get_bitstring_from_int(i, max_bits, littleEndian)]
 
 
@@ -29,6 +31,27 @@ def get_negated_bistring(a_str: str) -> str:
 
 def get_negated_bitarray(a_arr: List[int]) -> List[int]:
     return [1 if int(x) == 0 else 0 for x in a_arr]
+
+def get_ints_from_bitarray(state_arr: List[int],
+                            n: int,
+                            m: int,
+                            littleEndian=False) -> tuple[int]:
+    return get_ints_from_bitstring("".join(str(e) for e in state_arr), n, m, littleEndian)
+
+def get_ints_from_bitstring(state_str: str,
+                            n: int,
+                            m: int,
+                            littleEndian=False) -> tuple[int]:
+    """Given a bitstring, extract the corresponding integers. The bitstring is
+    assumed to contain n integers, represented on m qubits."""
+    ons = []
+    for i in range(n):
+        slice_ = state_str[i * m:(i + 1) * m]
+        if not slice_:
+            raise ValueError(
+                f"Empty slice for i={i}, m={m}, state_str='{state_str}'")
+        ons.append(get_int_from_bitstring(slice_, littleEndian))
+    return tuple(ons)
 
 
 def get_int_from_bitstring(a_str: str, littleEndian=False) -> int:
