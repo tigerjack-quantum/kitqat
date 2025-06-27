@@ -1,0 +1,10 @@
+{
+  "exclude": [
+    "**/__pycache__"
+  ],
+  "reportMissingImports": "error",
+  "reportMissingTypeStubs": "none",
+  "venvPath": "/mnt/internal/LinuxData/pyenv/versions",
+  "venv": "myqlm",
+  "pythonVersion": "3.12"
+}
