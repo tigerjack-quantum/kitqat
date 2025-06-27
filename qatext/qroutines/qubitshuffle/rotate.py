@@ -10,6 +10,31 @@ rotate_reg = AbstractGate("ROT_REG_D", [int, int], arity=lambda n, _: n)
 # Reversal alg., check
 # https://www.geeksforgeeks.org/program-for-array-rotation-continued-reversal-algorithm/
 
+
+# @build_gate('SHIFT', [int, int], lambda _, y: y)
+# def shift_qreg(n_shifts, n_bits):
+#     """Performs a cyclic left shift using only swaps (in-place)."""
+#     qf = QRoutine()
+#     n_shifts = n_shifts % n_bits  # Ensure the shift is within range
+#     qreg = qf.new_wires(n_bits)
+#     for _ in range(n_shifts):
+#         for i in range(n_bits - 1):
+#             qf.apply(SWAP, qreg[i], qreg[i + 1])
+#     return qf
+
+
+@build_gate('SWAP_QREG', [int], lambda x: x * 2)
+def swap_qreg_cells(n_cell_size):
+    """Swaps the matching qubits of two quantum registers having the same size"""
+    qf = QRoutine()
+    qreg1 = qf.new_wires(n_cell_size)
+    qreg2 = qf.new_wires(n_cell_size)
+    for cell_bit in range(n_cell_size):
+        qf.apply(SWAP, qreg1[cell_bit], qreg2[cell_bit])
+    return qf
+
+
+
 @build_gate("ROT_D", [int, int], arity=lambda n, _: n)
 def reversal(nqubits: int, d: int):
     """Rotate a set of nqbubits by d position. If d is >0, then it's a left
