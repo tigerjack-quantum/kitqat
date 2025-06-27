@@ -1,10 +1,7 @@
-import numpy as np
-
-from qat.lang.AQASM.qint import QInt
-from qat.lang.AQASM.gates import SWAP, H, X, CNOT, CCNOT
+from qat.lang.AQASM.gates import CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
+from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
-from qat.lang.AQASM.arithmetic import add
 
 
 @build_gate('SLIDING_SORT', [int, int])
@@ -29,7 +26,7 @@ def sliding_sorted_array(m, n):
             qf.apply(CNOT, qb1, qb2)
 
     # ... also to the last cell of A
-    for qb1, qb2 in zip(qr_val, qrs_a[n-1]):
+    for qb1, qb2 in zip(qr_val, qrs_a[n - 1]):
         qf.apply(CNOT, qb1, qb2)
     # return qf # OK
 
@@ -40,15 +37,15 @@ def sliding_sorted_array(m, n):
     # return qf # OK
 
     # swap 1
-    for i in range(n-1):
-        qr_a, qr_ai, qb_aii = qrs_a[i], qrs_ai[i+1], qr_aii[i]
+    for i in range(n - 1):
+        qr_a, qr_ai, qb_aii = qrs_a[i], qrs_ai[i + 1], qr_aii[i]
         for qb_a, qb_ai in zip(qr_a, qr_ai):
             qf.apply(SWAP.ctrl(), qb_aii, qb_ai, qb_a)
     # return qf
 
     # swap 2
-    for i in range(n-1):
-        qr_a, qr_ai, qb_aii = qrs_a[i+1], qrs_ai[i+1], qr_aii[i]
+    for i in range(n - 1):
+        qr_a, qr_ai, qb_aii = qrs_a[i + 1], qrs_ai[i + 1], qr_aii[i]
         for qb_a, qb_ai in zip(qr_a, qr_ai):
             qf.apply(SWAP.ctrl(), qb_aii, qb_a, qb_ai)
     # return qf

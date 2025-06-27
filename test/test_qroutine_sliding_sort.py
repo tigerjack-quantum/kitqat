@@ -6,16 +6,19 @@ from qat.lang.AQASM.qint import QInt
 from qat.lang.qpus.classical_qpu import ClassicalQPU
 from qatext.qpus.reversible import RProgram
 from qatext.qroutines import qregs_init as qregs
-from qatext.qroutines.datastructure.sliding_sort_array import sliding_sorted_array
-from qatext.utils.bits.conversion import get_int_from_bitarray, get_ints_from_bitarray
+from qatext.qroutines.datastructure.sliding_sort_array import \
+    sliding_sorted_array
+from qatext.utils.bits.conversion import (get_int_from_bitarray,
+                                          get_ints_from_bitarray)
 
 QPU = ClassicalQPU()
+
 
 def _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes):
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_range
-    res= rpr.get_result_by_name()
+    res = rpr.get_result_by_name()
     print(reg_names_to_range)
     for qreg_name in reg_names_to_range:
         n, m = reg_names_to_sizes[qreg_name]
@@ -67,9 +70,7 @@ def test_insertion(values, max_value, value_to_insert):
     }
     # tuple is (n, m), with n the number of elements in the bitstring, m the
     # size of each element
-    reg_names_to_sizes: dict[str, tuple[int, int]] = {
-        'x': (1, m)
-    }
+    reg_names_to_sizes: dict[str, tuple[int, int]] = {'x': (1, m)}
     range_start += m
 
     qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
@@ -123,7 +124,7 @@ def test_insertion(values, max_value, value_to_insert):
     a_vals = get_ints_from_bitarray(res['a'], n, m, False)
     ai_vals = get_ints_from_bitarray(res['a1'], n, m, False)
     aii_vals = get_ints_from_bitarray(res['a2'], n, 1, False)
-    ax_val =  res['ax']
+    ax_val = res['ax']
     # print(x_val, a_vals, ai_vals, aii_vals)
 
     values.append(value_to_insert)
@@ -134,42 +135,44 @@ def test_insertion(values, max_value, value_to_insert):
     assert (any(ax_val) == False)
 
 
-@pytest.mark.parametrize("values, value_to_delete", [
-    ([0, 1, 2, 3], 0),
-    ([0, 1, 2, 3], 3),
-    ([1, 2, 3, 4], 3),
-    ([2, 4, 5, 6], 5),
-    ([1, 2, 3, 4], 1),
-    ([1, 2, 3, 4], 3),
-    ([1, 2, 3, 4], 2),
-    ([1, 2, 3, 4], 4),
-    ([2, 3, 4], 3),
-    ([2, 4], 2),
-    ([4], 4),
-    # Delete from beginning
-    ([0, 1, 2, 3], 0),
-    ([1, 2, 3, 4], 1),
-    # Delete from end
-    ([0, 1, 2, 3], 3),
-    ([1, 2, 3, 4], 4),
-    # Delete from middle
-    ([1, 2, 3, 4], 2),
-    ([2, 4, 5, 6], 5),
-    ([2, 3, 4], 3),
-    # Delete unique value
-    ([4], 4),
-    # Delete when multiple identical elements
-    ([1, 2, 2, 3], 2),
-    ([2, 2, 2], 2),
-    # Delete from single-element list
-    ([3], 3),
-    # These cases are not handled by the sliding sorted array
-    # # Value not in list
-    # ([1, 2, 3, 4], 5),
-    # ([0, 1, 2], -1),
-    # # Empty list
-    # ([], 1),
-])
+@pytest.mark.parametrize(
+    "values, value_to_delete",
+    [
+        ([0, 1, 2, 3], 0),
+        ([0, 1, 2, 3], 3),
+        ([1, 2, 3, 4], 3),
+        ([2, 4, 5, 6], 5),
+        ([1, 2, 3, 4], 1),
+        ([1, 2, 3, 4], 3),
+        ([1, 2, 3, 4], 2),
+        ([1, 2, 3, 4], 4),
+        ([2, 3, 4], 3),
+        ([2, 4], 2),
+        ([4], 4),
+        # Delete from beginning
+        ([0, 1, 2, 3], 0),
+        ([1, 2, 3, 4], 1),
+        # Delete from end
+        ([0, 1, 2, 3], 3),
+        ([1, 2, 3, 4], 4),
+        # Delete from middle
+        ([1, 2, 3, 4], 2),
+        ([2, 4, 5, 6], 5),
+        ([2, 3, 4], 3),
+        # Delete unique value
+        ([4], 4),
+        # Delete when multiple identical elements
+        ([1, 2, 2, 3], 2),
+        ([2, 2, 2], 2),
+        # Delete from single-element list
+        ([3], 3),
+        # These cases are not handled by the sliding sorted array
+        # # Value not in list
+        # ([1, 2, 3, 4], 5),
+        # ([0, 1, 2], -1),
+        # # Empty list
+        # ([], 1),
+    ])
 def test_deletion(values, value_to_delete):
     m = int(np.ceil(np.log2(max(values) + 1)))
     # last one is the empty cell
@@ -200,32 +203,23 @@ def test_deletion(values, value_to_delete):
 
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
 
-    # res = QPU.submit(circ.to_job())
-    # for sample in res:
-    #     print(sample)
     reg_names_to_range: dict[str, range] = {
         'x': range(0, m),
         'a': range(m, m + n * m),
         'a1': range(m + n * m, m + 2 * n * m),
-        'a2': range( m + 2 * n * m,  m + 2 * n * m + n),
-        'ax': range( m + 2 * n * m + n,  m + 2 * n * m + n + 100),
+        'a2': range(m + 2 * n * m, m + 2 * n * m + n),
+        'ax': range(m + 2 * n * m + n, m + 2 * n * m + n + 100),
     }
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_range
     res = rpr.get_result_by_name()
-    # for name, bitstring in zip(reg_names_to_range, res):
-    #     print(name, bitstring)
-    # for name, bitstring in zip(reg_names_to_range, res):
-    #     _n = 1 if name == 'x' else n
-    #     _m = 1 if name == 'ax' or name ==  'a2' else m
-    #     print(name, get_ints_from_bitstring(_n, _m, bitstring))
 
     x_val = get_int_from_bitarray(res['x'], False)
     a_vals = get_ints_from_bitarray(res['a'], n, m, False)
     ai_vals = get_ints_from_bitarray(res['a1'], n, m, False)
     aii_vals = get_ints_from_bitarray(res['a2'], n, 1, False)
-    ax_val =  res['ax']
+    ax_val = res['ax']
     values.remove(value_to_delete)
     assert (tuple(sorted(values)) == a_vals[:-1])
     assert (x_val == value_to_delete)
@@ -234,8 +228,9 @@ def test_deletion(values, value_to_delete):
     assert (aii_vals == tuple(0 for _ in range(n)))
     assert (any(ax_val) == False)
 
+
 if __name__ == '__main__':
     print(f"to insert [1, 2, 4], m = 4, x = 3")
     test_insertion([1, 2, 4], 4, 3)
-    # print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
-    # test_deletion([0, 1, 2, 3], 2)
+    print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
+    test_deletion([0, 1, 2, 3], 2)
