@@ -6,28 +6,26 @@ from qat.lang.AQASM.qint import QInt
 from qat.lang.qpus.classical_qpu import ClassicalQPU
 from qatext.qpus.reversible import RProgram
 from qatext.qroutines import qregs_init as qregs
-from qatext.qroutines.datastructure.sliding_sort_array import \
-    sliding_sorted_array
+from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 
 QPU = ClassicalQPU()
 
-
-def _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes):
-    circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_range
-    res = rpr.get_result_by_name()
-    print(reg_names_to_range)
-    for qreg_name in reg_names_to_range:
-        n, m = reg_names_to_sizes[qreg_name]
-        if n == -1:
-            val = res[qreg_name]
-        else:
-            val = get_ints_from_bitarray(res[qreg_name], n, m, False)
-        print(f"{qreg_name}-> {val}, {res[qreg_name]}")
-    return
+# def _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes):
+#     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
+#     rpr = RProgram.circuit_to_rprogram(circ)
+#     rpr.rregs = reg_names_to_range
+#     res = rpr.get_result_by_name()
+#     print(reg_names_to_range)
+#     for qreg_name in reg_names_to_range:
+#         n, m = reg_names_to_sizes[qreg_name]
+#         if n == -1:
+#             val = res[qreg_name]
+#         else:
+#             val = get_ints_from_bitarray(res[qreg_name], n, m, False)
+#         print(f"{qreg_name}-> {val}, {res[qreg_name]}")
+#     return
 
 
 @pytest.mark.parametrize(
@@ -106,7 +104,7 @@ def test_insertion(values, max_value, value_to_insert):
     # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
     # return
 
-    qf = sliding_sorted_array(m, n)
+    qf = insert(m, n)
     # ancillary, don't know the sizes
     reg_names_to_range['ax'] = range(range_start, range_start + 199)
     reg_names_to_sizes['ax'] = (-1, 1)
@@ -198,7 +196,7 @@ def test_deletion(values, value_to_delete):
         qrs_data_i.append(pr.qalloc(m, QInt))
     qrs_data_ii = pr.qalloc(n, QInt)
 
-    qf = sliding_sorted_array(m, n).dag()
+    qf = delete(m, n)
     pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
 
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)

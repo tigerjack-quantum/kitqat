@@ -4,8 +4,8 @@ from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
 
 
-@build_gate('SLIDING_SORT', [int, int])
-def sliding_sorted_array(m, n):
+@build_gate('SLIDING_SORT_INSERT', [int, int])
+def insert(m, n):
     """n cells, each one of size m.
     Expect qregs in this order: X, A, A', A''
     """
