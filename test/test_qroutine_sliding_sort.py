@@ -29,7 +29,7 @@ QPU = ClassicalQPU()
 
 
 @pytest.mark.parametrize(
-    "values, max_value, value_to_insert",
+    "values, max_bits, value_to_insert",
     [
         # Insert in the middle
         ([1, 2, 4], 4, 3),
@@ -55,8 +55,8 @@ QPU = ClassicalQPU()
         # Insertion of existing max value
         ([1, 2], 3, 3),
     ])
-def test_insertion(values, max_value, value_to_insert):
-    m = max_value
+def test_insertion(values, max_bits, value_to_insert):
+    m = max_bits
     # last one is the empty cell, used as temporary
     n = len(values) + 1
     pr = Program()
@@ -90,14 +90,14 @@ def test_insertion(values, max_value, value_to_insert):
     # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
     # return
 
-    qrs_data_i = []
-    for _ in range(n):
-        qrs_data_i.append(pr.qalloc(m, QInt))
+    # qrs_data_i = []
+    # for _ in range(n):
+    #     qrs_data_i.append(pr.qalloc(m, QInt))
     reg_names_to_range['a1'] = range(range_start, range_start + n * m)
     reg_names_to_sizes['a1'] = (n, m)
     range_start += n * m
 
-    qrs_data_ii = pr.qalloc(n, QInt)
+    # qrs_data_ii = pr.qalloc(n, QInt)
     reg_names_to_range['a2'] = range(range_start, range_start + n)
     reg_names_to_sizes['a2'] = (n, 1)
     range_start += n
@@ -109,7 +109,8 @@ def test_insertion(values, max_value, value_to_insert):
     reg_names_to_range['ax'] = range(range_start, range_start + 199)
     reg_names_to_sizes['ax'] = (-1, 1)
 
-    pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
+    # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
+    pr.apply(qf, qr_x, *qrs_data)
     # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
     # return
 
@@ -189,15 +190,18 @@ def test_deletion(values, value_to_delete):
         qfun = qregs.initialize_qureg_given_int(value, m, False)
         pr.apply(qfun, qrs_data[i])
     # last one, empty
-    qrs_data.append(pr.qalloc(m, QInt))
+    # qrs_data.append(pr.qalloc(m, QInt))
 
-    qrs_data_i = []
-    for _ in range(n):
-        qrs_data_i.append(pr.qalloc(m, QInt))
-    qrs_data_ii = pr.qalloc(n, QInt)
+    # qrs_data_i = []
+    # for _ in range(n):
+    #     qrs_data_i.append(pr.qalloc(m, QInt))
+    # qrs_data_ii = pr.qalloc(n, QInt)
 
     qf = delete(m, n)
-    pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
+    # print(qf)
+    # input()
+    # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
+    pr.apply(qf, qr_x, *qrs_data)
 
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
 
@@ -228,7 +232,9 @@ def test_deletion(values, value_to_delete):
 
 
 if __name__ == '__main__':
-    print(f"to insert [1, 2, 4], m = 4, x = 3")
-    test_insertion([1, 2, 4], 4, 3)
-    print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
-    test_deletion([0, 1, 2, 3], 2)
+    # print(f"to insert [1, 2, 4], m = 4, x = 3")
+    # test_insertion([1, 2, 4], 4, 3)
+    print(f"to insert [2, 4, 6], m = 7, x = 3")
+    test_insertion([2, 4, 6], 7, 3)
+    # print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
+    # test_deletion([0, 1, 2, 3], 2)
