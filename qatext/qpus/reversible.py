@@ -10,6 +10,9 @@ import operator
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
+import qat.lang.AQASM.classarith
+from qatext.utils.bits.conversion import get_ints_from_bitarray
+
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
     from qat.lang.AQASM.routines import QRoutine
@@ -38,7 +41,8 @@ class RProgram:
     rev_gate_names = ("X", "NOT", "SWAP", "I")
 
     def __init__(self):
-        self.ops = []  # should contain the list of operations for logging purposes
+        self.ops = [
+        ]  # should contain the list of operations for logging purposes
         self.rbits: bitarray = bitarray()
         self.rregs: dict[str, range] = {}
 
@@ -48,7 +52,8 @@ class RProgram:
         `n` defaults to 1. You can additionally decide to name this
         register passing the `name` parameter.
         """
-        rang = range(len(self.rbits), len(self.rbits) + n)  # upper not included
+        rang = range(len(self.rbits),
+                     len(self.rbits) + n)  # upper not included
         if name is None:
             name = str(rang)[6:].replace(", ", "_").replace(")", "")
         elif name in self.rregs:
@@ -71,20 +76,18 @@ class RProgram:
             ntrgts = 1
         elif gate == RGate.I:
             ntrgts = 1
-        else:
-            raise ValueError(f"Unknown gate {gate}")
-        trgts = rbits[-1 : -1 * ntrgts - 1 : -1]
-        ctrls = rbits[: len(rbits) - ntrgts]
+        trgts = rbits[-1:-1 * ntrgts - 1:-1]
+        ctrls = rbits[:len(rbits) - ntrgts]
         # arity = len(rbits) - ntrgts
         if len(trgts) + len(ctrls) != len(rbits):
             raise ValueError(f"Wrong number of rbits {len(rbits)}")
         if ctrls is not None and not set(ctrls).isdisjoint(set(trgts)):
             raise ValueError("The target and control set should be disjoint")
-        ctrl = (
-            (ctrls is None or len(ctrls) == 0)
-            or (len(ctrls) == 1 and operator.itemgetter(*ctrls)(self.rbits) == 1)
-            or (len(ctrls) > 1 and all(operator.itemgetter(*ctrls)(self.rbits)))
-        )
+        ctrl = ((ctrls is None or len(ctrls) == 0)
+                or (len(ctrls) == 1
+                    and operator.itemgetter(*ctrls)(self.rbits) == 1)
+                or (len(ctrls) > 1
+                    and all(operator.itemgetter(*ctrls)(self.rbits))))
         self.ops.append((gate, *ctrls, *trgts))
         if not ctrl:
             # Nothing to do here
@@ -102,8 +105,6 @@ class RProgram:
             self.rbits[trgts[0]] = 0
         elif gate == RGate.I:
             pass
-        else:
-            raise ValueError(f"Unknown gate {gate}")
 
     def _apply_gate_from_name(self, gatename: str, rbits: Sequence[int]):
         """Apply a gate given the gatename.
@@ -121,25 +122,24 @@ class RProgram:
             trgts = {rbits[-1]}
             ctrls = set(rbits[:-1])
         elif gatename in (
-            "X",
-            "NOT",
-            "CNOT",
-            "C-NOT",
-            "C-X",
-            "CX",
-            "C-C-NOT",
-            "CCNOT",
-            "C-CNOT",
-            "C-C-X",
-            "CCX",
+                "X",
+                "NOT",
+                "CNOT",
+                "C-NOT",
+                "C-X",
+                "CX",
+                "C-C-NOT",
+                "CCNOT",
+                "C-CNOT",
+                "C-C-X",
+                "CCX",
         ):
             rgate = RGate.NOT
             trgts = {rbits[-1]}
             ctrls = set(rbits[:-1])
         else:
             raise AttributeError(
-                f"Got an unknown gate that passed the first check {gatename}"
-            )
+                f"Got an unknown gate that passed the first check {gatename}")
 
         self.apply(rgate, *ctrls, *trgts)
 
@@ -149,20 +149,19 @@ class RProgram:
     def get_result_by_name(self):
         res = {}
         for name, rang in self.rregs.items():
-            res[name] = self.rbits[rang.start : rang.stop]
+            res[name] = self.rbits[rang.start:rang.stop]
         return res
 
     def filter_result_by_name(self, *name: str):
         res = {}
         for _name, rang in self.rregs.items():
             if _name in name:
-                res[_name] = self.rbits[rang.start : rang.stop]
+                res[_name] = self.rbits[rang.start:rang.stop]
         return res
 
     @classmethod
     def circuit_to_rprogram(
-        cls, qcirc: Circuit, reg_names: dict[str, range] = dict()
-    ) -> RProgram:
+        cls, qcirc: Circuit, reg_names: dict[str, range] = dict()) -> RProgram:
         """Convert a qat Circuit object to a reversible program
         :class:`~qatext.qpus.reversible.RProgram`, applying all the
         operations contained."""
@@ -216,8 +215,7 @@ class RProgram:
                     else:
                         raise AttributeError(
                             "Reversible gates accepted: X, SWAP and their controlled"
-                            f" versions, got {gatename}"
-                        )
+                            f" versions, got {gatename}")
                 self._apply_gate_from_name(gatename, op.qbits)
 
     def apply_gates_from_qroutine(
@@ -236,7 +234,8 @@ class RProgram:
         elif len(qbits) < qroutine.arity:
             raise Exception(f"Too few qbits {len(qbits)}")
         qrout_to_orig: dict[int, int] = {
-            a: b for (a, b) in zip(range(qroutine.arity), qbits)
+            a: b
+            for (a, b) in zip(range(qroutine.arity), qbits)
         }
         for op in qroutine.op_list:
             op_qbits = [qrout_to_orig[i] for i in op.args]
@@ -251,3 +250,24 @@ class RProgram:
                     continue
 
             self.apply_gates_from_qroutine(op.gate, op_qbits)
+
+
+@staticmethod
+def get_states_from_program(pr,
+                            reg_names_to_range,
+                            reg_names_to_sizes,
+                            do_print=False):
+    circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
+    rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.rregs = reg_names_to_range
+    res = rpr.get_result_by_name()
+    if do_print:
+        print(reg_names_to_range)
+        for qreg_name in reg_names_to_range:
+            n, m = reg_names_to_sizes[qreg_name]
+            if n == -1:
+                val = res[qreg_name]
+            else:
+                val = get_ints_from_bitarray(res[qreg_name], n, m, False)
+            print(f"{qreg_name}-> {val}, {res[qreg_name]}")
+    return res

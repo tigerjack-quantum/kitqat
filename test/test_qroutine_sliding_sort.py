@@ -4,28 +4,13 @@ import qat.lang.AQASM.classarith
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.qint import QInt
 from qat.lang.qpus.classical_qpu import ClassicalQPU
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, get_states_from_program
 from qatext.qroutines import qregs_init as qregs
 from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 
 QPU = ClassicalQPU()
-
-# def _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes):
-#     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
-#     rpr = RProgram.circuit_to_rprogram(circ)
-#     rpr.rregs = reg_names_to_range
-#     res = rpr.get_result_by_name()
-#     print(reg_names_to_range)
-#     for qreg_name in reg_names_to_range:
-#         n, m = reg_names_to_sizes[qreg_name]
-#         if n == -1:
-#             val = res[qreg_name]
-#         else:
-#             val = get_ints_from_bitarray(res[qreg_name], n, m, False)
-#         print(f"{qreg_name}-> {val}, {res[qreg_name]}")
-#     return
 
 
 @pytest.mark.parametrize(
@@ -73,7 +58,7 @@ def test_insertion(values, max_bits, value_to_insert):
 
     qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
     pr.apply(qfun, qr_x)
-    # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
+    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes, True)
     # return
 
     qrs_data = []
@@ -87,37 +72,29 @@ def test_insertion(values, max_bits, value_to_insert):
     reg_names_to_range['a'] = range(range_start, range_start + n * m)
     reg_names_to_sizes['a'] = (n, m)
     range_start += n * m
-    # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
+    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes, True)
     # return
 
-    # qrs_data_i = []
-    # for _ in range(n):
-    #     qrs_data_i.append(pr.qalloc(m, QInt))
     reg_names_to_range['a1'] = range(range_start, range_start + n * m)
     reg_names_to_sizes['a1'] = (n, m)
     range_start += n * m
-
     # qrs_data_ii = pr.qalloc(n, QInt)
     reg_names_to_range['a2'] = range(range_start, range_start + n)
     reg_names_to_sizes['a2'] = (n, 1)
     range_start += n
-    # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
-    # return
-
-    qf = insert(m, n)
-    # ancillary, don't know the sizes
+    # other ancillary, don't know the sizes
     reg_names_to_range['ax'] = range(range_start, range_start + 199)
     reg_names_to_sizes['ax'] = (-1, 1)
 
+    qf = insert(m, n)
+
     # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
     pr.apply(qf, qr_x, *qrs_data)
-    # _inner_state_test(pr, reg_names_to_range, reg_names_to_sizes)
+    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes, True)
     # return
 
-    circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_range
-    res = rpr.get_result_by_name()
+    res = get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+                                  False)
 
     x_val = get_int_from_bitarray(res['x'], False)
     a_vals = get_ints_from_bitarray(res['a'], n, m, False)
@@ -234,7 +211,9 @@ def test_deletion(values, value_to_delete):
 if __name__ == '__main__':
     # print(f"to insert [1, 2, 4], m = 4, x = 3")
     # test_insertion([1, 2, 4], 4, 3)
-    print(f"to insert [2, 4, 6], m = 7, x = 3")
-    test_insertion([2, 4, 6], 7, 3)
+    # print(f"to insert [2, 4, 6], m = 7, x = 3")
+    # test_insertion([2, 4, 6], 7, 3)
+    print(f"to insert [1, 2, 4, 7], m = 4, x = 3")
+    test_insertion([1, 2, 4, 7], 3, 3)
     # print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
     # test_deletion([0, 1, 2, 3], 2)
