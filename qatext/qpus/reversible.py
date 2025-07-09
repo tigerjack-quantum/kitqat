@@ -10,7 +10,6 @@ import operator
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
-import qat.lang.AQASM.classarith
 from qatext.utils.bits.conversion import get_ints_from_bitarray
 
 if TYPE_CHECKING:
@@ -251,21 +250,26 @@ class RProgram:
 
             self.apply_gates_from_qroutine(op.gate, op_qbits)
 
+@staticmethod
+def get_state_from_program(pr,
+                            link: Optional[list],
+                            do_print=False) -> bitarray:
+    circ = pr.to_circ(link=link, inline=True)
+    rpr = RProgram.circuit_to_rprogram(circ)
+    res = rpr.get_result()
+    return res
 
 @staticmethod
 def get_states_from_program(pr,
                             reg_names_to_range,
                             reg_names_to_sizes,
-                            do_print=False):
-    circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
+                            link: Optional[list],
+                            do_print=False) -> dict[str, list[int]]:
+    circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_range
-    if reg_names_to_range is None and reg_names_to_sizes is None:
-        res = rpr.get_result()
-    else:
-        res = rpr.get_result_by_name()
+    res = rpr.get_result_by_name()
     if do_print:
-        print(reg_names_to_range)
         for qreg_name in reg_names_to_range:
             n, m = reg_names_to_sizes[qreg_name]
             if n == -1:

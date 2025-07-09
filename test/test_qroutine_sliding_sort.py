@@ -58,7 +58,9 @@ def test_insertion(values, max_bits, value_to_insert):
 
     qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
     pr.apply(qfun, qr_x)
-    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes, True)
+    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+    #                               [qat.lang.AQASM.classarith],
+    # True)
     # return
 
     qrs_data = []
@@ -72,7 +74,9 @@ def test_insertion(values, max_bits, value_to_insert):
     reg_names_to_range['a'] = range(range_start, range_start + n * m)
     reg_names_to_sizes['a'] = (n, m)
     range_start += n * m
-    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes, True)
+    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+    #                               [qat.lang.AQASM.classarith],
+    # True)
     # return
 
     reg_names_to_range['a1'] = range(range_start, range_start + n * m)
@@ -90,11 +94,13 @@ def test_insertion(values, max_bits, value_to_insert):
 
     # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
     pr.apply(qf, qr_x, *qrs_data)
-    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes, True)
+    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+    #                               [qat.lang.AQASM.classarith],
+    # True)
     # return
 
     res = get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
-                                  False)
+                                  [qat.lang.AQASM.classarith], False)
 
     x_val = get_int_from_bitarray(res['x'], False)
     a_vals = get_ints_from_bitarray(res['a'], n, m, False)
