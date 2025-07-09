@@ -1,13 +1,15 @@
 from ctypes import ArgumentError
-from qatext.qroutines.arith import adder, subtractor
-from qatext.qroutines.qubitshuffle import rotate
-from qat.lang.AQASM.gates import X, SWAP, CNOT
+from math import ceil, log2
+
+from qat.lang.AQASM.gates import CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines import qregs_init
-from math import log2, ceil
+from qatext.qroutines.arith import adder
+from qatext.qroutines.qubitshuffle import rotate
 
-@build_gate("nXOR", [int], lambda n: 2*n)
+
+@build_gate("nXOR", [int], lambda n: 2 * n)
 def nxor(n: int):
     qrout = QRoutine()
     qwc = qrout.new_wires(n)
@@ -17,9 +19,6 @@ def nxor(n: int):
         qrout.apply(CNOT, target, control)
 
     return qrout
-
-
-
 
 
 # @build_gate("BIX", [int, int], arity=lambda n1, n2: n1 + (n1 + 1) * ceil(log2(n2)))
@@ -53,8 +52,8 @@ def bix_fixed_weight_v1(n: int, weight: int, idx_start_at_one: bool):
     else:
         l2n = int(ceil(log2(n)))
 
-    qrout.arity = (n + 1) * l2n
-    
+    qrout.arity = n * l2n + n
+
     wreg = qrout.new_wires(n)
     oregs = []
     zregs = []
@@ -76,10 +75,10 @@ def bix_fixed_weight_v1(n: int, weight: int, idx_start_at_one: bool):
     qadd = adder(l2n, l2n, False, False)
     qleftrotones = rotate.reg_reversal(len(oregs), l2n, 1)
     qleftrotzeros = rotate.reg_reversal(len(zregs), l2n, 1)
-    final_clean = n if idx_start_at_one else n-1
-    qsetfinal = qregs_init.initialize_qureg_given_int(
-        final_clean, l2n, little_endian=False
-    )
+    final_clean = n if idx_start_at_one else n - 1
+    qsetfinal = qregs_init.initialize_qureg_given_int(final_clean,
+                                                      l2n,
+                                                      little_endian=False)
 
     qrout.apply(qset1, const)
     for i in range(n):
@@ -101,7 +100,7 @@ def bix_fixed_weight_v1(n: int, weight: int, idx_start_at_one: bool):
     # reset const register to 0
     qrout.apply(qset1.dag(), const)
 
-    # set it to value n 
+    # set it to value n
     qrout.apply(qsetfinal, const)
     for qreg in (oregs[0], zregs[0]):
         # The topmost register, qreg, should be decreased by the constant value
@@ -128,14 +127,17 @@ def bix_fixed_weight_v1(n: int, weight: int, idx_start_at_one: bool):
     # reset const register to 0
     qrout.apply(qsetfinal.dag(), const)
 
-    if weight == 1 or weight == n-1:
+    if weight == 1 or weight == n - 1:
         # there is an extra register
         qrout.apply(qleftrotzeros, *zregs)
         qrout.apply(qleftrotones, *oregs)
 
     return qrout
 
-@build_gate("BIX", [int, int, bool])
+
+@build_gate(
+    "BIX", [int, int, bool], lambda n, _, x: n + n * (n.bit_length() if x else
+                                                      (n - 1).bit_length()))
 def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
     """Given a bitstring of length `n`, having exactly `weight` qubits set
     to 1, store into `weight` registers the indexes of the 1's of the
@@ -164,8 +166,6 @@ def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
         l2n = int(ceil(log2(n + 1)))
     else:
         l2n = int(ceil(log2(n)))
-
-    qrout.arity = (n + 1) * l2n
 
     wreg = qrout.new_wires(n)
     oregs = []
@@ -196,10 +196,10 @@ def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
     qxor = nxor(l2n)
     qleftrotones = rotate.reg_reversal(len(oregs), l2n, 1)
     qleftrotzeros = rotate.reg_reversal(len(zregs), l2n, 1)
-    final_clean = n if idx_start_at_one else n-1
-    qsetfinal = qregs_init.initialize_qureg_given_int(
-        final_clean, l2n, little_endian=False
-    )
+    final_clean = n if idx_start_at_one else n - 1
+    qsetfinal = qregs_init.initialize_qureg_given_int(final_clean,
+                                                      l2n,
+                                                      little_endian=False)
 
     qrout.apply(qset1, const)
     for i in range(n):
@@ -249,7 +249,7 @@ def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
     qrout.apply(qsetfinal.dag(), const)
 
     # if weight == 1 or weight == n-1:
-        # there is an extra register
+    # there is an extra register
     qrout.apply(qleftrotzeros, *zregs)
     qrout.apply(qleftrotones, *oregs)
 

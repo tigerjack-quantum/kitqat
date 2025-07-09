@@ -57,6 +57,7 @@ class BixTestCase(CircuitTestCase):
                 )
 
                 qfun = bix.bix_fixed_weight_v2(n, weight, index_start_at_one)
+                self.assertEqual(qfun.arity, n*l2n + n)
                 pr.apply(qfun, wreg, *oregs, *zregs)
 
                 circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
