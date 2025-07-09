@@ -260,7 +260,10 @@ def get_states_from_program(pr,
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_range
-    res = rpr.get_result_by_name()
+    if reg_names_to_range is None and reg_names_to_sizes is None:
+        res = rpr.get_result()
+    else:
+        res = rpr.get_result_by_name()
     if do_print:
         print(reg_names_to_range)
         for qreg_name in reg_names_to_range:
