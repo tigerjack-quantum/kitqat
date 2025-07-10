@@ -10,8 +10,6 @@ import operator
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
-from qatext.utils.bits.conversion import get_ints_from_bitarray
-
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
     from qat.lang.AQASM.routines import QRoutine
@@ -250,21 +248,25 @@ class RProgram:
 
             self.apply_gates_from_qroutine(op.gate, op_qbits)
 
+
 @staticmethod
-def get_state_from_program(pr,
-                            link: Optional[list],
-                            do_print=False) -> bitarray:
+def get_state_from_program(
+    pr,
+    link: Optional[list],
+) -> bitarray:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     res = rpr.get_result()
     return res
 
+
 @staticmethod
-def get_states_from_program(pr,
-                            reg_names_to_slices,
-                            # reg_names_to_sizes,
-                            link: Optional[list],
-                            ) -> dict[str, list[int]]:
+def get_states_from_program(
+    pr,
+    reg_names_to_slices,
+    # reg_names_to_sizes,
+    link: Optional[list],
+) -> dict[str, list[int]]:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_slices
