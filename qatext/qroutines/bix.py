@@ -173,12 +173,12 @@ def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
     zregs = []
     for i in range(weight):
         oregs.append(qrout.new_wires(l2n))
+    for i in range(n - weight):
+        zregs.append(qrout.new_wires(l2n))
+
     ancillae1 = qrout.new_wires(l2n)
     qrout.set_ancillae(ancillae1)
     oregs.append(ancillae1)
-
-    for i in range(n - weight):
-        zregs.append(qrout.new_wires(l2n))
     ancillae2 = qrout.new_wires(l2n)
     qrout.set_ancillae(ancillae2)
     zregs.append(ancillae2)
@@ -278,6 +278,9 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     if weight < 1 or weight >= n:
         raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
     elems_diffs = [elems[0]] + [j - i for i, j in zip(elems, elems[1:])]
+    # print(f"elems {elems}")
+    # print(f"elems_diffs {elems_diffs}")
+    # print(f"m {m}")
 
     qrout = QRoutine()
     wreg = qrout.new_wires(n)
@@ -285,16 +288,16 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     zregs = []
     for i in range(weight):
         oregs.append(qrout.new_wires(m))
+    for i in range(n - weight):
+        zregs.append(qrout.new_wires(m))
     ancillae1 = qrout.new_wires(m)
     qrout.set_ancillae(ancillae1)
     oregs.append(ancillae1)
-
-    for i in range(n - weight):
-        zregs.append(qrout.new_wires(m))
     ancillae2 = qrout.new_wires(m)
     qrout.set_ancillae(ancillae2)
     zregs.append(ancillae2)
     # the register that will hold the constants +1 and -n
+    # in theory can be smaller than this
     const = qrout.new_wires(m)
     qrout.set_ancillae(const)
 
@@ -304,15 +307,26 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
     qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
 
+    # _otmp = [0] * (weight+1)
+    # _ztmp = [0] * (n-weight+1)
+
     for i in range(n):
         qset1 = qregs_init.initialize_qureg_given_int(elems_diffs[i], m, little_endian=False)
         qrout.apply(qset1, const)
-        qrout.apply(qadd, const, oregs[0])
-        qrout.apply(qadd, const, zregs[0])
+        # print(f"set const to {elems_diffs[i]}")
+        if elems_diffs[i] != 0:
+            # print("oregs[0] += const")
+            # _otmp[0] += elems_diffs[i]
+            # print(f"oregs[0] = {_otmp[0]}")
+            # print("zregs[0] += const")
+            # _ztmp[0] += elems_diffs[i]
+            # print(f"zregs[0] = {_ztmp[0]}")
+            qrout.apply(qadd, const, oregs[0])
+            qrout.apply(qadd, const, zregs[0])
 
         # if wreg[i] is 1, we left rotate the ones
         qrout.apply(qleftrotones.ctrl(1), wreg[i], *oregs)
-        # ... and add to the ones register
+        # ... and copy to the first register 
         qrout.apply(qxor.ctrl(1), wreg[i], oregs[-1], oregs[0])
 
         # ...otw, we left rotate the zeros
@@ -324,7 +338,7 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
         qrout.apply(qset1.dag(), const)
 
     # final_clean = n if idx_start_at_one else n - 1
-    final_clean = elems_diffs[-1]
+    final_clean = elems[-1]
     # set it to value n
     qsetfinal = qregs_init.initialize_qureg_given_int(final_clean,
                                                       m,

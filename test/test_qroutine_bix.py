@@ -4,151 +4,87 @@ from math import ceil, log2
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
+from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import RProgram
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
-from qat.lang.AQASM.program import Program
+from qatext.utils.bits.conversion import get_ints_from_bitstring
 
 # from qat.lang.AQASM.aqasm_util import InvalidGateArguments
 
 
 class BixTestCase(CircuitTestCase):
+    # def _tmp(self, pr, reg_name_to_slice, reg_name_to_size, do_print=False):
+    #     from qatext.utils.bits.conversion import get_ints_from_bitarray
+    #     from qatext.qpus.reversible import RProgram, get_states_from_program
+    #     res = get_states_from_program(pr, reg_name_to_slice, link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
+    #     if do_print:
+    #         for k, v in res.items():
+    #             print(k, end=": ")
+    #             if k == 'wreg':
+    #                 print(v)
+    #                 pass
+    #             else:
+    #                 n, m = reg_name_to_size[k]
+    #                 if n == -1:
+    #                     val = v
+    #                 else:
+    #                     val = get_ints_from_bitarray(v, n, m, False)
+    #                 print(val)
+    #     return res
 
-    def _test_bix_fixed_weight_common(self, bitstring):
+    def _test_bix_fixed_weight_common(self, bitstring, index_start_at_one):
         n = len(bitstring)
         # the additional + 1 is required since we want indexes starting from 1
         # to n (and not the traditional 0 to n-1)
         # add should be 0 for not idx_start_at_one
-        for index_start_at_one in (True, False):
-            with self.subTest(index_start_at_one=index_start_at_one):
-                add = 1 if index_start_at_one else 0
-                l2n = int(ceil(log2(n + add)))
-                onesexp = [
-                    bin(i + add)[2:].zfill(l2n)
-                    for i, j in enumerate(bitstring) if j == "1"
-                ]
-                zerosexp = [
-                    bin(i + add)[2:].zfill(l2n)
-                    for i, j in enumerate(bitstring) if j == "0"
-                ]
-                weight = len(onesexp)
-                reg_names = {}
-
-                pr = Program()
-                wreg = pr.qalloc(n)
-                reg_names[f"wreg"] = range(wreg.start, wreg.length)
-                oregs = []
-                zregs = []
-                for i in range(weight):
-                    qr = pr.qalloc(l2n)
-                    oregs.append(qr)
-                    reg_names[f"oregs_{i}"] = range(qr.start,
-                                                    qr.start + qr.length)
-                for i in range(n - weight):
-                    qr = pr.qalloc(l2n)
-                    zregs.append(qr)
-                    reg_names[f"zregs_{i}"] = range(qr.start,
-                                                    qr.start + qr.length)
-
-                pr.apply(
-                    qregs_init.initialize_qureg_given_bitstring(
-                        bitstring, little_endian=False),
-                    wreg,
-                )
-
-                qfun = bix.bix_fixed_weight_v2(n, weight, index_start_at_one)
-                self.assertEqual(qfun.arity, n * l2n + n)
-                pr.apply(qfun, wreg, *oregs, *zregs)
-
-                circ = pr.to_circ(
-                    link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
-                # circ = pr.to_circ(link=[tkk_arith.adder])
-
-                obtained = None
-                if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(circ, reg_names)
-                    obtained = rpr.rbits.to01()
-                else:
-                    res = self.qpu.submit(circ.to_job())
-                    counts = len(res)
-                    self.assertEqual(counts, 1)
-                    for sample in res:
-                        if self.SIMULATOR == "linalg":
-                            self.assertEqual(sample.probability, 1)
-                        obtained = sample.state.bitstring
-                ones = []
-                zeros = []
-                assert obtained is not None
-                for k, v in reg_names.items():
-                    if k.startswith("oregs_"):
-                        ones.append(obtained[v.start:v.stop])
-                    elif k.startswith("zregs_"):
-                        zeros.append(obtained[v.start:v.stop])
-
-                self.assertEqual(obtained[wreg.start:wreg.length], bitstring)
-                for obt, exp in itertools.chain(zip(ones, onesexp),
-                                                zip(zeros, zerosexp)):
-                    self.assertEqual(obt, exp)
-
-                ancillae_start = zregs[-1].start + zregs[-1].length
-                for i in bitstring[ancillae_start:]:
-                    self.assertEqual(i, "0")
-
-    def _test_bix_fixed_weight_common_elems(self, bitstring, elems):
-        n = len(bitstring)
-        m = max(elems).bit_length()
-        # the additional + 1 is required since we want indexes starting from 1
-        # to n (and not the traditional 0 to n-1)
-        # add should be 0 for not idx_start_at_one
-        # add = 1 if index_start_at_one else 0
+        add = 1 if index_start_at_one else 0
+        l2n = int(ceil(log2(n + add)))
         onesexp = [
-            bin(elems[i])[2:].zfill(m)
-            for i, j in enumerate(bitstring) if j == "1"
+            bin(i + add)[2:].zfill(l2n) for i, j in enumerate(bitstring)
+            if j == "1"
         ]
         zerosexp = [
-            bin(elems[i])[2:].zfill(m)
-            for i, j in enumerate(bitstring) if j == "0"
+            bin(i + add)[2:].zfill(l2n) for i, j in enumerate(bitstring)
+            if j == "0"
         ]
-        # print(bitstring)
-        # print(elems)
-        # print(onesexp, zerosexp)
-        # input()
         weight = len(onesexp)
-        reg_names = {}
+        reg_name_to_slice = {}
+        reg_name_to_size = {}
 
         pr = Program()
         wreg = pr.qalloc(n)
-        reg_names[f"wreg"] = range(wreg.start, wreg.length)
+        reg_name_to_slice["wreg"] = slice(wreg.start, wreg.length)
+        reg_name_to_size["wreg"] = (n, 1)
         oregs = []
         zregs = []
         for i in range(weight):
-            qr = pr.qalloc(m)
+            qr = pr.qalloc(l2n)
             oregs.append(qr)
-            reg_names[f"oregs_{i}"] = range(qr.start,
-                                            qr.start + qr.length)
+            reg_name_to_slice[f"oregs_{i}"] = slice(qr.start,
+                                                    qr.start + qr.length)
         for i in range(n - weight):
-            qr = pr.qalloc(m)
+            qr = pr.qalloc(l2n)
             zregs.append(qr)
-            reg_names[f"zregs_{i}"] = range(qr.start,
-                                            qr.start + qr.length)
+            reg_name_to_slice[f"zregs_{i}"] = slice(qr.start,
+                                                    qr.start + qr.length)
 
         pr.apply(
-            qregs_init.initialize_qureg_given_bitstring(
-                bitstring, little_endian=False),
+            qregs_init.initialize_qureg_given_bitstring(bitstring,
+                                                        little_endian=False),
             wreg,
         )
 
-        qfun = bix.bix_fixed_weight_v3(n, m, weight, elems)
-        self.assertEqual(qfun.arity, n * m + n)
+        qfun = bix.bix_fixed_weight_v2(n, weight, index_start_at_one)
+        self.assertEqual(qfun.arity, n * l2n + n)
         pr.apply(qfun, wreg, *oregs, *zregs)
 
-        circ = pr.to_circ(
-            link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
+        circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
         # circ = pr.to_circ(link=[tkk_arith.adder])
 
         obtained = None
         if self.REVERSIBLE_ON:
-            rpr = RProgram.circuit_to_rprogram(circ, reg_names)
+            rpr = RProgram.circuit_to_rprogram(circ, reg_name_to_slice)
             obtained = rpr.rbits.to01()
         else:
             res = self.qpu.submit(circ.to_job())
@@ -161,7 +97,7 @@ class BixTestCase(CircuitTestCase):
         ones = []
         zeros = []
         assert obtained is not None
-        for k, v in reg_names.items():
+        for k, v in reg_name_to_slice.items():
             if k.startswith("oregs_"):
                 ones.append(obtained[v.start:v.stop])
             elif k.startswith("zregs_"):
@@ -173,11 +109,119 @@ class BixTestCase(CircuitTestCase):
             self.assertEqual(obt, exp)
 
         ancillae_start = zregs[-1].start + zregs[-1].length
-        for i in bitstring[ancillae_start:]:
+        for i in obtained[ancillae_start:]:
             self.assertEqual(i, "0")
+
+    def _test_bix_fixed_weight_common_elems(self, bitstring, elems):
+        n = len(bitstring)
+        m = max(elems).bit_length()
+        # the additional + 1 is required since we want indexes starting from 1
+        # to n (and not the traditional 0 to n-1)
+        # add should be 0 for not idx_start_at_one
+        # add = 1 if index_start_at_one else 0
+        onesexp = [
+            bin(elems[i])[2:].zfill(m) for i, j in enumerate(bitstring)
+            if j == "1"
+        ]
+        zerosexp = [
+            bin(elems[i])[2:].zfill(m) for i, j in enumerate(bitstring)
+            if j == "0"
+        ]
+        weight = len(onesexp)
+        reg_name_to_slice = {}
+        reg_name_to_size = {}
+
+        pr = Program()
+        wreg = pr.qalloc(n)
+        reg_name_to_slice[f"wreg"] = slice(wreg.start, wreg.length)
+        reg_name_to_size["wreg"] = (n, 1)
+        oregs = []
+        zregs = []
+        for i in range(weight):
+            qr = pr.qalloc(m)
+            oregs.append(qr)
+        reg_name_to_slice["oregs"] = slice(oregs[0].start,
+                                           oregs[-1].start + oregs[-1].length)
+        reg_name_to_size["oregs"] = (weight, m)
+
+        for i in range(n - weight):
+            qr = pr.qalloc(m)
+            zregs.append(qr)
+        reg_name_to_slice["zregs"] = slice(zregs[0].start,
+                                           zregs[-1].start + zregs[-1].length)
+        reg_name_to_size["zregs"] = (n - weight, m)
+
+        reg_name_to_slice["oregs_add"] = slice(
+            reg_name_to_slice['zregs'].stop,
+            reg_name_to_slice['zregs'].stop + m)
+        reg_name_to_size["oregs_add"] = (1, m)
+        reg_name_to_slice["zregs_add"] = slice(
+            reg_name_to_slice['zregs'].stop + m,
+            reg_name_to_slice['zregs'].stop + 2 * m)
+        reg_name_to_size["zregs_add"] = (1, m)
+
+        reg_name_to_slice['anc'] = slice(zregs[-1].start + zregs[-1].length,
+                                         None)
+        reg_name_to_size['anc'] = (-1, -1)
+
+        pr.apply(
+            qregs_init.initialize_qureg_given_bitstring(bitstring,
+                                                        little_endian=False),
+            wreg,
+        )
+        qfun = bix.bix_fixed_weight_v3(n, m, weight, elems)
+
+        self.assertEqual(qfun.arity, n * m + n)
+        pr.apply(qfun, wreg, *oregs, *zregs)
+        # self._tmp(pr, reg_name_to_slice, reg_name_to_size)
+        # input()
+
+        circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
+        # circ = pr.to_circ(link=[tkk_arith.adder])
+
+        obtained = None
+        if self.REVERSIBLE_ON:
+            rpr = RProgram.circuit_to_rprogram(circ, reg_name_to_slice)
+            obtained = rpr.rbits.to01()
+        else:
+            res = self.qpu.submit(circ.to_job())
+            counts = len(res)
+            self.assertEqual(counts, 1)
+            for sample in res:
+                if self.SIMULATOR == "linalg":
+                    self.assertEqual(sample.probability, 1)
+                obtained = sample.state.bitstring
+        ones = []
+        zeros = []
+        assert obtained is not None
+
+        for k, slic in reg_name_to_slice.items():
+            if k == 'wreg':
+                val = obtained[slic]
+                self.assertEqual(val, bitstring)
+            elif k == 'anc':
+                val = obtained[slic]
+                self.assertFalse(any(map(lambda x: x == '1', val)))
+            else:
+                _n, _m = reg_name_to_size[k]
+                val = get_ints_from_bitstring(obtained[slic], _n, _m, False)
+                if k == 'oregs':
+                    ones = list(val)
+                elif k == 'zregs':  # necessarily zregs
+                    zeros = list(val)
+                elif k == 'oregs_add':
+                    self.assertEqual(len(val), 1)
+                    self.assertEqual(val[0], 0)
+                elif k == 'zregs_add':
+                    self.assertEqual(len(val), 1)
+                    self.assertEqual(val[0], 0)
+        for obt, exp in itertools.chain(zip(ones, onesexp),
+                                        zip(zeros, zerosexp)):
+            self.assertEqual(obt, int(exp, 2))
 
     @parameterized.expand([
         "0101",
+        "1001",
         "0001",
         "1000",
         "1101",
@@ -190,9 +234,10 @@ class BixTestCase(CircuitTestCase):
         "111001011",
     ])
     @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         f"Only enabled with reversible simulation")
+                         "Only enabled with reversible simulation")
     def test_bix_fixed_weight_large(self, bitstring):
-        self._test_bix_fixed_weight_common(bitstring)
+        for index_start_at_one in (False, True):
+            self._test_bix_fixed_weight_common(bitstring, index_start_at_one)
 
     @parameterized.expand([
         ("0101", [0, 1, 2, 3]),
@@ -209,6 +254,6 @@ class BixTestCase(CircuitTestCase):
         ("111001011", [0, 1, 2, 6, 7, 9, 11, 13, 14]),
     ])
     @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         f"Only enabled with reversible simulation")
+                         "Only enabled with reversible simulation")
     def test_bix_fixed_weight_elems(self, bitstring, elems):
         self._test_bix_fixed_weight_common_elems(bitstring, elems)
