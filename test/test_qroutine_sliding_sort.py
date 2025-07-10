@@ -48,8 +48,8 @@ def test_insertion(values, max_bits, value_to_insert):
     qr_x = pr.qalloc(m)
 
     range_start = 0
-    reg_names_to_range: dict[str, range] = {
-        'x': range(range_start, m),
+    reg_names_to_slice: dict[str, slice] = {
+        'x': slice(range_start, m),
     }
     # tuple is (n, m), with n the number of elements in the bitstring, m the
     # size of each element
@@ -58,7 +58,7 @@ def test_insertion(values, max_bits, value_to_insert):
 
     qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
     pr.apply(qfun, qr_x)
-    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+    # get_states_from_program(pr, reg_names_to_slice, reg_names_to_sizes,
     #                               [qat.lang.AQASM.classarith],
     # True)
     # return
@@ -71,36 +71,36 @@ def test_insertion(values, max_bits, value_to_insert):
         pr.apply(qfun, qrs_data[i])
     # last one, empty
     qrs_data.append(pr.qalloc(m, QInt))
-    reg_names_to_range['a'] = range(range_start, range_start + n * m)
+    reg_names_to_slice['a'] = slice(range_start, range_start + n * m)
     reg_names_to_sizes['a'] = (n, m)
     range_start += n * m
-    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+    # get_states_from_program(pr, reg_names_to_slice, reg_names_to_sizes,
     #                               [qat.lang.AQASM.classarith],
     # True)
     # return
 
-    reg_names_to_range['a1'] = range(range_start, range_start + n * m)
+    reg_names_to_slice['a1'] = slice(range_start, range_start + n * m)
     reg_names_to_sizes['a1'] = (n, m)
     range_start += n * m
     # qrs_data_ii = pr.qalloc(n, QInt)
-    reg_names_to_range['a2'] = range(range_start, range_start + n)
+    reg_names_to_slice['a2'] = slice(range_start, range_start + n)
     reg_names_to_sizes['a2'] = (n, 1)
     range_start += n
     # other ancillary, don't know the sizes
-    reg_names_to_range['ax'] = range(range_start, range_start + 199)
+    reg_names_to_slice['ax'] = slice(range_start, None)
     reg_names_to_sizes['ax'] = (-1, 1)
 
     qf = insert(m, n)
 
     # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
     pr.apply(qf, qr_x, *qrs_data)
-    # get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
+    # get_states_from_program(pr, reg_names_to_slice, reg_names_to_sizes,
     #                               [qat.lang.AQASM.classarith],
     # True)
     # return
 
-    res = get_states_from_program(pr, reg_names_to_range, reg_names_to_sizes,
-                                  [qat.lang.AQASM.classarith], False)
+    res = get_states_from_program(pr, reg_names_to_slice,
+                                  [qat.lang.AQASM.classarith])
 
     x_val = get_int_from_bitarray(res['x'], False)
     a_vals = get_ints_from_bitarray(res['a'], n, m, False)
@@ -188,16 +188,16 @@ def test_deletion(values, value_to_delete):
 
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
 
-    reg_names_to_range: dict[str, range] = {
-        'x': range(0, m),
-        'a': range(m, m + n * m),
-        'a1': range(m + n * m, m + 2 * n * m),
-        'a2': range(m + 2 * n * m, m + 2 * n * m + n),
-        'ax': range(m + 2 * n * m + n, m + 2 * n * m + n + 100),
+    reg_names_to_slice: dict[str, slice] = {
+        'x': slice(0, m),
+        'a': slice(m, m + n * m),
+        'a1': slice(m + n * m, m + 2 * n * m),
+        'a2': slice(m + 2 * n * m, m + 2 * n * m + n),
+        'ax': slice(m + 2 * n * m + n, None),
     }
     circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_range
+    rpr.rregs = reg_names_to_slice
     res = rpr.get_result_by_name()
 
     x_val = get_int_from_bitarray(res['x'], False)

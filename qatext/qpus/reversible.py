@@ -43,7 +43,7 @@ class RProgram:
         self.ops = [
         ]  # should contain the list of operations for logging purposes
         self.rbits: bitarray = bitarray()
-        self.rregs: dict[str, range] = {}
+        self.rregs: dict[str, slice] = {}
 
     def ralloc(self, n=1, name: Optional[str] = None):
         """Allocate a register of `n` reversible bits.
@@ -51,13 +51,13 @@ class RProgram:
         `n` defaults to 1. You can additionally decide to name this
         register passing the `name` parameter.
         """
-        rang = range(len(self.rbits),
+        slic = slice(len(self.rbits),
                      len(self.rbits) + n)  # upper not included
         if name is None:
-            name = str(rang)[6:].replace(", ", "_").replace(")", "")
+            name = str(slic)[6:].replace(", ", "_").replace(")", "")
         elif name in self.rregs:
             raise ValueError("Already another register with the same name")
-        self.rregs[name] = rang
+        self.rregs[name] = slic
         self.rbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, *rbits: int):
@@ -147,28 +147,28 @@ class RProgram:
 
     def get_result_by_name(self):
         res = {}
-        for name, rang in self.rregs.items():
-            res[name] = self.rbits[rang.start:rang.stop]
+        for name, slic in self.rregs.items():
+            res[name] = self.rbits[slic]
         return res
 
     def filter_result_by_name(self, *name: str):
         res = {}
-        for _name, rang in self.rregs.items():
+        for _name, slic in self.rregs.items():
             if _name in name:
-                res[_name] = self.rbits[rang.start:rang.stop]
+                res[_name] = self.rbits[slic]
         return res
 
     @classmethod
     def circuit_to_rprogram(
-        cls, qcirc: Circuit, reg_names: dict[str, range] = dict()) -> RProgram:
+        cls, qcirc: Circuit, reg_names: dict[str, slice] = dict()) -> RProgram:
         """Convert a qat Circuit object to a reversible program
         :class:`~qatext.qpus.reversible.RProgram`, applying all the
         operations contained."""
         rprogram = RProgram()
         reg_names_inv = dict((v, k) for k, v in reg_names.items())
         for qr in qcirc.qregs:
-            rang = range(qr.start, qr.start + qr.length)
-            name = reg_names_inv.get(rang, None)
+            slic = slice(qr.start, qr.start + qr.length)
+            name = reg_names_inv.get(slic, None)
             rprogram.ralloc(qr.length, name)
         qdiff = qcirc.nbqbits - len(rprogram.rbits)
         if qdiff > 0:
@@ -261,20 +261,20 @@ def get_state_from_program(pr,
 
 @staticmethod
 def get_states_from_program(pr,
-                            reg_names_to_range,
-                            reg_names_to_sizes,
+                            reg_names_to_slices,
+                            # reg_names_to_sizes,
                             link: Optional[list],
-                            do_print=False) -> dict[str, list[int]]:
+                            ) -> dict[str, list[int]]:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_range
+    rpr.rregs = reg_names_to_slices
     res = rpr.get_result_by_name()
-    if do_print:
-        for qreg_name in reg_names_to_range:
-            n, m = reg_names_to_sizes[qreg_name]
-            if n == -1:
-                val = res[qreg_name]
-            else:
-                val = get_ints_from_bitarray(res[qreg_name], n, m, False)
-            print(f"{qreg_name}-> {val}, {res[qreg_name]}")
+    # if do_print:
+    #     for qreg_name in reg_names_to_range:
+    #         n, m = reg_names_to_sizes[qreg_name]
+    #         if n == -1:
+    #             val = res[qreg_name]
+    #         else:
+    #             val = get_ints_from_bitarray(res[qreg_name], n, m, False)
+    #         print(f"{qreg_name}-> {val}, {res[qreg_name]}")
     return res
