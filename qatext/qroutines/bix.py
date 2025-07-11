@@ -1,6 +1,8 @@
 from ctypes import ArgumentError
 from math import ceil, log2
 from typing import List
+# from itertools import chain
+import logging
 
 from qat.lang.AQASM.gates import CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
@@ -8,6 +10,9 @@ from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines import qregs_init
 from qatext.qroutines.arith import adder
 from qatext.qroutines.qubitshuffle import rotate
+from qatext.utils.bits.conversion import get_bitarray_from_int
+
+LOGGER = logging.getLogger(__name__)
 
 
 @build_gate("nXOR", [int], lambda n: 2 * n)
@@ -137,7 +142,7 @@ def bix_fixed_weight_v1(n: int, weight: int, idx_start_at_one: bool):
 
 
 @build_gate(
-    "BIX", [int, int, bool], lambda n, _, x: n + n * (n.bit_length() if x else
+    "BIX_IDXS", [int, int, bool], lambda n, _, x: n + n * (n.bit_length() if x else
                                                       (n - 1).bit_length()))
 def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
     """Given a bitstring of length `n`, having exactly `weight` qubits set
@@ -257,7 +262,7 @@ def bix_fixed_weight_v2(n: int, weight: int, idx_start_at_one: bool):
     return qrout
 
 @build_gate(
-    "BIX", [int, int, int, List], lambda n, m, w, x: n + n * m)
+    "BIX_DATA", [int, int, int, List], lambda n, m, w, x: n + n * m)
 def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     """Given a bitstring of length `n`, having exactly `weight` qubits set to
     1, store into `weight` registers the values `elems[i]` if `dicke[i] == 1`,
@@ -278,9 +283,6 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     if weight < 1 or weight >= n:
         raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
     elems_diffs = [elems[0]] + [j - i for i, j in zip(elems, elems[1:])]
-    # print(f"elems {elems}")
-    # print(f"elems_diffs {elems_diffs}")
-    # print(f"m {m}")
 
     qrout = QRoutine()
     wreg = qrout.new_wires(n)
@@ -313,14 +315,7 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     for i in range(n):
         qset1 = qregs_init.initialize_qureg_given_int(elems_diffs[i], m, little_endian=False)
         qrout.apply(qset1, const)
-        # print(f"set const to {elems_diffs[i]}")
         if elems_diffs[i] != 0:
-            # print("oregs[0] += const")
-            # _otmp[0] += elems_diffs[i]
-            # print(f"oregs[0] = {_otmp[0]}")
-            # print("zregs[0] += const")
-            # _ztmp[0] += elems_diffs[i]
-            # print(f"zregs[0] = {_ztmp[0]}")
             qrout.apply(qadd, const, oregs[0])
             qrout.apply(qadd, const, zregs[0])
 
@@ -373,5 +368,75 @@ def bix_fixed_weight_v3(n: int, m: int, weight: int, elems: List):
     # there is an extra register
     qrout.apply(qleftrotzeros, *zregs)
     qrout.apply(qleftrotones, *oregs)
+
+    return qrout
+
+@build_gate(
+    "BIX_MATRIX", [int, int, int, int, List], lambda n, r, m, w, x: n * r * m + n)
+def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
+    """It is given a bitstring of length `n`, having exactly `weight` qubits
+    set to 1. The goal is to store into `weight` registers (each one composed
+    by `columns` cells, each cell having `m` bits) the submatrix composed by
+    the rows of `matrix` indexed by the `i` bits set to `1` of the bitstring,
+    and on `n-weight` the remaining ones. The matrix has size `n X columns`
+    size, and its flattened row-wise (e.g. [[0, 1, 2], [3, 4, 5]] is [0, 1, 2,
+    3, 4, 5])
+
+
+    It should be applied to the following registers:
+    - qreg_dicke: the register containing the dicke state
+    - qreg_omatrix
+    - qreg_zmatrix
+
+    It uses additional ancillary register, reset to all zeros after
+    """
+    # This one is the VBE proposed to TC, which works with direct encoding
+    # instead of deltas
+
+    if weight < 1 or weight >= n:
+        raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
+    # elems_diffs = [elems[0]] + [j - i for i, j in zip(elems, elems[1:])]
+    rows = n
+
+    qrout = QRoutine()
+    wreg = qrout.new_wires(n)
+    omatrix_flat = []
+    # flattened row-wise
+    for row in range(weight):
+        for col in range(columns):
+            qr = qrout.new_wires(m)
+            omatrix_flat.append(qr)
+    omatrix = [omatrix_flat[i * columns:(i + 1) * columns] for i in range(weight)]
+    zmatrix_flat = []
+    for row in range(weight):
+        for col in range(columns):
+            qr = qrout.new_wires(m)
+            zmatrix_flat.append(qr)
+    zmatrix = [zmatrix_flat[i * columns:(i + 1) * columns] for i in range(n-weight)]
+    LOGGER.debug("zmatrix")
+    LOGGER.debug(zmatrix)
+    LOGGER.debug("omatrix")
+    LOGGER.debug(omatrix)
+
+    #
+    qleftrotones = rotate.reg_reversal(len(omatrix_flat), m, columns)
+    qleftrotzeros = rotate.reg_reversal(len(zmatrix_flat), m, columns)
+
+    for row in range(rows):
+        for col in range(columns):
+            matrix_val = matrix[row * columns + col]
+            LOGGER.debug("matrix[%d][%d]", row, col)
+            LOGGER.debug("It is computed as row*columns + col")
+            LOGGER.debug("It is %d",  matrix_val)
+            val = get_bitarray_from_int(matrix_val, m, False)
+            q_row_init = qregs_init.initialize_qureg_given_bitarray(val, False)
+            qrout.apply(q_row_init.ctrl(1), wreg[row], omatrix[0][col])
+            qrout.apply(X, wreg[row])
+            qrout.apply(q_row_init.ctrl(1), wreg[row], zmatrix[0][col])
+            qrout.apply(X, wreg[row])
+        if weight != 1:
+            qrout.apply(qleftrotzeros.ctrl(1), wreg[row], omatrix_flat)
+        if n - weight != 1:
+            qrout.apply(qleftrotones.ctrl(1), wreg[row], zmatrix_flat)
 
     return qrout

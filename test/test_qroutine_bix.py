@@ -1,8 +1,11 @@
 import itertools
+import logging
 import unittest
+from itertools import chain
 from math import ceil, log2
 from test.common_circuit import CircuitTestCase
 
+import numpy as np
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import RProgram
@@ -10,28 +13,11 @@ from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_ints_from_bitstring
 
-# from qat.lang.AQASM.aqasm_util import InvalidGateArguments
+LOGGER = logging.getLogger(__name__)
+#
 
 
 class BixTestCase(CircuitTestCase):
-    # def _tmp(self, pr, reg_name_to_slice, reg_name_to_size, do_print=False):
-    #     from qatext.utils.bits.conversion import get_ints_from_bitarray
-    #     from qatext.qpus.reversible import RProgram, get_states_from_program
-    #     res = get_states_from_program(pr, reg_name_to_slice, link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
-    #     if do_print:
-    #         for k, v in res.items():
-    #             print(k, end=": ")
-    #             if k == 'wreg':
-    #                 print(v)
-    #                 pass
-    #             else:
-    #                 n, m = reg_name_to_size[k]
-    #                 if n == -1:
-    #                     val = v
-    #                 else:
-    #                     val = get_ints_from_bitarray(v, n, m, False)
-    #                 print(val)
-    #     return res
 
     def _test_bix_fixed_weight_common(self, bitstring, index_start_at_one):
         n = len(bitstring)
@@ -137,14 +123,14 @@ class BixTestCase(CircuitTestCase):
         reg_name_to_size["wreg"] = (n, 1)
         oregs = []
         zregs = []
-        for i in range(weight):
+        for _ in range(weight):
             qr = pr.qalloc(m)
             oregs.append(qr)
         reg_name_to_slice["oregs"] = slice(oregs[0].start,
                                            oregs[-1].start + oregs[-1].length)
         reg_name_to_size["oregs"] = (weight, m)
 
-        for i in range(n - weight):
+        for _ in range(n - weight):
             qr = pr.qalloc(m)
             zregs.append(qr)
         reg_name_to_slice["zregs"] = slice(zregs[0].start,
@@ -173,8 +159,7 @@ class BixTestCase(CircuitTestCase):
 
         self.assertEqual(qfun.arity, n * m + n)
         pr.apply(qfun, wreg, *oregs, *zregs)
-        # self._tmp(pr, reg_name_to_slice, reg_name_to_size)
-        # input()
+        # self.print_rprogram_regs(pr, reg_name_to_slice, reg_name_to_size, [cuccaro_arith.adder, cuccaro_arith.subtractor])
 
         circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
         # circ = pr.to_circ(link=[tkk_arith.adder])
@@ -219,6 +204,118 @@ class BixTestCase(CircuitTestCase):
                                         zip(zeros, zerosexp)):
             self.assertEqual(obt, int(exp, 2))
 
+    def _test_bix_fixed_weight_common_matrix(self, bitstring, matrix):
+        LOGGER.debug("bitstring %s", bitstring)
+        LOGGER.debug("matrix")
+        LOGGER.debug(matrix)
+        n = len(bitstring)
+        rows, cols = len(matrix), len(matrix[0])
+        LOGGER.debug("n %d, rows %d, cols %d", n, rows, cols)
+        assert rows == n, "bitstring should have same length of rows, got n %d, rows %d" % (
+            n, rows)
+        matrix_flat = [int(i) for i in chain.from_iterable(matrix)]
+
+        m = max(matrix_flat).bit_length()
+        LOGGER.debug("m %d", m)
+        onesexp = [
+            matrix[idx] for idx, val in enumerate(bitstring) if val == "1"
+        ]
+        zerosexp = [
+            matrix[idx] for idx, val in enumerate(bitstring) if val == "0"
+        ]
+        LOGGER.debug("onesexp")
+        LOGGER.debug(onesexp)
+        LOGGER.debug("zerosexp")
+        LOGGER.debug(zerosexp)
+
+        weight = len(onesexp)
+        reg_name_to_slice = {}
+        reg_name_to_size = {}
+
+        pr = Program()
+        wreg = pr.qalloc(n)
+        reg_name_to_slice[f"wreg"] = slice(wreg.start, wreg.length)
+        reg_name_to_size["wreg"] = (n, 1)
+        omatrix = []
+        zmatrix = []
+        for _ in range(weight):
+            for _ in range(cols):
+                qr = pr.qalloc(m)
+                omatrix.append(qr)
+        reg_name_to_slice["omatrix"] = slice(
+            omatrix[0].start, omatrix[-1].start + omatrix[-1].length)
+        reg_name_to_size["omatrix"] = (weight * cols, m)
+
+        for _ in range(n - weight):
+            for _ in range(cols):
+                qr = pr.qalloc(m)
+                zmatrix.append(qr)
+        reg_name_to_slice["zmatrix"] = slice(
+            zmatrix[0].start, zmatrix[-1].start + zmatrix[-1].length)
+        reg_name_to_size["zmatrix"] = ((n - weight) * cols, m)
+
+        LOGGER.debug(reg_name_to_slice)
+        LOGGER.debug(reg_name_to_size)
+
+        reg_name_to_slice['anc'] = slice(
+            zmatrix[-1].start + zmatrix[-1].length, None)
+        reg_name_to_size['anc'] = (-1, -1)
+
+        pr.apply(
+            qregs_init.initialize_qureg_given_bitstring(bitstring,
+                                                        little_endian=False),
+            wreg,
+        )
+        qfun = bix.bix_matrix(n, cols, m, weight, matrix_flat)
+
+        self.assertEqual(qfun.arity, rows * cols * m + n)
+        pr.apply(qfun, wreg, *omatrix, *zmatrix)
+        # self.print_rprogram_regs(pr, reg_name_to_slice, reg_name_to_size, [cuccaro_arith.adder, cuccaro_arith.subtractor])
+
+        circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
+        # circ = pr.to_circ(link=[tkk_arith.adder])
+
+        obtained = None
+        if self.REVERSIBLE_ON:
+            rpr = RProgram.circuit_to_rprogram(circ, reg_name_to_slice)
+            obtained = rpr.rbits.to01()
+        else:
+            res = self.qpu.submit(circ.to_job())
+            counts = len(res)
+            self.assertEqual(counts, 1)
+            for sample in res:
+                if self.SIMULATOR == "linalg":
+                    self.assertEqual(sample.probability, 1)
+                obtained = sample.state.bitstring
+        ones = []
+        zeros = []
+        assert obtained is not None
+
+        for k, slic in reg_name_to_slice.items():
+            if k == 'wreg':
+                val = obtained[slic]
+                self.assertEqual(val, bitstring)
+            elif k == 'anc':
+                val = obtained[slic]
+                self.assertFalse(any(map(lambda x: x == '1', val)))
+            else:
+                _n, _m = reg_name_to_size[k]
+                val = get_ints_from_bitstring(obtained[slic], _n, _m, False)
+                if k == 'omatrix':
+                    # reshaping to submatrix
+                    ones = [
+                        list(val[i * cols:(i + 1) * cols])
+                        for i in range(weight)
+                    ]
+                elif k == 'zmatrix':
+                    zeros = [
+                        list(val[i * cols:(i + 1) * cols])
+                        for i in range(n - weight)
+                    ]
+        for obt, exp in itertools.chain(zip(ones, onesexp),
+                                        zip(zeros, zerosexp)):
+            self.assertTrue(obt, exp)
+
     @parameterized.expand([
         "0101",
         "1001",
@@ -257,3 +354,52 @@ class BixTestCase(CircuitTestCase):
                          "Only enabled with reversible simulation")
     def test_bix_fixed_weight_elems(self, bitstring, elems):
         self._test_bix_fixed_weight_common_elems(bitstring, elems)
+
+    @parameterized.expand([
+        # 3 rows, select middle row
+        ("010", np.array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]])),
+
+        # 4 rows, select outer rows
+        ("1001", np.array([[10, 20], [30, 40], [50, 60], [70, 80]])),
+
+        # 5 rows, select middle three
+        ("01110", np.array([[1], [2], [3], [4], [5]])),
+
+        # 2 rows, select all
+        ("10", np.array([[100, 101, 102], [200, 201, 202]])),
+
+        # 6 rows, select alternating rows
+        ("101010", np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11,
+                                                                       12]])),
+    ])
+    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
+                         "Only enabled with reversible simulation")
+    def test_bix_fixed_weight_matrix(self, bitstring, matrix):
+        self._test_bix_fixed_weight_common_matrix(bitstring, matrix)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(filename)s %(asctime)s - %(levelname)s - %(message)s')
+    logging.getLogger("qatext.qroutines.bix").setLevel(logging.DEBUG)
+    logging.getLogger(__name__).setLevel(logging.DEBUG)
+    test = BixTestCase()
+    test.setUpClass()
+    test.setUp()  # optional, if you have a setUp method
+    test.REVERSIBLE_ON = True
+    # Example bitstring and matrix
+    # bitstring = "101"
+    # bitstring = "010"
+    # matrix = [
+    #     [1, 2],
+    #     [4, 5],
+    #     [7, 8],
+    # ]
+    # matrix = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
+    bitstring, matrix = ("01110", np.array([[1], [2], [3], [4], [5]]))
+
+    # Manually call the test method
+    test._test_bix_fixed_weight_common_matrix(bitstring, matrix)
+    test.tearDown()
+    test.tearDownClass()
