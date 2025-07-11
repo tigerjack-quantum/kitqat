@@ -295,21 +295,21 @@ def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
         for col in range(columns):
             qr = qrout.new_wires(m)
             omatrix_flat.append(qr)
-    omatrix = [
-        omatrix_flat[i * columns:(i + 1) * columns] for i in range(weight)
-    ]
+    # omatrix = [
+    #     omatrix_flat[i * columns:(i + 1) * columns] for i in range(weight)
+    # ]
     zmatrix_flat = []
-    for row in range(weight):
+    for row in range(n-weight):
         for col in range(columns):
             qr = qrout.new_wires(m)
             zmatrix_flat.append(qr)
-    zmatrix = [
-        zmatrix_flat[i * columns:(i + 1) * columns] for i in range(n - weight)
-    ]
-    LOGGER.debug("zmatrix")
-    LOGGER.debug(zmatrix)
-    LOGGER.debug("omatrix")
-    LOGGER.debug(omatrix)
+    # zmatrix = [
+    #     zmatrix_flat[i * columns:(i + 1) * columns] for i in range(n - weight)
+    # ]
+    # LOGGER.debug("zmatrix")
+    # LOGGER.debug(zmatrix)
+    # LOGGER.debug("omatrix")
+    # LOGGER.debug(omatrix)
 
     #
     qleftrotones = rotate.reg_reversal(len(omatrix_flat), m, columns)
@@ -323,9 +323,9 @@ def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
             LOGGER.debug("It is %d", matrix_val)
             val = get_bitarray_from_int(matrix_val, m, False)
             q_row_init = qregs_init.initialize_qureg_given_bitarray(val, False)
-            qrout.apply(q_row_init.ctrl(1), wreg[row], omatrix[0][col])
+            qrout.apply(q_row_init.ctrl(1), wreg[row], omatrix_flat[0 + col])
             qrout.apply(X, wreg[row])
-            qrout.apply(q_row_init.ctrl(1), wreg[row], zmatrix[0][col])
+            qrout.apply(q_row_init.ctrl(1), wreg[row], zmatrix_flat[0 + col])
             qrout.apply(X, wreg[row])
         if weight != 1:
             LOGGER.debug("Rotating ones")
