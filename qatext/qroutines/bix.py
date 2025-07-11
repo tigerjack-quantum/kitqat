@@ -328,8 +328,10 @@ def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
             qrout.apply(q_row_init.ctrl(1), wreg[row], zmatrix[0][col])
             qrout.apply(X, wreg[row])
         if weight != 1:
-            qrout.apply(qleftrotzeros.ctrl(1), wreg[row], omatrix_flat)
+            LOGGER.debug("Rotating ones")
+            qrout.apply(qleftrotones.ctrl(1), wreg[row], omatrix_flat)
         if n - weight != 1:
-            qrout.apply(qleftrotones.ctrl(1), wreg[row], zmatrix_flat)
+            LOGGER.debug("Rotating zeros")
+            qrout.apply(qleftrotzeros.ctrl(1), wreg[row], zmatrix_flat)
 
     return qrout
