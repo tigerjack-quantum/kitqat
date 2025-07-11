@@ -61,7 +61,7 @@ class BixTestCase(CircuitTestCase):
             wreg,
         )
 
-        qfun = bix.bix_fixed_weight_v2(n, weight, index_start_at_one)
+        qfun = bix.bix_fixed_weight_indexes(n, weight, index_start_at_one)
         self.assertEqual(qfun.arity, n * l2n + n)
         pr.apply(qfun, wreg, *oregs, *zregs)
 
@@ -155,7 +155,7 @@ class BixTestCase(CircuitTestCase):
                                                         little_endian=False),
             wreg,
         )
-        qfun = bix.bix_fixed_weight_v3(n, m, weight, elems)
+        qfun = bix.bix_fixed_weight_data(n, m, weight, elems)
 
         self.assertEqual(qfun.arity, n * m + n)
         pr.apply(qfun, wreg, *oregs, *zregs)
