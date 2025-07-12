@@ -105,10 +105,8 @@ class CircuitTestCase(BasicTestCase):
         return res
 
     @staticmethod
-    def print_rprogram_regs(pr: "Program", reg_name_to_slice, reg_name_to_size,
-                            link):
-        res = CircuitTestCase.get_rprogram_regs(pr, reg_name_to_slice, link)
-        for k, v in res.items():
+    def print_rprogram_regs_from_rprogram_states(states, reg_name_to_size,):
+        for k, v in states.items():
             print(k, end=": ")
             if k == 'wreg':
                 print(v)
@@ -119,4 +117,9 @@ class CircuitTestCase(BasicTestCase):
                 else:
                     val = get_ints_from_bitarray(v, n, m, False)
                 print(val)
-        return res
+
+    @staticmethod
+    def print_rprogram_regs_from_program(pr: "Program", reg_name_to_slice, reg_name_to_size,
+                            link):
+        res = CircuitTestCase.get_rprogram_regs(pr, reg_name_to_slice, link)
+        CircuitTestCase.print_rprogram_regs_from_rprogram_states(res, reg_name_to_size)
