@@ -1,8 +1,7 @@
+import logging
 from ctypes import ArgumentError
 from math import ceil, log2
 from typing import List
-# from itertools import chain
-import logging
 
 from qat.lang.AQASM.gates import CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
@@ -289,27 +288,22 @@ def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
 
     qrout = QRoutine()
     wreg = qrout.new_wires(n)
+
     omatrix_flat = []
     # flattened row-wise
     for row in range(weight):
         for col in range(columns):
             qr = qrout.new_wires(m)
             omatrix_flat.append(qr)
-    # omatrix = [
-    #     omatrix_flat[i * columns:(i + 1) * columns] for i in range(weight)
-    # ]
     zmatrix_flat = []
-    for row in range(n-weight):
+    for row in range(n - weight):
         for col in range(columns):
             qr = qrout.new_wires(m)
             zmatrix_flat.append(qr)
-    # zmatrix = [
-    #     zmatrix_flat[i * columns:(i + 1) * columns] for i in range(n - weight)
-    # ]
-    # LOGGER.debug("zmatrix")
-    # LOGGER.debug(zmatrix)
-    # LOGGER.debug("omatrix")
-    # LOGGER.debug(omatrix)
+    LOGGER.debug("omatrix_flat, len %d", len(omatrix_flat))
+    # LOGGER.debug(omatrix_flat)
+    LOGGER.debug("zmatrix_flat, len %d", len(zmatrix_flat))
+    # LOGGER.debug(zmatrix_flat)
 
     #
     qleftrotones = rotate.reg_reversal(len(omatrix_flat), m, columns)
@@ -320,18 +314,22 @@ def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
             matrix_val = matrix[row * columns + col]
             LOGGER.debug("matrix[%d][%d]", row, col)
             LOGGER.debug("It is computed as row*columns + col")
-            LOGGER.debug("It is %d", matrix_val)
             val = get_bitarray_from_int(matrix_val, m, False)
+            LOGGER.debug("It is %d, meaning %s", matrix_val, val)
             q_row_init = qregs_init.initialize_qureg_given_bitarray(val, False)
+            LOGGER.debug("Initialize omatrix[%d] (%s) to %s", col,
+                         str(omatrix_flat[col]), val)
             qrout.apply(q_row_init.ctrl(1), wreg[row], omatrix_flat[0 + col])
             qrout.apply(X, wreg[row])
             qrout.apply(q_row_init.ctrl(1), wreg[row], zmatrix_flat[0 + col])
             qrout.apply(X, wreg[row])
         if weight != 1:
-            LOGGER.debug("Rotating ones")
+            LOGGER.debug("Rotating ones ctrld on wreg[%d]", row)
             qrout.apply(qleftrotones.ctrl(1), wreg[row], omatrix_flat)
         if n - weight != 1:
-            LOGGER.debug("Rotating zeros")
+            LOGGER.debug("Rotating zeros ctrld on wreg[%d]", row)
+            qrout.apply(X, wreg[row])
             qrout.apply(qleftrotzeros.ctrl(1), wreg[row], zmatrix_flat)
+            qrout.apply(X, wreg[row])
 
     return qrout

@@ -218,10 +218,10 @@ class BixTestCase(CircuitTestCase):
         m = max(matrix_flat).bit_length()
         LOGGER.debug("m %d", m)
         onesexp = [
-            matrix[idx] for idx, val in enumerate(bitstring) if val == "1"
+            matrix[idx].tolist() for idx, val in enumerate(bitstring) if val == "1"
         ]
         zerosexp = [
-            matrix[idx] for idx, val in enumerate(bitstring) if val == "0"
+            matrix[idx].tolist() for idx, val in enumerate(bitstring) if val == "0"
         ]
         LOGGER.debug("onesexp")
         LOGGER.debug(onesexp)
@@ -290,13 +290,16 @@ class BixTestCase(CircuitTestCase):
         ones = []
         zeros = []
         assert obtained is not None
+        LOGGER.debug("Len obtained %d", len(obtained))
 
         for k, slic in reg_name_to_slice.items():
             if k == 'wreg':
                 val = obtained[slic]
+                LOGGER.debug("wreg %s", val)
                 self.assertEqual(val, bitstring)
             elif k == 'anc':
                 val = obtained[slic]
+                LOGGER.debug("anc %s", val)
                 self.assertFalse(any(map(lambda x: x == '1', val)))
             else:
                 _n, _m = reg_name_to_size[k]
@@ -307,14 +310,16 @@ class BixTestCase(CircuitTestCase):
                         list(val[i * cols:(i + 1) * cols])
                         for i in range(weight)
                     ]
+                    LOGGER.debug(ones)
                 elif k == 'zmatrix':
                     zeros = [
                         list(val[i * cols:(i + 1) * cols])
                         for i in range(n - weight)
                     ]
+                    LOGGER.debug(zeros)
         for obt, exp in itertools.chain(zip(ones, onesexp),
                                         zip(zeros, zerosexp)):
-            self.assertTrue(obt, exp)
+            self.assertEqual(obt, exp)
 
     @parameterized.expand([
         "0101",
@@ -358,6 +363,8 @@ class BixTestCase(CircuitTestCase):
     @parameterized.expand([
         # 3 rows, select middle row
         ("010", np.array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]])),
+        ("001", np.array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]])),
+        ("100", np.array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]])),
 
         # 4 rows, select outer rows
         ("1001", np.array([[10, 20], [30, 40], [50, 60], [70, 80]])),
@@ -397,7 +404,8 @@ if __name__ == '__main__':
     #     [7, 8],
     # ]
     # matrix = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
-    bitstring, matrix = ("01110", np.array([[1], [2], [3], [4], [5]]))
+    # bitstring, matrix = ("01110", np.array([[1], [2], [3], [4], [5]]))
+    bitstring, matrix = ("1001", np.array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]]))
 
     # Manually call the test method
     test._test_bix_fixed_weight_common_matrix(bitstring, matrix)
