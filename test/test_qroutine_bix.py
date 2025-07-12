@@ -159,7 +159,8 @@ class BixTestCase(CircuitTestCase):
 
         self.assertEqual(qfun.arity, n * m + n)
         pr.apply(qfun, wreg, *oregs, *zregs)
-        # self.print_rprogram_regs(pr, reg_name_to_slice, reg_name_to_size, [cuccaro_arith.adder, cuccaro_arith.subtractor])
+        # state = CircuitTestCase.get_rprogram_regs(pr, reg_name_to_slice, [cuccaro_arith.adder, cuccaro_arith.subtractor])
+        # self.print_rprogram_regs_from_rprogram_states(state, reg_name_to_size)
 
         circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
         # circ = pr.to_circ(link=[tkk_arith.adder])
@@ -270,7 +271,8 @@ class BixTestCase(CircuitTestCase):
 
         self.assertEqual(qfun.arity, rows * cols * m + n)
         pr.apply(qfun, wreg, *omatrix, *zmatrix)
-        # self.print_rprogram_regs(pr, reg_name_to_slice, reg_name_to_size, [cuccaro_arith.adder, cuccaro_arith.subtractor])
+        # state = CircuitTestCase.get_rprogram_regs(pr, reg_name_to_slice, [cuccaro_arith.adder, cuccaro_arith.subtractor])
+        # self.print_rprogram_regs_from_rprogram_states(state, reg_name_to_size)
 
         circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
         # circ = pr.to_circ(link=[tkk_arith.adder])
