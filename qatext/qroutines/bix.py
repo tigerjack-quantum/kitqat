@@ -321,3 +321,79 @@ def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
             qrout.apply(X, wreg[row])
 
     return qrout
+
+@build_gate("BIX_MATRIX_RUNTIME", [int, int, int, int],
+            lambda r, c, m, _: r * c * m * 2 + r)
+def bix_matrix_runtime(rows: int, columns: int, m: int, weight: int):
+    """It acts on a quantum register of `n` qubits, having exactly `weight`
+    qubits set to 1. The goal is to store into `weight` registers (each one
+    composed by `columns` cells, each cell having `m` bits) the submatrix
+    composed by the rows of `matrix` indexed by the `i` bits set to `1` of the
+    bitstring, and on `n-weight` the remaining ones. The matrix has size `n X
+    columns` size, and its stored in row-major order in a quantum register of
+    size `n X columns X m`.
+
+
+    It should be applied to the following registers:
+    - qreg_dicke: the register containing the dicke state
+    - qreg_matrix: the matrix that we want to encode.
+    - qreg_omatrix: the submatrix that will contain the rows of the matrix for
+      which the correponding index in the quantum bitarray is set to 1.
+    - qreg_zmatrix: the submatrix that will contain the rows of the matrix for
+      which the correponding index in the quantum bitarray is set to 0.
+
+    It uses additional ancillary register, reset to all zeros after
+
+    """
+    # This one is the VBE proposed to TC, which works with direct encoding
+    # instead of deltas
+    n = rows
+
+    if weight < 1 or weight >= n:
+        raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
+    # elems_diffs = [elems[0]] + [j - i for i, j in zip(elems, elems[1:])]
+
+    qrout = QRoutine()
+    wreg = qrout.new_wires(n)
+    qmatrix_flat = []
+    for _ in range(rows * columns):
+        qmatrix_flat.append(qrout.new_wires(m))
+
+    q1matrix_flat = []
+    for _ in range(weight * columns):
+        qr = qrout.new_wires(m)
+        q1matrix_flat.append(qr)
+
+    q0matrix_flat = []
+    for _ in range((rows - weight) * columns):
+        qr = qrout.new_wires(m)
+        q0matrix_flat.append(qr)
+    LOGGER.debug("omatrix_flat, len %d", len(q1matrix_flat))
+    # LOGGER.debug(omatrix_flat)
+    LOGGER.debug("zmatrix_flat, len %d", len(q0matrix_flat))
+    # LOGGER.debug(zmatrix_flat)
+
+    #
+    qleftrotones = rotate.reg_reversal(len(q1matrix_flat), m, columns)
+    qleftrotzeros = rotate.reg_reversal(len(q0matrix_flat), m, columns)
+
+    qcell_copy = qregs_init.copy_register(m)
+    for row in range(rows):
+        for col in range(columns):
+            qcell = qmatrix_flat[row * columns + col]
+            LOGGER.debug("matrix[%d][%d]", row, col)
+            LOGGER.debug("It is computed as row*columns + col")
+            qrout.apply(qcell_copy.ctrl(1), wreg[row], qcell, q1matrix_flat[0 + col])
+            qrout.apply(X, wreg[row])
+            qrout.apply(qcell_copy.ctrl(1), wreg[row], qcell, q0matrix_flat[0 + col])
+            qrout.apply(X, wreg[row])
+        if weight != 1:
+            LOGGER.debug("Rotating ones ctrld on wreg[%d]", row)
+            qrout.apply(qleftrotones.ctrl(1), wreg[row], q1matrix_flat)
+        if n - weight != 1:
+            LOGGER.debug("Rotating zeros ctrld on wreg[%d]", row)
+            qrout.apply(X, wreg[row])
+            qrout.apply(qleftrotzeros.ctrl(1), wreg[row], q0matrix_flat)
+            qrout.apply(X, wreg[row])
+
+    return qrout
