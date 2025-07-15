@@ -1,5 +1,5 @@
 """Notes on endianness convention. Most quantum toolkits use little-endianness;
-that is, a 3 qubit register |a \otimes b \otimes c> has qreg[0] = c, qreg[1] =
+that is, a 3 qubit register |a \\otimes b \\otimes c> has qreg[0] = c, qreg[1] =
 b, qreg[2] = a.
 
 In myqlm, on the other hand, if qreg[0]=1, qreg[1]=0, qreg[2]=0, the output
@@ -8,12 +8,12 @@ will be |100>. So it can be thougth as big-endianness.
 """
 import functools
 import logging
-from typing import TYPE_CHECKING, List, Sequence
+from typing import TYPE_CHECKING, Sequence
 
-from qatext.utils.bits import conversion
-from qat.lang.AQASM.gates import X
+from qat.lang.AQASM.gates import CNOT, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
+from qatext.utils.bits import conversion
 
 if TYPE_CHECKING:
     from qat.lang.AQASM.bits import QRegister
@@ -73,36 +73,29 @@ def conditionally_initialize_qureg_given_bitarray(
     little_endian,
 ) -> QRoutine:
     return _conditionally_initialize_qureg_given_bitarray(
-        a_arr, ncontrols, little_endian
-    )
+        a_arr, ncontrols, little_endian)
 
 
-def conditionally_initialize_qureg_given_bitstring(
-    a_str, ncontrols, little_endian
-) -> QRoutine:
+def conditionally_initialize_qureg_given_bitstring(a_str, ncontrols,
+                                                   little_endian) -> QRoutine:
     a_list = [int(c) for c in a_str]
     # a_list = map(int, a_str)
     return _conditionally_initialize_qureg_given_bitarray(
-        a_list, ncontrols, little_endian
-    )
+        a_list, ncontrols, little_endian)
 
 
 def conditionally_initialize_qureg_to_complement_of_bitstring(
-    a_str, ncontrols, little_endian
-) -> QRoutine:
+        a_str, ncontrols, little_endian) -> QRoutine:
     a_n_str = conversion.get_negated_bistring(a_str)
     return conditionally_initialize_qureg_given_bitstring(
-        a_n_str, ncontrols, little_endian
-    )
+        a_n_str, ncontrols, little_endian)
 
 
 def conditionally_initialize_qureg_to_complement_of_bitarray(
-    a_str, ncontrols, little_endian
-) -> QRoutine:
+        a_str, ncontrols, little_endian) -> QRoutine:
     a_n_str = conversion.get_negated_bitarray(a_str)
     return _conditionally_initialize_qureg_given_bitarray(
-        a_n_str, ncontrols, little_endian
-    )
+        a_n_str, ncontrols, little_endian)
 
 
 # @build_gate("QBIT_INIT_BITA", [Union[List, nptyping.NDArray], bool])
@@ -122,7 +115,8 @@ def initialize_qureg_given_bitarray(a_str, little_endian) -> QRoutine:
     was performed
 
     """
-    return _conditionally_initialize_qureg_given_bitarray(a_str, 0, little_endian)
+    return _conditionally_initialize_qureg_given_bitarray(
+        a_str, 0, little_endian)
 
 
 def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
@@ -140,7 +134,8 @@ def initialize_qureg_given_bitstring(a_str, little_endian) -> QRoutine:
     :return False if no operation was performed, True if at least one operation
     was performed
     """
-    return conditionally_initialize_qureg_given_bitstring(a_str, 0, little_endian)
+    return conditionally_initialize_qureg_given_bitstring(
+        a_str, 0, little_endian)
 
 
 def initialize_qureg_given_int(a_int, n_bits, little_endian):
@@ -171,3 +166,21 @@ def initialize_qureg_to_complement_of_bitarray(a_arr, little_endian):
 def initialize_qureg_to_complement_of_int(a_int, n_bits, little_endian):
     a_str = conversion.get_bitstring_from_int(a_int, n_bits)
     return initialize_qureg_to_complement_of_bitstring(a_str, little_endian)
+
+
+@build_gate("COPY", [int], lambda n: 2 * n)
+def copy_register(n: int):
+    """Copy basis state 0/1 to another register through n parallel CNOTs.
+
+    It acts on two quantum registers:
+    - The register to copy
+    - The register upon which we need to copy
+    """
+    qrout = QRoutine()
+    qwc = qrout.new_wires(n)
+    qwt = qrout.new_wires(n)
+
+    for control, target in zip(qwc, qwt):
+        qrout.apply(CNOT, control, target)
+
+    return qrout

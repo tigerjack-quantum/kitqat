@@ -14,18 +14,6 @@ from qatext.utils.bits.conversion import get_bitarray_from_int
 LOGGER = logging.getLogger(__name__)
 
 
-@build_gate("nXOR", [int], lambda n: 2 * n)
-def nxor(n: int):
-    qrout = QRoutine()
-    qwc = qrout.new_wires(n)
-    qwt = qrout.new_wires(n)
-
-    for target, control in zip(qwc, qwt):
-        qrout.apply(CNOT, target, control)
-
-    return qrout
-
-
 @build_gate(
     "BIX_IDXS", [int, int, bool], lambda n, _, x: n + n *
     (n.bit_length() if x else (n - 1).bit_length()))
@@ -84,7 +72,7 @@ def bix_fixed_weight_indexes(n: int, weight: int, idx_start_at_one: bool):
     #
     qset1 = qregs_init.initialize_qureg_given_int(1, l2n, little_endian=False)
     qadd = adder(l2n, l2n, False, False)
-    qxor = nxor(l2n)
+    qxor = qregs_init.copy_register(l2n)
     qleftrotones = rotate.reg_reversal(len(oregs), l2n, 1)
     qleftrotzeros = rotate.reg_reversal(len(zregs), l2n, 1)
     final_clean = n if idx_start_at_one else n - 1
@@ -190,7 +178,7 @@ def bix_fixed_weight_data(n: int, m: int, weight: int, elems: List):
 
     #
     qadd = adder(m, m, False, False)
-    qxor = nxor(m)
+    qxor = qregs_init.copy_register(m)
     qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
     qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
 
