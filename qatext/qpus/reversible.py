@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from qat.lang.AQASM.routines import QRoutine
 
 from bitarray import bitarray, util
+from qatext.qpus.common import QRegsProperties
 
 logger = logging.getLogger(__name__)
-
 
 class RGate(Enum):
     """Reversible Gate: NOT, SWAP or RESET."""
@@ -41,7 +41,7 @@ class RProgram:
         self.ops = [
         ]  # should contain the list of operations for logging purposes
         self.rbits: bitarray = bitarray()
-        self.rregs: dict[str, slice] = {}
+        self.rregs: dict[str, QRegsProperties] = {}
 
     def ralloc(self, n=1, name: Optional[str] = None):
         """Allocate a register of `n` reversible bits.
@@ -55,7 +55,8 @@ class RProgram:
             name = str(slic)[6:].replace(", ", "_").replace(")", "")
         elif name in self.rregs:
             raise ValueError("Already another register with the same name")
-        self.rregs[name] = slic
+        qreg_property = QRegsProperties(slic, 1, n, str)
+        self.rregs[name] = qreg_property
         self.rbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, *rbits: int):
@@ -145,15 +146,15 @@ class RProgram:
 
     def get_result_by_name(self):
         res = {}
-        for name, slic in self.rregs.items():
-            res[name] = self.rbits[slic]
+        for name, qreg_property in self.rregs.items():
+            res[name] = self.rbits[qreg_property.slic]
         return res
 
     def filter_result_by_name(self, *name: str):
         res = {}
-        for _name, slic in self.rregs.items():
+        for _name, qreg_property in self.rregs.items():
             if _name in name:
-                res[_name] = self.rbits[slic]
+                res[_name] = self.rbits[qreg_property.slic]
         return res
 
     @classmethod
@@ -263,20 +264,12 @@ def get_state_from_program(
 @staticmethod
 def get_states_from_program(
     pr,
-    reg_names_to_slices,
+    reg_names_to_properties: dict[str, QRegsProperties],
     # reg_names_to_sizes,
     link: Optional[list],
 ) -> dict[str, list[int]]:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_slices
+    rpr.rregs = reg_names_to_properties
     res = rpr.get_result_by_name()
-    # if do_print:
-    #     for qreg_name in reg_names_to_range:
-    #         n, m = reg_names_to_sizes[qreg_name]
-    #         if n == -1:
-    #             val = res[qreg_name]
-    #         else:
-    #             val = get_ints_from_bitarray(res[qreg_name], n, m, False)
-    #         print(f"{qreg_name}-> {val}, {res[qreg_name]}")
     return res

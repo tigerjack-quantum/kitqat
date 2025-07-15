@@ -1,21 +1,20 @@
+from test.common_circuit import CircuitTestCase
+
 import numpy as np
-import pytest
 import qat.lang.AQASM.classarith
+from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qat.lang.AQASM.qint import QInt
-from qat.lang.qpus.classical_qpu import ClassicalQPU
-from qatext.qpus.reversible import RProgram, get_states_from_program
+from qatext.qpus.common import QRegsProperties
+from qatext.qpus.reversible import get_states_from_program
 from qatext.qroutines import qregs_init as qregs
 from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 
-QPU = ClassicalQPU()
 
+class TestQroutineSlidingSort(CircuitTestCase):
 
-@pytest.mark.parametrize(
-    "values, max_bits, value_to_insert",
-    [
+    @parameterized.expand([
         # Insert in the middle
         ([1, 2, 4], 4, 3),
         ([2, 4, 6], 7, 3),
@@ -40,86 +39,53 @@ QPU = ClassicalQPU()
         # Insertion of existing max value
         ([1, 2], 3, 3),
     ])
-def test_insertion(values, max_bits, value_to_insert):
-    m = max_bits
-    # last one is the empty cell, used as temporary
-    n = len(values) + 1
-    pr = Program()
-    qr_x = pr.qalloc(m)
+    def test_insertion(self, values, max_bits, value_to_insert):
+        m = max_bits
+        # last one is the empty cell, used as temporary
+        n = len(values) + 1
+        pr = Program()
+        qregs_properties: dict[str, QRegsProperties] = {}
+        qr_x = self.qregs_array_alloc(pr, 1, m, "x", int, qregs_properties)
+        qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
+        pr.apply(qfun, qr_x)
 
-    range_start = 0
-    reg_names_to_slice: dict[str, slice] = {
-        'x': slice(range_start, m),
-    }
-    # tuple is (n, m), with n the number of elements in the bitstring, m the
-    # size of each element
-    reg_names_to_sizes: dict[str, tuple[int, int]] = {'x': (1, m)}
-    range_start += m
+        qrs_data = self.qregs_array_alloc(pr, n, m, "a", int, qregs_properties)
+        for i, value in enumerate(values):
+            qfun = qregs.initialize_qureg_given_int(value, m, False)
+            pr.apply(qfun, qrs_data[i])
+        self.qregs_ancillae_array_noalloc(
+            n, m, "a1", qrs_data[-1].start + qrs_data[-1].length, int,
+            qregs_properties)
+        self.qregs_ancillae_array_noalloc(
+            n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
+            qregs_properties)
+        self.qregs_ancillae_array_noalloc(
+            None, None, "anc",
+            qrs_data[-1].start + qrs_data[-1].length + n * m + n, str,
+            qregs_properties)
 
-    qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
-    pr.apply(qfun, qr_x)
-    # get_states_from_program(pr, reg_names_to_slice, reg_names_to_sizes,
-    #                               [qat.lang.AQASM.classarith],
-    # True)
-    # return
+        qf = insert(m, n)
+        pr.apply(qf, qr_x, *qrs_data)
 
-    qrs_data = []
-    for i, value in enumerate(values):
-        qrs_data.append(pr.qalloc(m, QInt))
-        qfun = qregs.initialize_qureg_given_int(value, m, False)
-        # qf_tmp = qcs.int_to_bit_enc(m, value, True)
-        pr.apply(qfun, qrs_data[i])
-    # last one, empty
-    qrs_data.append(pr.qalloc(m, QInt))
-    reg_names_to_slice['a'] = slice(range_start, range_start + n * m)
-    reg_names_to_sizes['a'] = (n, m)
-    range_start += n * m
-    # get_states_from_program(pr, reg_names_to_slice, reg_names_to_sizes,
-    #                               [qat.lang.AQASM.classarith],
-    # True)
-    # return
+        res = get_states_from_program(pr, qregs_properties,
+                                      [qat.lang.AQASM.classarith])
+        # self.print_rprogram_regs_from_rprogram_states(states, qregs_properties)
 
-    reg_names_to_slice['a1'] = slice(range_start, range_start + n * m)
-    reg_names_to_sizes['a1'] = (n, m)
-    range_start += n * m
-    # qrs_data_ii = pr.qalloc(n, QInt)
-    reg_names_to_slice['a2'] = slice(range_start, range_start + n)
-    reg_names_to_sizes['a2'] = (n, 1)
-    range_start += n
-    # other ancillary, don't know the sizes
-    reg_names_to_slice['ax'] = slice(range_start, None)
-    reg_names_to_sizes['ax'] = (-1, 1)
+        x_val = get_int_from_bitarray(res['x'], False)
+        a_vals = get_ints_from_bitarray(res['a'], n, m, False)
+        ai_vals = get_ints_from_bitarray(res['a1'], n, m, False)
+        aii_vals = get_ints_from_bitarray(res['a2'], n, 1, False)
+        ax_val = res['anc']
+        # print(x_val, a_vals, ai_vals, aii_vals)
 
-    qf = insert(m, n)
+        values.append(value_to_insert)
+        assert (x_val == value_to_insert)
+        assert (tuple(sorted(values)) == a_vals)
+        assert (ai_vals == tuple(0 for _ in range(n)))
+        assert (aii_vals == tuple(0 for _ in range(n)))
+        assert (any(ax_val) == False)
 
-    # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
-    pr.apply(qf, qr_x, *qrs_data)
-    # get_states_from_program(pr, reg_names_to_slice, reg_names_to_sizes,
-    #                               [qat.lang.AQASM.classarith],
-    # True)
-    # return
-
-    res = get_states_from_program(pr, reg_names_to_slice,
-                                  [qat.lang.AQASM.classarith])
-
-    x_val = get_int_from_bitarray(res['x'], False)
-    a_vals = get_ints_from_bitarray(res['a'], n, m, False)
-    ai_vals = get_ints_from_bitarray(res['a1'], n, m, False)
-    aii_vals = get_ints_from_bitarray(res['a2'], n, 1, False)
-    ax_val = res['ax']
-    # print(x_val, a_vals, ai_vals, aii_vals)
-
-    values.append(value_to_insert)
-    assert (x_val == value_to_insert)
-    assert (tuple(sorted(values)) == a_vals)
-    assert (ai_vals == tuple(0 for _ in range(n)))
-    assert (aii_vals == tuple(0 for _ in range(n)))
-    assert (any(ax_val) == False)
-
-
-@pytest.mark.parametrize(
-    "values, value_to_delete",
-    [
+    @parameterized.expand([
         ([0, 1, 2, 3], 0),
         ([0, 1, 2, 3], 3),
         ([1, 2, 3, 4], 3),
@@ -155,71 +121,62 @@ def test_insertion(values, max_bits, value_to_insert):
         # # Empty list
         # ([], 1),
     ])
-def test_deletion(values, value_to_delete):
-    m = int(np.ceil(np.log2(max(values) + 1)))
-    # last one is the empty cell
-    n = len(values)
-    pr = Program()
+    def test_deletion(self, values, value_to_delete):
+        m = int(np.ceil(np.log2(max(values) + 1)))
+        # last one is the empty cell
+        n = len(values)
+        pr = Program()
 
-    qr_x = pr.qalloc(m)
-    # qf_tmp = qcs.int_to_bit_enc(m, value_to_delete, True)
-    qfun = qregs.initialize_qureg_given_int(value_to_delete, m, False)
-    pr.apply(qfun, qr_x)
+        qregs_properties: dict[str, QRegsProperties] = {}
+        qr_x = self.qregs_array_alloc(pr, 1, m, "x", int, qregs_properties)
+        qfun = qregs.initialize_qureg_given_int(value_to_delete, m, False)
+        pr.apply(qfun, qr_x)
 
-    qrs_data = []
-    for i, value in enumerate(values):
-        qrs_data.append(pr.qalloc(m, QInt))
-        # qf_tmp = qcs.int_to_bit_enc(m, value, True)
-        qfun = qregs.initialize_qureg_given_int(value, m, False)
-        pr.apply(qfun, qrs_data[i])
-    # last one, empty
-    # qrs_data.append(pr.qalloc(m, QInt))
+        qrs_data = self.qregs_array_alloc(pr, n, m, "a", int, qregs_properties)
+        for i, value in enumerate(values):
+            qfun = qregs.initialize_qureg_given_int(value, m, False)
+            pr.apply(qfun, qrs_data[i])
+        self.qregs_ancillae_array_noalloc(
+            n, m, "a1", qrs_data[-1].start + qrs_data[-1].length, int,
+            qregs_properties)
+        self.qregs_ancillae_array_noalloc(
+            n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
+            qregs_properties)
+        self.qregs_ancillae_array_noalloc(
+            None, None, "anc",
+            qrs_data[-1].start + qrs_data[-1].length + n * m + n, str,
+            qregs_properties)
 
-    # qrs_data_i = []
-    # for _ in range(n):
-    #     qrs_data_i.append(pr.qalloc(m, QInt))
-    # qrs_data_ii = pr.qalloc(n, QInt)
+        qf = delete(m, n)
+        pr.apply(qf, qr_x, *qrs_data)
 
-    qf = delete(m, n)
-    # print(qf)
-    # input()
-    # pr.apply(qf, qr_x, *qrs_data, *qrs_data_i, *qrs_data_ii)
-    pr.apply(qf, qr_x, *qrs_data)
+        # circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
+        # rpr = RProgram.circuit_to_rprogram(circ)
+        # rpr.rregs = reg_names_to_slice
+        # res = rpr.get_result_by_name()
+        res = get_states_from_program(pr, qregs_properties,
+                                      [qat.lang.AQASM.classarith])
 
-    circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
-
-    reg_names_to_slice: dict[str, slice] = {
-        'x': slice(0, m),
-        'a': slice(m, m + n * m),
-        'a1': slice(m + n * m, m + 2 * n * m),
-        'a2': slice(m + 2 * n * m, m + 2 * n * m + n),
-        'ax': slice(m + 2 * n * m + n, None),
-    }
-    circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_slice
-    res = rpr.get_result_by_name()
-
-    x_val = get_int_from_bitarray(res['x'], False)
-    a_vals = get_ints_from_bitarray(res['a'], n, m, False)
-    ai_vals = get_ints_from_bitarray(res['a1'], n, m, False)
-    aii_vals = get_ints_from_bitarray(res['a2'], n, 1, False)
-    ax_val = res['ax']
-    values.remove(value_to_delete)
-    assert (tuple(sorted(values)) == a_vals[:-1])
-    assert (x_val == value_to_delete)
-    assert (a_vals[-1] == 0)
-    assert (ai_vals == tuple(0 for _ in range(n)))
-    assert (aii_vals == tuple(0 for _ in range(n)))
-    assert (any(ax_val) == False)
+        x_val = get_int_from_bitarray(res['x'], False)
+        a_vals = get_ints_from_bitarray(res['a'], n, m, False)
+        ai_vals = get_ints_from_bitarray(res['a1'], n, m, False)
+        aii_vals = get_ints_from_bitarray(res['a2'], n, 1, False)
+        ax_val = res['anc']
+        values.remove(value_to_delete)
+        assert (tuple(sorted(values)) == a_vals[:-1])
+        assert (x_val == value_to_delete)
+        assert (a_vals[-1] == 0)
+        assert (ai_vals == tuple(0 for _ in range(n)))
+        assert (aii_vals == tuple(0 for _ in range(n)))
+        assert (any(ax_val) == False)
 
 
-if __name__ == '__main__':
-    # print(f"to insert [1, 2, 4], m = 4, x = 3")
-    # test_insertion([1, 2, 4], 4, 3)
-    # print(f"to insert [2, 4, 6], m = 7, x = 3")
-    # test_insertion([2, 4, 6], 7, 3)
-    print(f"to insert [1, 2, 4, 7], m = 4, x = 3")
-    test_insertion([1, 2, 4, 7], 3, 3)
-    # print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
-    # test_deletion([0, 1, 2, 3], 2)
+# if __name__ == '__main__':
+#     # print(f"to insert [1, 2, 4], m = 4, x = 3")
+#     # test_insertion([1, 2, 4], 4, 3)
+#     # print(f"to insert [2, 4, 6], m = 7, x = 3")
+#     # test_insertion([2, 4, 6], 7, 3)
+#     print(f"to insert [1, 2, 4, 7], m = 4, x = 3")
+#     test_insertion([1, 2, 4, 7], 3, 3)
+#     # print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
+#     # test_deletion([0, 1, 2, 3], 2)
