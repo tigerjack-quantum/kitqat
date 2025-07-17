@@ -136,7 +136,7 @@ class BixTestCase(CircuitTestCase):
             ])
             LOGGER.debug("onesexp %s", onesexp)
             LOGGER.debug("zerosexp %s", zerosexp)
-            qfun = bix.bix_fixed_weight_indexes(n, weight, index_start_at_one)
+            qfun = bix.bix_indexes_compile_time(n, weight, index_start_at_one)
             LOGGER.debug("Got qfun with arity %d", qfun.arity)
             self._run_test_bix(
                 n,
@@ -184,7 +184,7 @@ class BixTestCase(CircuitTestCase):
         ])
         LOGGER.debug("onesexp %s", onesexp)
         LOGGER.debug("zerosexp %s", zerosexp)
-        qfun = bix.bix_fixed_weight_data(n, m, weight, elems)
+        qfun = bix.bix_data_compile_time(n, m, weight, elems)
         LOGGER.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
@@ -246,7 +246,7 @@ class BixTestCase(CircuitTestCase):
             get_bitstring_from_int(i, m)
             for i in chain.from_iterable(zerosexp_rows))
 
-        qfun = bix.bix_matrix(rows, cols, m, weight, matrix_flat)
+        qfun = bix.bix_matrix_compile_time(rows, cols, m, weight, matrix_flat)
         LOGGER.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,

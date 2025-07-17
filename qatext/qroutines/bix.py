@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 @build_gate(
     "BIX_IDXS", [int, int, bool], lambda n, _, x: n + n *
     (n.bit_length() if x else (n - 1).bit_length()))
-def bix_fixed_weight_indexes(n: int, weight: int, idx_start_at_one: bool):
+def bix_indexes_compile_time(n: int, weight: int, idx_start_at_one: bool):
     """Given a bitstring of length `n`, having exactly `weight` qubits set to
     1, store into `weight` registers the indexes of the 1's of the bitstring,
     and `n - weight` registers the weight of the 0's of the bitstring. If
@@ -133,7 +133,7 @@ def bix_fixed_weight_indexes(n: int, weight: int, idx_start_at_one: bool):
 
 
 @build_gate("BIX_DATA", [int, int, int, List], lambda n, m, w, x: n + n * m)
-def bix_fixed_weight_data(n: int, m: int, weight: int, elems: List):
+def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
     """Given a bitstring of length `n`, having exactly `weight` qubits set to
     1, store into `weight` registers the values `elems[i]` if `dicke[i] == 1`,
     and `n - weight` registers the values `elems[i]` if `dicke[i] == 0`.
@@ -246,7 +246,7 @@ def bix_fixed_weight_data(n: int, m: int, weight: int, elems: List):
 
 @build_gate("BIX_MATRIX", [int, int, int, int, List],
             lambda n, r, m, w, x: n * r * m + n)
-def bix_matrix(n: int, columns: int, m: int, weight: int, matrix: List):
+def bix_matrix_compile_time(n: int, columns: int, m: int, weight: int, matrix: List):
     """It is given a bitstring of length `n`, having exactly `weight` qubits
     set to 1. The goal is to store into `weight` registers (each one composed
     by `columns` cells, each cell having `m` bits) the submatrix composed by
