@@ -33,11 +33,12 @@ class BixTestCase(CircuitTestCase):
             exp_ones,
             exp_zeros,
             bix_func,
-            runtime_data=False,
-            cols=1,  # make sense only for matrices
+            cols=1,  # Make sense only for matrices
             has_support_registers=True,  # bix_matrix, for example, doesn't have them
+            runtime_data=None,  # If it is applied to bix_runtime, it must be != None
     ):
         qregs_properties: dict[str, QRegsProperties] = {}
+        is_runtime = runtime_data is not None
 
         pr = Program()
         wreg = self.qregs_array_alloc(pr, 1, n, "wreg", str, qregs_properties)
@@ -46,6 +47,18 @@ class BixTestCase(CircuitTestCase):
                                                         little_endian=False),
             wreg,
         )
+        qregs_data = None
+        if is_runtime:
+            qregs_data = self.qregs_array_alloc(pr, n * cols, m,
+                                                  "qregs_data", int,
+                                                  qregs_properties)
+            for i in range(n * cols):
+                LOGGER.debug("qregs_data[%d] = %s", i, qregs_data[i])
+
+                pr.apply(
+                    qregs_init.initialize_qureg_given_int(runtime_data[i],
+                                                          m,
+                                                          little_endian=False), *qregs_data[i])
         qregs1s = self.qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
                                          qregs_properties)
         self.qregs_ancillae_array_noalloc(weight, m, "qregs1s_bits",
@@ -75,7 +88,10 @@ class BixTestCase(CircuitTestCase):
                                           qregs_properties,
                                           unknown_size=True)
         LOGGER.debug("Applying bix_func of arity %d", bix_func.arity)
-        pr.apply(bix_func, wreg, *qregs1s, *qregs0s)
+        if is_runtime:
+            pr.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
+        else:
+            pr.apply(bix_func, wreg, *qregs1s, *qregs0s)
         LOGGER.debug(
             "%s",
             self.inspect_rprogram_state(
@@ -256,10 +272,73 @@ class BixTestCase(CircuitTestCase):
             onesexp,
             zerosexp,
             qfun,
-            runtime_data=False,
             cols=cols,
             has_support_registers=False,
         )
+
+    @parameterized.expand([
+        # 3 rows, select middle row
+        ("010", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+        ("001", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+        ("100", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+
+        # 4 rows, select outer rows
+        ("1001", [[10, 20], [30, 40], [50, 60], [70, 80]]),
+
+        # 5 rows, select middle three
+        ("01110", [[1], [2], [3], [4], [5]]),
+
+        # 2 rows, select all
+        ("10", [[100, 101, 102], [200, 201, 202]]),
+
+        # 6 rows, select alternating rows
+        ("101010", [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]),
+    ])
+    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
+                         "Only enabled with reversible simulation")
+    def test_bix_matrix_runtime(self, bitstring, matrix):
+        self._test_bix_matrix_runtime(bitstring, matrix)
+
+    def _test_bix_matrix_runtime(self, bitstring, matrix):
+        LOGGER.debug("bitstring %s", bitstring)
+        n = len(bitstring)
+        weight = bitstring.count("1")
+        LOGGER.debug("Len %d, weight %d", n, weight)
+        rows, cols = len(matrix), len(matrix[0])
+        LOGGER.debug("n %d, rows %d, cols %d", n, rows, cols)
+        assert rows == n, "bitstring should have same length of rows, got n %d, rows %d" % (
+            n, rows)
+        matrix_flat = [int(i) for i in chain.from_iterable(matrix)]
+        m = max(matrix_flat).bit_length()
+        LOGGER.debug("m %d", m)
+        onesexp_rows = [
+            matrix[idx] for idx, val in enumerate(bitstring) if val == "1"
+        ]
+        zerosexp_rows = [
+            matrix[idx] for idx, val in enumerate(bitstring) if val == "0"
+        ]
+        LOGGER.debug("onesexp %s", onesexp_rows)
+        LOGGER.debug("zerosexp %s", zerosexp_rows)
+        onesexp = "".join(
+            get_bitstring_from_int(i, m)
+            for i in chain.from_iterable(onesexp_rows))
+        zerosexp = "".join(
+            get_bitstring_from_int(i, m)
+            for i in chain.from_iterable(zerosexp_rows))
+
+        qfun = bix.bix_matrix_runtime(rows, cols, m, weight)
+        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self._run_test_bix(n,
+                           m,
+                           weight,
+                           bitstring,
+                           onesexp,
+                           zerosexp,
+                           qfun,
+                           cols=cols,
+                           has_support_registers=False,
+                           runtime_data=matrix_flat,
+                           )
 
 
 if __name__ == '__main__':
