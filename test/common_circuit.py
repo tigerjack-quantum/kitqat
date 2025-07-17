@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING
 
 from qat.core.console import display
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import (QRegsProperties, RProgram,
-                                    get_states_from_program)
-from qatext.utils.bits.conversion import get_ints_from_bitarray
+from qatext.qpus.reversible import RProgram
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -105,33 +103,6 @@ class CircuitTestCase(BasicTestCase):
         for sample in result:
             print(sample)
 
-    @staticmethod
-    def get_rprogram_regs(pr: "Program", reg_name_to_slice, link: list):
-        res = get_states_from_program(pr, reg_name_to_slice, link=link)
-        return res
-
-    @staticmethod
-    def get_rprogram_regs_values_from_states(
-        states,
-        qregs_properties: dict[str, QRegsProperties],
-    ):
-        dic = {}
-        for k, v in states.items():
-            LOGGER.debug(f"%s: %s", k, v)
-            qreg_properties = qregs_properties[k]
-            LOGGER.debug("qreg_properties %s", qreg_properties)
-            if qreg_properties.unknown_size:
-                val = v
-            elif qreg_properties.qtype == str:
-                val = v
-            elif qreg_properties.qtype == int:
-                val = get_ints_from_bitarray(v, qreg_properties.n,
-                                             qreg_properties.m, False)
-            else:
-                raise Exception("Unknown qtype")
-            dic[k] = val
-        return dic
-
     @classmethod
     def run_and_get_bitstring_for_reversible(cls, circ, reg_name_to_slice):
         """Circuit submission and result retrieval for a reversible simulator class."""
@@ -148,75 +119,3 @@ class CircuitTestCase(BasicTestCase):
             obtained = sample.state.bitstring
         assert obtained is not None
         return obtained
-
-    @staticmethod
-    def qregs_array_alloc(
-        pr: Program,
-        n,
-        size,
-        name,
-        qtype,
-        qregs_properties: dict[str, QRegsProperties],
-    ):
-        """Register allocation logic for a register of length `n`, each cell
-        having `size` qubits. For matrices, you should unroll them row- or
-        column-major.
-
-        """
-        regs = []
-        for _ in range(n):
-            qr = pr.qalloc(size)
-            regs.append(qr)
-        key = f"{name}"
-        start = regs[0].start
-        stop = regs[-1].start + size
-        qregs_properties[key] = QRegsProperties(slice(start, stop), n, size,
-                                                qtype)
-        return regs
-
-    @staticmethod
-    def qregs_ancillae_array_noalloc(n,
-                                     size,
-                                     name,
-                                     start_idx,
-                                     qtype,
-                                     qregs_properties: dict[str,
-                                                            QRegsProperties],
-                                     unknown_size=False):
-        """Register allocation logic for a register of length `n`, each cell
-        having `size` qubits. For matrices, you should unroll them row- or
-        column-major.
-        """
-        key = f"{name}"
-        start = start_idx
-        if unknown_size:
-            stop = None
-        else:
-            stop = start_idx + size * n
-        qregs_properties[key] = QRegsProperties(slice(start, stop), n, size,
-                                                qtype, unknown_size)
-
-    @staticmethod
-    def inspect_rprogram_state(pr, qregs_properties, link):
-        # state = CircuitTestCase.get_rprogram_regs(
-        #     pr, qregs_properties, link
-        #     )
-
-        # this is the get_states_from_program function, but I need circ
-        circ = pr.to_circ(link=link, inline=True)
-        rpr = RProgram.circuit_to_rprogram(circ)
-        rpr_bits = rpr.rbits
-        rpr.rregs = qregs_properties
-        state = rpr.get_result_by_name()
-        st = "\n"
-        st += f"n qbits {circ.nbqbits}\n"
-        st += f"n rbits {len(rpr.rbits)}\n"
-        # st += f"state obtained {rpr_bits}"
-        st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
-
-        for key, value in CircuitTestCase.get_rprogram_regs_values_from_states(
-                state, qregs_properties).items():
-            slic = qregs_properties[key].slic
-            st += f"{key:<20} [{slic}] ->\t{value}\n"
-
-        return st

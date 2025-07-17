@@ -5,7 +5,9 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import QRegsProperties
+from qatext.qpus.reversible import (QRegsProperties, inspect_rprogram_state,
+                                    qregs_ancillae_array_noalloc,
+                                    qregs_array_alloc)
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
@@ -42,7 +44,7 @@ class BixTestCase(CircuitTestCase):
         is_runtime = runtime_data is not None
 
         pr = Program()
-        wreg = self.qregs_array_alloc(pr, 1, n, "wreg", str, qregs_properties)
+        wreg = qregs_array_alloc(pr, 1, n, "wreg", str, qregs_properties)
         pr.apply(
             qregs_init.initialize_qureg_given_bitstring(bitstring,
                                                         little_endian=False),
@@ -50,8 +52,8 @@ class BixTestCase(CircuitTestCase):
         )
         qregs_data = None
         if is_runtime:
-            qregs_data = self.qregs_array_alloc(pr, n * cols, m, "qregs_data",
-                                                int, qregs_properties)
+            qregs_data = qregs_array_alloc(pr, n * cols, m, "qregs_data", int,
+                                           qregs_properties)
             for i in range(n * cols):
                 LOGGER.debug("qregs_data[%d] = %s", i, qregs_data[i])
 
@@ -60,34 +62,32 @@ class BixTestCase(CircuitTestCase):
                                                           m,
                                                           little_endian=False),
                     *qregs_data[i])
-        qregs1s = self.qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
-                                         qregs_properties)
-        self.qregs_ancillae_array_noalloc(weight, m, "qregs1s_bits",
-                                          qregs1s[0].start, str,
-                                          qregs_properties)
-        qregs0s = self.qregs_array_alloc(pr, (n - weight) * cols, m, "qregs0s",
-                                         int, qregs_properties)
-        self.qregs_ancillae_array_noalloc(n - weight, m, "qregs0s_bits",
-                                          qregs0s[0].start, str,
-                                          qregs_properties)
+        qregs1s = qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
+                                    qregs_properties)
+        qregs_ancillae_array_noalloc(weight, m, "qregs1s_bits",
+                                     qregs1s[0].start, str, qregs_properties)
+        qregs0s = qregs_array_alloc(pr, (n - weight) * cols, m, "qregs0s", int,
+                                    qregs_properties)
+        qregs_ancillae_array_noalloc(n - weight, m, "qregs0s_bits",
+                                     qregs0s[0].start, str, qregs_properties)
 
         anc_start = qregs0s[-1].start + qregs0s[-1].length
         if has_support_registers:
-            self.qregs_ancillae_array_noalloc(1, m, "qregs1s_add", anc_start,
-                                              str, qregs_properties)
+            qregs_ancillae_array_noalloc(1, m, "qregs1s_add", anc_start, str,
+                                         qregs_properties)
             anc_start += m
             LOGGER.debug("zeros will be rotated")
-            self.qregs_ancillae_array_noalloc(1, m, "qregs0s_add", anc_start,
-                                              str, qregs_properties)
+            qregs_ancillae_array_noalloc(1, m, "qregs0s_add", anc_start, str,
+                                         qregs_properties)
             anc_start += m
         # ancillary register of unknown size, catch all
-        self.qregs_ancillae_array_noalloc(None,
-                                          None,
-                                          "anc",
-                                          anc_start,
-                                          str,
-                                          qregs_properties,
-                                          unknown_size=True)
+        qregs_ancillae_array_noalloc(None,
+                                     None,
+                                     "anc",
+                                     anc_start,
+                                     str,
+                                     qregs_properties,
+                                     unknown_size=True)
         LOGGER.debug("Applying bix_func of arity %d", bix_func.arity)
         if is_runtime:
             pr.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
@@ -95,7 +95,7 @@ class BixTestCase(CircuitTestCase):
             pr.apply(bix_func, wreg, *qregs1s, *qregs0s)
         LOGGER.debug(
             "%s",
-            self.inspect_rprogram_state(
+            inspect_rprogram_state(
                 pr, qregs_properties,
                 [cuccaro_arith.adder, cuccaro_arith.subtractor]))
 
