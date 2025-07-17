@@ -18,20 +18,21 @@ LOGGER = logging.getLogger(__name__)
     "BIX_IDXS", [int, int, bool], lambda n, _, x: n + n *
     (n.bit_length() if x else (n - 1).bit_length()))
 def bix_fixed_weight_indexes(n: int, weight: int, idx_start_at_one: bool):
-    """Given a bitstring of length `n`, having exactly `weight` qubits set
-    to 1, store into `weight` registers the indexes of the 1's of the
-    bitstring, and `n - weight` registers the weight of the 0's of the
-    bitstring.
+    """Given a bitstring of length `n`, having exactly `weight` qubits set to
+    1, store into `weight` registers the indexes of the 1's of the bitstring,
+    and `n - weight` registers the weight of the 0's of the bitstring. If
+    `idx_start_at_one` is True, the result will be a 0-indexed array.
 
     It should be applied to the following registers:
     - qreg of length `n`, containing `weight` 1's
     - `weight` qregs, each of size `log2(n)`
     - `n - weight` qregs, each of size `log2(n)`
-    - `idx_start_at_one` if True, start indexing the array results from 1, else from 0
 
-    It uses an additional ancilla register, reset to all zeros after
-    - one qreg of size `log2(n)`
-    If `weight` is equal to 1 or n-1, it uses an additional support array
+    It also uses ancillary registers:
+    - `qreg1s_add`, of size bit_length(n), containing a temporary register for the `weight` qregs, used if `weight` > 1
+    - `qreg0s_add`, of size bit_length(n), containing a temporary register for the `n-weight` qregs, used if `n-weight ` > 1
+    - `const` register, of size bit_length(n), containing the fixed value `1`
+    All ancillary registers are cleaned at the end of the circuit.
 
     Internally, it invokes left rotate circuit and addition circuits; last one
     is abstract and must be specialized.
@@ -40,44 +41,39 @@ def bix_fixed_weight_indexes(n: int, weight: int, idx_start_at_one: bool):
 
     if weight < 1 or weight >= n:
         raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
+    LOGGER.debug("weight %d", weight)
     qrout = QRoutine()
-    if idx_start_at_one:
-        l2n = int(ceil(log2(n + 1)))
-    else:
-        l2n = int(ceil(log2(n)))
+    add = 1 if idx_start_at_one else 0
+    m = (n - 1 + add).bit_length()
+    LOGGER.debug("m %d", m)
 
     wreg = qrout.new_wires(n)
     oregs = []
     zregs = []
     for i in range(weight):
-        oregs.append(qrout.new_wires(l2n))
+        oregs.append(qrout.new_wires(m))
     for i in range(n - weight):
-        zregs.append(qrout.new_wires(l2n))
+        zregs.append(qrout.new_wires(m))
 
-    ancillae1 = qrout.new_wires(l2n)
+    ancillae1 = qrout.new_wires(m)
     qrout.set_ancillae(ancillae1)
     oregs.append(ancillae1)
-    ancillae2 = qrout.new_wires(l2n)
+    ancillae2 = qrout.new_wires(m)
     qrout.set_ancillae(ancillae2)
     zregs.append(ancillae2)
-    # if weight == 1 or weight == n - 1:
-    #     oregs.append(qrout.new_wires(l2n))
-    #     zregs.append(qrout.new_wires(l2n))
-    #     qrout.set_ancillae(oregs[-1])
-    #     qrout.set_ancillae(zregs[-1])
     # the register that will hold the constants +1 and -n
-    const = qrout.new_wires(l2n)
+    const = qrout.new_wires(m)
     qrout.set_ancillae(const)
 
     #
-    qset1 = qregs_init.initialize_qureg_given_int(1, l2n, little_endian=False)
-    qadd = adder(l2n, l2n, False, False)
-    qxor = qregs_init.copy_register(l2n)
-    qleftrotones = rotate.reg_reversal(len(oregs), l2n, 1)
-    qleftrotzeros = rotate.reg_reversal(len(zregs), l2n, 1)
+    qset1 = qregs_init.initialize_qureg_given_int(1, m, little_endian=False)
+    qadd = adder(m, m, False, False)
+    qxor = qregs_init.copy_register(m)
+    qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
+    qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
     final_clean = n if idx_start_at_one else n - 1
     qsetfinal = qregs_init.initialize_qureg_given_int(final_clean,
-                                                      l2n,
+                                                      m,
                                                       little_endian=False)
 
     qrout.apply(qset1, const)
@@ -87,6 +83,7 @@ def bix_fixed_weight_indexes(n: int, weight: int, idx_start_at_one: bool):
             qrout.apply(qadd, const, zregs[0])
 
         # if wreg[i] is 1, we left rotate the ones
+        # if weight > 1:
         qrout.apply(qleftrotones.ctrl(1), wreg[i], *oregs)
         # ... and add to the ones register
         qrout.apply(qxor.ctrl(1), wreg[i], oregs[-1], oregs[0])
