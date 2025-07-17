@@ -1,3 +1,4 @@
+import logging
 import os
 # from collections import namedtuple
 from test.common import BasicTestCase
@@ -13,6 +14,8 @@ if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
     from qat.core.wrappers.result import Result
     from qat.lang.AQASM.program import Program
+
+LOGGER = logging.getLogger(__name__)
 
 
 class CircuitTestCase(BasicTestCase):
@@ -108,21 +111,26 @@ class CircuitTestCase(BasicTestCase):
         return res
 
     @staticmethod
-    def print_rprogram_regs_from_rprogram_states(
+    def get_rprogram_regs_values_from_states(
         states,
         qregs_properties: dict[str, QRegsProperties],
     ):
+        dic = {}
         for k, v in states.items():
+            LOGGER.debug(f"%s: %s", k, v)
             qreg_properties = qregs_properties[k]
+            LOGGER.debug("qreg_properties %s", qreg_properties)
             if qreg_properties.unknown_size:
                 val = v
             elif qreg_properties.qtype == str:
                 val = v
             elif qreg_properties.qtype == int:
-                val = get_ints_from_bitarray(v, qreg_properties.n, qreg_properties.m, False)
+                val = get_ints_from_bitarray(v, qreg_properties.n,
+                                             qreg_properties.m, False)
             else:
                 raise Exception("Unknown qtype")
-            print(f"{k}: {val}")
+            dic[k] = val
+        return dic
 
     @classmethod
     def run_and_get_bitstring_for_reversible(cls, circ, reg_name_to_slice):
@@ -162,29 +170,53 @@ class CircuitTestCase(BasicTestCase):
         key = f"{name}"
         start = regs[0].start
         stop = regs[-1].start + size
-        qregs_properties[key] = QRegsProperties(slice(start, stop), n, size, qtype)
+        qregs_properties[key] = QRegsProperties(slice(start, stop), n, size,
+                                                qtype)
         return regs
 
     @staticmethod
-    def qregs_ancillae_array_noalloc(
-        n,
-        size,
-        name,
-        start_idx,
-        qtype,
-        qregs_properties: dict[str, QRegsProperties],
-    ):
+    def qregs_ancillae_array_noalloc(n,
+                                     size,
+                                     name,
+                                     start_idx,
+                                     qtype,
+                                     qregs_properties: dict[str,
+                                                            QRegsProperties],
+                                     unknown_size=False):
         """Register allocation logic for a register of length `n`, each cell
         having `size` qubits. For matrices, you should unroll them row- or
         column-major.
         """
         key = f"{name}"
         start = start_idx
-        if size is None:
-            stop = -1
-            unknown_size = True
-            n = -1
+        if unknown_size:
+            stop = None
         else:
             stop = start_idx + size * n
-            unknown_size = False
-        qregs_properties[key] = QRegsProperties(slice(start, stop), n, size, qtype, unknown_size)
+        qregs_properties[key] = QRegsProperties(slice(start, stop), n, size,
+                                                qtype, unknown_size)
+
+    @staticmethod
+    def inspect_rprogram_state(pr, qregs_properties, link):
+        # state = CircuitTestCase.get_rprogram_regs(
+        #     pr, qregs_properties, link
+        #     )
+
+        # this is the get_states_from_program function, but I need circ
+        circ = pr.to_circ(link=link, inline=True)
+        rpr = RProgram.circuit_to_rprogram(circ)
+        rpr_bits = rpr.rbits
+        rpr.rregs = qregs_properties
+        state = rpr.get_result_by_name()
+        st = "\n"
+        st += f"n qbits {circ.nbqbits}\n"
+        st += f"n rbits {len(rpr.rbits)}\n"
+        # st += f"state obtained {rpr_bits}"
+        st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
+
+        for key, value in CircuitTestCase.get_rprogram_regs_values_from_states(
+                state, qregs_properties).items():
+            slic = qregs_properties[key].slic
+            st += f"{key:<20} [{slic}] ->\t{value}\n"
+
+        return st
