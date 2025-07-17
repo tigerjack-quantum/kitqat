@@ -1,10 +1,11 @@
 import logging
 import unittest
 from itertools import chain
-from test.common_circuit import CircuitTestCase, QRegsProperties
+from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
+from qatext.qpus.reversible import QRegsProperties
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
@@ -49,16 +50,16 @@ class BixTestCase(CircuitTestCase):
         )
         qregs_data = None
         if is_runtime:
-            qregs_data = self.qregs_array_alloc(pr, n * cols, m,
-                                                  "qregs_data", int,
-                                                  qregs_properties)
+            qregs_data = self.qregs_array_alloc(pr, n * cols, m, "qregs_data",
+                                                int, qregs_properties)
             for i in range(n * cols):
                 LOGGER.debug("qregs_data[%d] = %s", i, qregs_data[i])
 
                 pr.apply(
                     qregs_init.initialize_qureg_given_int(runtime_data[i],
                                                           m,
-                                                          little_endian=False), *qregs_data[i])
+                                                          little_endian=False),
+                    *qregs_data[i])
         qregs1s = self.qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
                                          qregs_properties)
         self.qregs_ancillae_array_noalloc(weight, m, "qregs1s_bits",
@@ -328,17 +329,18 @@ class BixTestCase(CircuitTestCase):
 
         qfun = bix.bix_matrix_runtime(rows, cols, m, weight)
         LOGGER.debug("Got qfun with arity %d", qfun.arity)
-        self._run_test_bix(n,
-                           m,
-                           weight,
-                           bitstring,
-                           onesexp,
-                           zerosexp,
-                           qfun,
-                           cols=cols,
-                           has_support_registers=False,
-                           runtime_data=matrix_flat,
-                           )
+        self._run_test_bix(
+            n,
+            m,
+            weight,
+            bitstring,
+            onesexp,
+            zerosexp,
+            qfun,
+            cols=cols,
+            has_support_registers=False,
+            runtime_data=matrix_flat,
+        )
 
 
 if __name__ == '__main__':
