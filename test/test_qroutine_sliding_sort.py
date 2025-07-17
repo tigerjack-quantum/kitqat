@@ -62,7 +62,7 @@ class TestQroutineSlidingSort(CircuitTestCase):
         self.qregs_ancillae_array_noalloc(
             None, None, "anc",
             qrs_data[-1].start + qrs_data[-1].length + n * m + n, str,
-            qregs_properties)
+            qregs_properties, unknown_size=True)
 
         qf = insert(m, n)
         pr.apply(qf, qr_x, *qrs_data)
@@ -145,7 +145,7 @@ class TestQroutineSlidingSort(CircuitTestCase):
         self.qregs_ancillae_array_noalloc(
             None, None, "anc",
             qrs_data[-1].start + qrs_data[-1].length + n * m + n, str,
-            qregs_properties)
+            qregs_properties, unknown_size=True)
 
         qf = delete(m, n)
         pr.apply(qf, qr_x, *qrs_data)
