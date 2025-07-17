@@ -159,15 +159,18 @@ class RProgram:
 
     @classmethod
     def circuit_to_rprogram(
-        cls, qcirc: Circuit, reg_names: dict[str, slice] = dict()) -> RProgram:
+        cls, qcirc: Circuit, qregs_properties: dict[str, QRegsProperties] = dict()) -> RProgram:
         """Convert a qat Circuit object to a reversible program
         :class:`~qatext.qpus.reversible.RProgram`, applying all the
         operations contained."""
         rprogram = RProgram()
-        reg_names_inv = dict((v, k) for k, v in reg_names.items())
+        # qreg_names_inv = dict((v, k) for k, v in reg_names.items())
+        qreg_slices_to_names: dict[slice, str] = {}
+        for name, qreg_properties in qregs_properties.items():
+            qreg_slices_to_names[qreg_properties.slic] = name
         for qr in qcirc.qregs:
             slic = slice(qr.start, qr.start + qr.length)
-            name = reg_names_inv.get(slic, None)
+            name = qreg_slices_to_names.get(slic, None)
             rprogram.ralloc(qr.length, name)
         qdiff = qcirc.nbqbits - len(rprogram.rbits)
         if qdiff > 0:
