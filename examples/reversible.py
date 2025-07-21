@@ -1,11 +1,15 @@
-from qat.external.qpus.reversible import RGate, RProgram
-from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, H, X
+from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, X
 from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
+from qatext.qpus.reversible import RProgram, inspect_rprogram_state
+from qatext.qroutines.qregs_init import initialize_qureg_given_int
+from qatext.utils.qatmgmt.qbits import QRegsProperties, qregs_array_alloc
 
-def main():
+
+def ex1():
     pr = Program()
     qr = pr.qalloc(5)
+
     pr.apply(X, qr[0])
     pr.apply(X, qr[4])
     pr.apply(SWAP, qr[4], qr[3])
@@ -22,9 +26,31 @@ def main():
     for sample in res:
         pass
     assert sample is not None
-    breakpoint()
     rpr = RProgram.circuit_to_rprogram(cr)
     print(rpr.rbits)
+
+
+def ex2(n):
+    n_qubits = (n - 1).bit_length()
+    pr = Program()
+    qreg_names_to_properties: dict[str, QRegsProperties] = {}
+    # allocate on pr 3 quantum registers, each having size 2 qubits
+    qarray_ints = qregs_array_alloc(pr, n, n_qubits, "Qarray", int,
+                                    qreg_names_to_properties)
+    for i in range(n):
+        qroutine_init = initialize_qureg_given_int(i,
+                                                   n_qubits,
+                                                   little_endian=False)
+        pr.apply(qroutine_init, qarray_ints[i])
+
+    state_str = inspect_rprogram_state(pr, qreg_names_to_properties, [])
+    print(state_str)
+
+
+def main():
+    # ex1()
+    ex2(4)
+
 
 if __name__ == '__main__':
     main()
