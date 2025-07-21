@@ -71,9 +71,12 @@ def qregs_array_alloc(
     qtype: Type[Union[bool, int, str]],
     qregs_properties: dict[str, QRegsProperties],
 ):
-    """Register allocation logic for a register of length `n`, each cell
-    having `size` qubits. For matrices, you should unroll them row- or
-    column-major.
+    """Register allocation logic for an array of `n` quantum registers, each
+    cell composed of `size` qubits. The array will be associated to the given
+    `name`. The variable `qtype` can be equal to `bool`, `int` or `str`, and it
+    is used both to specify the myqlm type of the quantum register, and in
+    quantum state related functions in order to interpret the qubits as ints,
+    booleans or directly print them as bitstrings.
 
     """
     regs = []
@@ -93,16 +96,24 @@ def qregs_array_alloc(
     return regs
 
 
-def qregs_ancillae_array_noalloc(n: int | None,
-                                 size: int | None,
-                                 name: str,
-                                 start_idx: int,
-                                 qtype,
-                                 qregs_properties: dict[str, QRegsProperties],
-                                 unknown_size=False):
-    """Register allocation logic for a register of length `n`, each cell
-    having `size` qubits. For matrices, you should unroll them row- or
-    column-major.
+def qregs_array_noalloc(n: int | None,
+                        size: int | None,
+                        name: str,
+                        start_idx: int,
+                        qtype,
+                        qregs_properties: dict[str, QRegsProperties],
+                        unknown_size=False):
+    """Register declaration, without allocation, for a register of `n`
+    elements, each cell having `size` qubits. Since there is no allocation, you
+    should specify the qubit index `start_idx` from which this array starts.
+    This function can be also used to allocate ancillary qubits of unknown
+    length (such as the ones automatically generated inside QRoutine) by
+    setting `unknown_size=True`.
+
+    The variable `qtype` can be equal to `bool`, `int` or `str`, and it is used
+    in quantum state related functions in order to interpret the qubits as
+    ints, booleans or directly print them as bitstrings.
+
     """
     key = f"{name}"
     start = start_idx
