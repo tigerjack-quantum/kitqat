@@ -11,6 +11,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
 from qatext.utils.bits.conversion import get_ints_from_bitarray
+from qatext.utils.qatmgmt.qbits import QRegsProperties
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
     from qat.lang.AQASM.program import Program
 
 from bitarray import bitarray, util
-from qatext.qpus.common import QRegsProperties
 
 LOGGER = logging.getLogger(__name__)
 
@@ -306,59 +306,14 @@ def get_rprogram_regs_values_from_states(
         elif qreg_properties.qtype == str:
             val = v
         elif qreg_properties.qtype == int:
+            assert qreg_properties.n is not None
+            assert qreg_properties.m is not None
             val = get_ints_from_bitarray(v, qreg_properties.n,
                                          qreg_properties.m, False)
         else:
             raise Exception("Unknown qtype")
         dic[k] = val
     return dic
-
-
-@staticmethod
-def qregs_array_alloc(
-    pr: Program,
-    n,
-    size,
-    name,
-    qtype,
-    qregs_properties: dict[str, QRegsProperties],
-):
-    """Register allocation logic for a register of length `n`, each cell
-    having `size` qubits. For matrices, you should unroll them row- or
-    column-major.
-
-    """
-    regs = []
-    for _ in range(n):
-        qr = pr.qalloc(size)
-        regs.append(qr)
-    key = f"{name}"
-    start = regs[0].start
-    stop = regs[-1].start + size
-    qregs_properties[key] = QRegsProperties(slice(start, stop), n, size, qtype)
-    return regs
-
-
-@staticmethod
-def qregs_ancillae_array_noalloc(n,
-                                 size,
-                                 name,
-                                 start_idx,
-                                 qtype,
-                                 qregs_properties: dict[str, QRegsProperties],
-                                 unknown_size=False):
-    """Register allocation logic for a register of length `n`, each cell
-    having `size` qubits. For matrices, you should unroll them row- or
-    column-major.
-    """
-    key = f"{name}"
-    start = start_idx
-    if unknown_size:
-        stop = None
-    else:
-        stop = start_idx + size * n
-    qregs_properties[key] = QRegsProperties(slice(start, stop), n, size, qtype,
-                                            unknown_size)
 
 
 @staticmethod

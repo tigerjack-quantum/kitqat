@@ -5,12 +5,13 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import (QRegsProperties, inspect_rprogram_state,
-                                    qregs_ancillae_array_noalloc,
-                                    qregs_array_alloc)
+from qatext.qpus.reversible import inspect_rprogram_state
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
+from qatext.utils.qatmgmt.qbits import (QRegsProperties,
+                                        qregs_ancillae_array_noalloc,
+                                        qregs_array_alloc)
 
 LOGGER = logging.getLogger(__name__)
 

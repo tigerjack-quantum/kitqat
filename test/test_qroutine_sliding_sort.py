@@ -4,13 +4,14 @@ import numpy as np
 import qat.lang.AQASM.classarith
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import (QRegsProperties, get_states_from_program,
-                                    qregs_ancillae_array_noalloc,
-                                    qregs_array_alloc)
+from qatext.qpus.reversible import get_states_from_program
 from qatext.qroutines import qregs_init as qregs
 from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
+from qatext.utils.qatmgmt.qbits import (QRegsProperties,
+                                        qregs_ancillae_array_noalloc,
+                                        qregs_array_alloc)
 
 
 class TestQroutineSlidingSort(CircuitTestCase):
@@ -54,16 +55,20 @@ class TestQroutineSlidingSort(CircuitTestCase):
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             pr.apply(qfun, qrs_data[i])
-        qregs_ancillae_array_noalloc(
-            n, m, "a1", qrs_data[-1].start + qrs_data[-1].length, int,
-            qregs_properties)
+        qregs_ancillae_array_noalloc(n, m, "a1",
+                                     qrs_data[-1].start + qrs_data[-1].length,
+                                     int, qregs_properties)
         qregs_ancillae_array_noalloc(
             n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
             qregs_properties)
-        qregs_ancillae_array_noalloc(
-            None, None, "anc",
-            qrs_data[-1].start + qrs_data[-1].length + n * m + n, str,
-            qregs_properties, unknown_size=True)
+        qregs_ancillae_array_noalloc(None,
+                                     None,
+                                     "anc",
+                                     qrs_data[-1].start + qrs_data[-1].length +
+                                     n * m + n,
+                                     str,
+                                     qregs_properties,
+                                     unknown_size=True)
 
         qf = insert(m, n)
         pr.apply(qf, qr_x, *qrs_data)
@@ -137,16 +142,20 @@ class TestQroutineSlidingSort(CircuitTestCase):
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             pr.apply(qfun, qrs_data[i])
-        qregs_ancillae_array_noalloc(
-            n, m, "a1", qrs_data[-1].start + qrs_data[-1].length, int,
-            qregs_properties)
+        qregs_ancillae_array_noalloc(n, m, "a1",
+                                     qrs_data[-1].start + qrs_data[-1].length,
+                                     int, qregs_properties)
         qregs_ancillae_array_noalloc(
             n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
             qregs_properties)
-        qregs_ancillae_array_noalloc(
-            None, None, "anc",
-            qrs_data[-1].start + qrs_data[-1].length + n * m + n, str,
-            qregs_properties, unknown_size=True)
+        qregs_ancillae_array_noalloc(None,
+                                     None,
+                                     "anc",
+                                     qrs_data[-1].start + qrs_data[-1].length +
+                                     n * m + n,
+                                     str,
+                                     qregs_properties,
+                                     unknown_size=True)
 
         qf = delete(m, n)
         pr.apply(qf, qr_x, *qrs_data)
