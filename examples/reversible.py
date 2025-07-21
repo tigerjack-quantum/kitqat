@@ -34,7 +34,7 @@ def ex2(n):
     n_qubits = (n - 1).bit_length()
     pr = Program()
     qreg_names_to_properties: dict[str, QRegsProperties] = {}
-    # allocate on pr 3 quantum registers, each having size 2 qubits
+    # allocate n quantum registers on pr, each one composed of n_qubits
     qarray_ints = qregs_array_alloc(pr, n, n_qubits, "Qarray", int,
                                     qreg_names_to_properties)
     for i in range(n):
