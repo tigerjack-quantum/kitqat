@@ -9,9 +9,8 @@ from qatext.qpus.reversible import inspect_rprogram_state
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
-from qatext.utils.qatmgmt.qbits import (QRegsProperties,
-                                        qregs_array_noalloc,
-                                        qregs_array_alloc)
+from qatext.utils.qatmgmt.qbits import (QRegsProperties, qregs_array_alloc,
+                                        qregs_array_noalloc)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -65,30 +64,30 @@ class BixTestCase(CircuitTestCase):
                     *qregs_data[i])
         qregs1s = qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
                                     qregs_properties)
-        qregs_array_noalloc(weight, m, "qregs1s_bits",
-                                     qregs1s[0].start, str, qregs_properties)
+        qregs_array_noalloc(weight, m, "qregs1s_bits", qregs1s[0].start, str,
+                            qregs_properties)
         qregs0s = qregs_array_alloc(pr, (n - weight) * cols, m, "qregs0s", int,
                                     qregs_properties)
-        qregs_array_noalloc(n - weight, m, "qregs0s_bits",
-                                     qregs0s[0].start, str, qregs_properties)
+        qregs_array_noalloc(n - weight, m, "qregs0s_bits", qregs0s[0].start,
+                            str, qregs_properties)
 
         anc_start = qregs0s[-1].start + qregs0s[-1].length
         if has_support_registers:
             qregs_array_noalloc(1, m, "qregs1s_add", anc_start, str,
-                                         qregs_properties)
+                                qregs_properties)
             anc_start += m
             LOGGER.debug("zeros will be rotated")
             qregs_array_noalloc(1, m, "qregs0s_add", anc_start, str,
-                                         qregs_properties)
+                                qregs_properties)
             anc_start += m
         # ancillary register of unknown size, catch all
         qregs_array_noalloc(None,
-                                     None,
-                                     "anc",
-                                     anc_start,
-                                     str,
-                                     qregs_properties,
-                                     unknown_size=True)
+                            None,
+                            "anc",
+                            anc_start,
+                            str,
+                            qregs_properties,
+                            unknown_size=True)
         LOGGER.debug("Applying bix_func of arity %d", bix_func.arity)
         if is_runtime:
             pr.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
@@ -279,6 +278,61 @@ class BixTestCase(CircuitTestCase):
         )
 
     @parameterized.expand([
+        # select middle row
+        ("010", [0, 1, 2]),
+        ("001", [0, 1, 2]),
+        ("100", [0, 1, 2]),
+
+        # select outer rows
+        ("1001", [10, 20, 30, 40]),
+
+        # select middle three
+        ("01110", [1, 2, 3, 4, 5]),
+
+        # select
+        ("10", [100, 101]),
+
+        # select alternating rows
+        ("101010", [5, 15, 30, 45, 75, 120]),
+    ])
+    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
+                         "Only enabled with reversible simulation")
+    def test_bix_data_runtime(self, bitstring, elements):
+        self._test_bix_data_runtime(bitstring, elements)
+
+    def _test_bix_data_runtime(self, bitstring, elements):
+        LOGGER.debug("bitstring %s", bitstring)
+        n = len(bitstring)
+        weight = bitstring.count("1")
+        LOGGER.debug("Len %d, weight %d", n, weight)
+        m = max(elements).bit_length()
+        LOGGER.debug("m %d", m)
+        onesexp = "".join([
+            get_bitstring_from_int(elements[idx], m, False) for idx, val in enumerate(bitstring)
+            if val == "1"
+        ])
+        zerosexp = "".join([
+            get_bitstring_from_int(elements[idx], m, False) for idx, val in enumerate(bitstring)
+            if val == "0"
+        ])
+        LOGGER.debug("onesexp %s", onesexp)
+        LOGGER.debug("zerosexp %s", zerosexp)
+
+        qfun = bix.bix_data_runtime(n, m, weight)
+        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self._run_test_bix(
+            n,
+            m,
+            weight,
+            bitstring,
+            onesexp,
+            zerosexp,
+            qfun,
+            has_support_registers=False,
+            runtime_data=elements,
+        )
+
+    @parameterized.expand([
         # 3 rows, select middle row
         ("010", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
         ("001", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
@@ -363,11 +417,17 @@ if __name__ == '__main__':
     # bitstring, elems = ("0101", [2, 8, 10, 12])
     # test._test_bix_elems(bitstring, elems)
 
-    bitstring, matrix = ("010", [
-        [1, 2],
-        [4, 5],
-        [7, 8],
-    ])
-    test._test_bix_matrix(bitstring, matrix)
+
+    bitstring, array = ("010",
+        [2, 5, 8],
+    )
+    test._test_bix_data_runtime(bitstring, array)
+
+    # bitstring, matrix = ("010", [
+    #     [1, 2],
+    #     [4, 5],
+    #     [7, 8],
+    # ])
+    # test._test_bix_matrix(bitstring, matrix)
     test.tearDown()
     test.tearDownClass()
