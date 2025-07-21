@@ -10,7 +10,7 @@ from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
 from qatext.utils.qatmgmt.qbits import (QRegsProperties,
-                                        qregs_ancillae_array_noalloc,
+                                        qregs_array_noalloc,
                                         qregs_array_alloc)
 
 LOGGER = logging.getLogger(__name__)
@@ -65,24 +65,24 @@ class BixTestCase(CircuitTestCase):
                     *qregs_data[i])
         qregs1s = qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
                                     qregs_properties)
-        qregs_ancillae_array_noalloc(weight, m, "qregs1s_bits",
+        qregs_array_noalloc(weight, m, "qregs1s_bits",
                                      qregs1s[0].start, str, qregs_properties)
         qregs0s = qregs_array_alloc(pr, (n - weight) * cols, m, "qregs0s", int,
                                     qregs_properties)
-        qregs_ancillae_array_noalloc(n - weight, m, "qregs0s_bits",
+        qregs_array_noalloc(n - weight, m, "qregs0s_bits",
                                      qregs0s[0].start, str, qregs_properties)
 
         anc_start = qregs0s[-1].start + qregs0s[-1].length
         if has_support_registers:
-            qregs_ancillae_array_noalloc(1, m, "qregs1s_add", anc_start, str,
+            qregs_array_noalloc(1, m, "qregs1s_add", anc_start, str,
                                          qregs_properties)
             anc_start += m
             LOGGER.debug("zeros will be rotated")
-            qregs_ancillae_array_noalloc(1, m, "qregs0s_add", anc_start, str,
+            qregs_array_noalloc(1, m, "qregs0s_add", anc_start, str,
                                          qregs_properties)
             anc_start += m
         # ancillary register of unknown size, catch all
-        qregs_ancillae_array_noalloc(None,
+        qregs_array_noalloc(None,
                                      None,
                                      "anc",
                                      anc_start,

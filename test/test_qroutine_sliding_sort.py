@@ -10,7 +10,7 @@ from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 from qatext.utils.qatmgmt.qbits import (QRegsProperties,
-                                        qregs_ancillae_array_noalloc,
+                                        qregs_array_noalloc,
                                         qregs_array_alloc)
 
 
@@ -55,13 +55,13 @@ class TestQroutineSlidingSort(CircuitTestCase):
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             pr.apply(qfun, qrs_data[i])
-        qregs_ancillae_array_noalloc(n, m, "a1",
+        qregs_array_noalloc(n, m, "a1",
                                      qrs_data[-1].start + qrs_data[-1].length,
                                      int, qregs_properties)
-        qregs_ancillae_array_noalloc(
+        qregs_array_noalloc(
             n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
             qregs_properties)
-        qregs_ancillae_array_noalloc(None,
+        qregs_array_noalloc(None,
                                      None,
                                      "anc",
                                      qrs_data[-1].start + qrs_data[-1].length +
@@ -142,13 +142,13 @@ class TestQroutineSlidingSort(CircuitTestCase):
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             pr.apply(qfun, qrs_data[i])
-        qregs_ancillae_array_noalloc(n, m, "a1",
+        qregs_array_noalloc(n, m, "a1",
                                      qrs_data[-1].start + qrs_data[-1].length,
                                      int, qregs_properties)
-        qregs_ancillae_array_noalloc(
+        qregs_array_noalloc(
             n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
             qregs_properties)
-        qregs_ancillae_array_noalloc(None,
+        qregs_array_noalloc(None,
                                      None,
                                      "anc",
                                      qrs_data[-1].start + qrs_data[-1].length +
