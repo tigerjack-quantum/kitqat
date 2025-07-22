@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 from qatext.utils.bits.conversion import get_ints_from_bitarray
 from qatext.utils.qatmgmt.program import ProgramWrapper, QRegsProperties
+from qatext.utils.qatmgmt.routines import QRoutineWrapper
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -357,6 +358,28 @@ def inspect_state_reversible_program(prw: ProgramWrapper, link):
     for key, value in get_rprogram_regs_values_from_states(
             state, prw._qregnames_to_properties).items():
         slic = prw._qregnames_to_properties[key].slic
+        st += f"{key:<20} [{slic}] ->\t{value}\n"
+
+    return st
+
+
+@staticmethod
+def inspect_state_reversible_qroutine(qroutw: QRoutineWrapper, link):
+    # this is the get_states_from_program function, but I need circ
+    circ = qroutw.to_circ(link=link, inline=True)
+    rpr = RProgram.circuit_to_rprogram(circ)
+    rpr_bits = rpr.rbits
+    rpr.rregs = qroutw._qregnames_to_properties
+    state = rpr.get_result_by_name()
+    st = "\n"
+    st += f"n qbits {circ.nbqbits}\n"
+    st += f"n rbits {len(rpr.rbits)}\n"
+    # st += f"state obtained {rpr_bits}"
+    st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
+
+    for key, value in get_rprogram_regs_values_from_states(
+            state, qroutw._qregnames_to_properties).items():
+        slic = qroutw._qregnames_to_properties[key].slic
         st += f"{key:<20} [{slic}] ->\t{value}\n"
 
     return st
