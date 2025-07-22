@@ -3,7 +3,7 @@ from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
 from qatext.qpus.reversible import RProgram, inspect_rprogram_state
 from qatext.qroutines.qregs_init import initialize_qureg_given_int
-from qatext.utils.qatmgmt.qbits import QRegsProperties, qregs_array_alloc
+from qatext.utils.qatmgmt.program import ProgramWrapper
 
 
 def ex1():
@@ -33,17 +33,22 @@ def ex1():
 def ex2(n):
     n_qubits = (n - 1).bit_length()
     pr = Program()
-    qreg_names_to_properties: dict[str, QRegsProperties] = {}
+    # ProgramWrapper adds a few functionalities to Program
+    prw = ProgramWrapper(pr)
     # allocate n quantum registers on pr, each one composed of n_qubits
-    qarray_ints = qregs_array_alloc(pr, n, n_qubits, "Qarray", int,
-                                    qreg_names_to_properties)
+    qarray_ints = prw.qregs_array_alloc(
+        n,
+        n_qubits,
+        "MyQuantumArray",
+        int,
+    )
     for i in range(n):
         qroutine_init = initialize_qureg_given_int(i,
                                                    n_qubits,
                                                    little_endian=False)
         pr.apply(qroutine_init, qarray_ints[i])
 
-    state_str = inspect_rprogram_state(pr, qreg_names_to_properties, [])
+    state_str = inspect_rprogram_state(prw, [])
     print(state_str)
 
 

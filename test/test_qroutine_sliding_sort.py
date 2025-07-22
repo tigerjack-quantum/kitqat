@@ -4,14 +4,12 @@ import numpy as np
 import qat.lang.AQASM.classarith
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import get_states_from_program
+from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines import qregs_init as qregs
 from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
-from qatext.utils.qatmgmt.qbits import (QRegsProperties,
-                                        qregs_array_noalloc,
-                                        qregs_array_alloc)
+from qatext.utils.qatmgmt.program import ProgramWrapper
 
 
 class TestQroutineSlidingSort(CircuitTestCase):
@@ -45,35 +43,34 @@ class TestQroutineSlidingSort(CircuitTestCase):
         m = max_bits
         # last one is the empty cell, used as temporary
         n = len(values) + 1
-        pr = Program()
-        qregs_properties: dict[str, QRegsProperties] = {}
-        qr_x = qregs_array_alloc(pr, 1, m, "x", int, qregs_properties)
+        prw = ProgramWrapper(Program())
+        # qregs_properties: dict[str, QRegsProperties] = {}
+        qr_x = prw.qregs_array_alloc(1, m, "x", int)
         qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
-        pr.apply(qfun, qr_x)
+        prw.apply(qfun, qr_x)
 
-        qrs_data = qregs_array_alloc(pr, n, m, "a", int, qregs_properties)
+        qrs_data = prw.qregs_array_alloc(n, m, "a", int)
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
-            pr.apply(qfun, qrs_data[i])
-        qregs_array_noalloc(n, m, "a1",
+            prw.apply(qfun, qrs_data[i])
+        prw.qregs_array_noalloc(n, m, "a1",
                                      qrs_data[-1].start + qrs_data[-1].length,
-                                     int, qregs_properties)
-        qregs_array_noalloc(
+                                     int)
+        prw.qregs_array_noalloc(
             n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
-            qregs_properties)
-        qregs_array_noalloc(None,
+            )
+        prw.qregs_array_noalloc(None,
                                      None,
                                      "anc",
                                      qrs_data[-1].start + qrs_data[-1].length +
                                      n * m + n,
                                      str,
-                                     qregs_properties,
                                      unknown_size=True)
 
         qf = insert(m, n)
-        pr.apply(qf, qr_x, *qrs_data)
+        prw.apply(qf, qr_x, *qrs_data)
 
-        res = get_states_from_program(pr, qregs_properties,
+        res = get_states_from_program_wrapper(prw,
                                       [qat.lang.AQASM.classarith])
         # self.print_rprogram_regs_from_rprogram_states(states, qregs_properties)
 
@@ -131,40 +128,38 @@ class TestQroutineSlidingSort(CircuitTestCase):
         m = int(np.ceil(np.log2(max(values) + 1)))
         # last one is the empty cell
         n = len(values)
-        pr = Program()
+        prw = ProgramWrapper(Program())
 
-        qregs_properties: dict[str, QRegsProperties] = {}
-        qr_x = qregs_array_alloc(pr, 1, m, "x", int, qregs_properties)
+        qr_x = prw.qregs_array_alloc(1, m, "x", int)
         qfun = qregs.initialize_qureg_given_int(value_to_delete, m, False)
-        pr.apply(qfun, qr_x)
+        prw.apply(qfun, qr_x)
 
-        qrs_data = qregs_array_alloc(pr, n, m, "a", int, qregs_properties)
+        qrs_data = prw.qregs_array_alloc(n, m, "a", int)
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
-            pr.apply(qfun, qrs_data[i])
-        qregs_array_noalloc(n, m, "a1",
+            prw.apply(qfun, qrs_data[i])
+        prw.qregs_array_noalloc(n, m, "a1",
                                      qrs_data[-1].start + qrs_data[-1].length,
-                                     int, qregs_properties)
-        qregs_array_noalloc(
+                                     int)
+        prw.qregs_array_noalloc(
             n, 1, "a2", qrs_data[-1].start + qrs_data[-1].length + n * m, int,
-            qregs_properties)
-        qregs_array_noalloc(None,
+            )
+        prw.qregs_array_noalloc(None,
                                      None,
                                      "anc",
                                      qrs_data[-1].start + qrs_data[-1].length +
                                      n * m + n,
                                      str,
-                                     qregs_properties,
                                      unknown_size=True)
 
         qf = delete(m, n)
-        pr.apply(qf, qr_x, *qrs_data)
+        prw.apply(qf, qr_x, *qrs_data)
 
         # circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)
         # rpr = RProgram.circuit_to_rprogram(circ)
         # rpr.rregs = reg_names_to_slice
         # res = rpr.get_result_by_name()
-        res = get_states_from_program(pr, qregs_properties,
+        res = get_states_from_program_wrapper(prw,
                                       [qat.lang.AQASM.classarith])
 
         x_val = get_int_from_bitarray(res['x'], False)

@@ -7,7 +7,7 @@ from qat.lang.AQASM.routines import QRoutine
 @build_gate('SLIDING_SORT_INSERT', [int, int], lambda m, n: n * m + m)
 def insert(m, n):
     """n cells, each one of size m.
-    Expect qregs in this order: X, A, A', A''
+    Expect qregs in this order: X, A
     """
     qf = QRoutine()
     qr_val = qf.new_wires(m, QInt)

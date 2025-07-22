@@ -1,3 +1,4 @@
+# TODO subclass RProgram from ProgramWrapper and override methods
 """For now it is only a test bench, creating a fake Program object.
 
 Virtually, it should be integrated into qat, taking a circuit as input
@@ -11,7 +12,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
 from qatext.utils.bits.conversion import get_ints_from_bitarray
-from qatext.utils.qatmgmt.qbits import QRegsProperties
+from qatext.utils.qatmgmt.program import ProgramWrapper, QRegsProperties
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -59,7 +60,9 @@ class RProgram:
             name = str(slic)[6:].replace(", ", "_").replace(")", "")
         elif name in self.rregs:
             raise ValueError("Already another register with the same name")
-        qreg_property = QRegsProperties(slic, 1, n, str)
+        # TODO once changed to ProgramWrapper subclass, replace None w/ proper
+        # register
+        qreg_property = QRegsProperties(slic, 1, n, None, str)
         self.rregs[name] = qreg_property
         self.rbits.extend(util.zeros(n))
 
@@ -284,6 +287,27 @@ def get_states_from_program(
     res = rpr.get_result_by_name()
     return res
 
+@staticmethod
+def get_states_from_circuit(
+    circ,
+    reg_names_to_properties: dict[str, QRegsProperties],
+) -> dict[str, list[int]]:
+    rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.rregs = reg_names_to_properties
+    res = rpr.get_result_by_name()
+    return res
+
+@staticmethod
+def get_states_from_program_wrapper(
+    prw: ProgramWrapper,
+    link: Optional[list],
+) -> dict[str, list[int]]:
+    circ = prw.to_circ(link=link, inline=True)
+    rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.rregs = prw._qregnames_to_properties
+    res = rpr.get_result_by_name()
+    return res
+
 
 @staticmethod
 def get_rprogram_regs(pr: "Program", reg_name_to_slice, link: list):
@@ -317,16 +341,12 @@ def get_rprogram_regs_values_from_states(
 
 
 @staticmethod
-def inspect_rprogram_state(pr, qregs_properties, link):
-    # state = CircuitTestCase.get_rprogram_regs(
-    #     pr, qregs_properties, link
-    #     )
-
+def inspect_rprogram_state(prw: ProgramWrapper, link):
     # this is the get_states_from_program function, but I need circ
-    circ = pr.to_circ(link=link, inline=True)
+    circ = prw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr_bits = rpr.rbits
-    rpr.rregs = qregs_properties
+    rpr.rregs = prw._qregnames_to_properties
     state = rpr.get_result_by_name()
     st = "\n"
     st += f"n qbits {circ.nbqbits}\n"
@@ -335,8 +355,8 @@ def inspect_rprogram_state(pr, qregs_properties, link):
     st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
 
     for key, value in get_rprogram_regs_values_from_states(
-            state, qregs_properties).items():
-        slic = qregs_properties[key].slic
+            state, prw._qregnames_to_properties).items():
+        slic = prw._qregnames_to_properties[key].slic
         st += f"{key:<20} [{slic}] ->\t{value}\n"
 
     return st

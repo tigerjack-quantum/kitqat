@@ -2,6 +2,7 @@ import logging
 import unittest
 from itertools import chain
 from test.common_circuit import CircuitTestCase
+from typing import TYPE_CHECKING
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
@@ -9,8 +10,10 @@ from qatext.qpus.reversible import inspect_rprogram_state
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
-from qatext.utils.qatmgmt.qbits import (QRegsProperties, qregs_array_alloc,
-                                        qregs_array_noalloc)
+from qatext.utils.qatmgmt.program import ProgramWrapper
+
+if TYPE_CHECKING:
+    from qatext.utils.qatmgmt.program import QRegsProperties
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +22,7 @@ class BixTestCase(CircuitTestCase):
 
     def _extract_and_check_named_regs(self, bitstring, expected_map,
                                       qregs_properties: dict[str,
-                                                             QRegsProperties]):
+                                                             'QRegsProperties']):
         """Post-processing checks"""
         for name, expected in expected_map.items():
             bits = bitstring[qregs_properties[name].slic]
@@ -40,68 +43,93 @@ class BixTestCase(CircuitTestCase):
             has_support_registers=True,  # bix_matrix, for example, doesn't have them
             runtime_data=None,  # If it is applied to bix_runtime, it must be != None
     ):
-        qregs_properties: dict[str, QRegsProperties] = {}
+        # qregs_properties: dict[str, QRegsProperties] = {}
         is_runtime = runtime_data is not None
 
-        pr = Program()
-        wreg = qregs_array_alloc(pr, 1, n, "wreg", str, qregs_properties)
-        pr.apply(
+        prw = ProgramWrapper(Program())
+        wreg = prw.qregs_array_alloc(1, n, "wreg", str)
+        prw.apply(
             qregs_init.initialize_qureg_given_bitstring(bitstring,
                                                         little_endian=False),
             wreg,
         )
         qregs_data = None
         if is_runtime:
-            qregs_data = qregs_array_alloc(pr, n * cols, m, "qregs_data", int,
-                                           qregs_properties)
+            qregs_data = prw.qregs_array_alloc(
+                n * cols,
+                m,
+                "qregs_data",
+                int,
+            )
             for i in range(n * cols):
                 LOGGER.debug("qregs_data[%d] = %s", i, qregs_data[i])
 
-                pr.apply(
+                prw.apply(
                     qregs_init.initialize_qureg_given_int(runtime_data[i],
                                                           m,
                                                           little_endian=False),
                     *qregs_data[i])
-        qregs1s = qregs_array_alloc(pr, weight * cols, m, "qregs1s", int,
-                                    qregs_properties)
-        qregs_array_noalloc(weight, m, "qregs1s_bits", qregs1s[0].start, str,
-                            qregs_properties)
-        qregs0s = qregs_array_alloc(pr, (n - weight) * cols, m, "qregs0s", int,
-                                    qregs_properties)
-        qregs_array_noalloc(n - weight, m, "qregs0s_bits", qregs0s[0].start,
-                            str, qregs_properties)
+        qregs1s = prw.qregs_array_alloc(
+            weight * cols,
+            m,
+            "qregs1s",
+            int,
+        )
+        prw.qregs_array_noalloc(
+            weight,
+            m,
+            "qregs1s_bits",
+            qregs1s[0].start,
+            str,
+        )
+        qregs0s = prw.qregs_array_alloc(
+            (n - weight) * cols,
+            m,
+            "qregs0s",
+            int,
+        )
+        prw.qregs_array_noalloc(n - weight, m, "qregs0s_bits",
+                                qregs0s[0].start, str)
 
         anc_start = qregs0s[-1].start + qregs0s[-1].length
         if has_support_registers:
-            qregs_array_noalloc(1, m, "qregs1s_add", anc_start, str,
-                                qregs_properties)
+            prw.qregs_array_noalloc(
+                1,
+                m,
+                "qregs1s_add",
+                anc_start,
+                str,
+            )
             anc_start += m
             LOGGER.debug("zeros will be rotated")
-            qregs_array_noalloc(1, m, "qregs0s_add", anc_start, str,
-                                qregs_properties)
+            prw.qregs_array_noalloc(
+                1,
+                m,
+                "qregs0s_add",
+                anc_start,
+                str,
+            )
             anc_start += m
         # ancillary register of unknown size, catch all
-        qregs_array_noalloc(None,
-                            None,
-                            "anc",
-                            anc_start,
-                            str,
-                            qregs_properties,
-                            unknown_size=True)
+        prw.qregs_array_noalloc(None,
+                                None,
+                                "anc",
+                                anc_start,
+                                str,
+                                unknown_size=True)
         LOGGER.debug("Applying bix_func of arity %d", bix_func.arity)
         if is_runtime:
-            pr.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
+            prw.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
         else:
-            pr.apply(bix_func, wreg, *qregs1s, *qregs0s)
+            prw.apply(bix_func, wreg, *qregs1s, *qregs0s)
         LOGGER.debug(
             "%s",
             inspect_rprogram_state(
-                pr, qregs_properties,
-                [cuccaro_arith.adder, cuccaro_arith.subtractor]))
+                prw, [cuccaro_arith.adder, cuccaro_arith.subtractor]))
 
-        circ = pr.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
+        circ = prw.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
         obtained = self.run_and_get_bitstring_for_reversible(
-            circ, qregs_properties)
+            circ, prw._qregnames_to_properties)
 
         expected = {
             "wreg": bitstring,
@@ -112,7 +140,7 @@ class BixTestCase(CircuitTestCase):
             expected["qregs1s_add"] = "0" * m
             expected["qregs0s_add"] = "0" * m
         self._extract_and_check_named_regs(obtained, expected,
-                                           qregs_properties)
+                                           prw._qregnames_to_properties)
 
     @parameterized.expand([
         "0101",
@@ -308,12 +336,12 @@ class BixTestCase(CircuitTestCase):
         m = max(elements).bit_length()
         LOGGER.debug("m %d", m)
         onesexp = "".join([
-            get_bitstring_from_int(elements[idx], m, False) for idx, val in enumerate(bitstring)
-            if val == "1"
+            get_bitstring_from_int(elements[idx], m, False)
+            for idx, val in enumerate(bitstring) if val == "1"
         ])
         zerosexp = "".join([
-            get_bitstring_from_int(elements[idx], m, False) for idx, val in enumerate(bitstring)
-            if val == "0"
+            get_bitstring_from_int(elements[idx], m, False)
+            for idx, val in enumerate(bitstring) if val == "0"
         ])
         LOGGER.debug("onesexp %s", onesexp)
         LOGGER.debug("zerosexp %s", zerosexp)
@@ -417,8 +445,8 @@ if __name__ == '__main__':
     # bitstring, elems = ("0101", [2, 8, 10, 12])
     # test._test_bix_elems(bitstring, elems)
 
-
-    bitstring, array = ("010",
+    bitstring, array = (
+        "010",
         [2, 5, 8],
     )
     test._test_bix_data_runtime(bitstring, array)
