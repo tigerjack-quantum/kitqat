@@ -184,3 +184,25 @@ def copy_register(n: int):
         qrout.apply(CNOT, control, target)
 
     return qrout
+
+
+@build_gate("COPY_ARRAY", [int, int], lambda n, m: 2 * n * m)
+def copy_array_of_registers(n: int, m: int):
+    """Copy basis state 0/1 from an array of registers to another array of
+    registers of the same size. The array is composed of `n` cells, each cell
+    having size `m` qubits. The operations is performed through `n\\\\times m`
+    parallel CNOTs.
+
+    It acts on two quantum arrays:
+    - The array to copy
+    - The array upon which we need to copy
+
+    """
+    qrout = QRoutine()
+    qarr_in = [qrout.new_wires(m) for _ in range(n)]
+    qarr_out = [qrout.new_wires(m) for _ in range(n)]
+
+    qrout_copy_cell = copy_register(m)
+    for qr_in, qr_out in zip(qarr_in, qarr_out):
+        qrout.apply(qrout_copy_cell, qr_in, qr_out)
+    return qrout
