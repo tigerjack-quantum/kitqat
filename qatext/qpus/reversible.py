@@ -341,7 +341,7 @@ def get_rprogram_regs_values_from_states(
 
 
 @staticmethod
-def inspect_rprogram_state(prw: ProgramWrapper, link):
+def inspect_state_reversible_program(prw: ProgramWrapper, link):
     # this is the get_states_from_program function, but I need circ
     circ = prw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)

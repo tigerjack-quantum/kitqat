@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import inspect_rprogram_state
+from qatext.qpus.reversible import inspect_state_reversible_program
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
@@ -124,7 +124,7 @@ class BixTestCase(CircuitTestCase):
             prw.apply(bix_func, wreg, *qregs1s, *qregs0s)
         LOGGER.debug(
             "%s",
-            inspect_rprogram_state(
+            inspect_state_reversible_program(
                 prw, [cuccaro_arith.adder, cuccaro_arith.subtractor]))
 
         circ = prw.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
