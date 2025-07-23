@@ -288,6 +288,7 @@ def get_states_from_program(
     res = rpr.get_result_by_name()
     return res
 
+
 @staticmethod
 def get_states_from_circuit(
     circ,
@@ -297,6 +298,7 @@ def get_states_from_circuit(
     rpr.rregs = reg_names_to_properties
     res = rpr.get_result_by_name()
     return res
+
 
 @staticmethod
 def get_states_from_program_wrapper(
@@ -308,6 +310,19 @@ def get_states_from_program_wrapper(
     rpr.rregs = prw._qregnames_to_properties
     res = rpr.get_result_by_name()
     return res
+
+
+@staticmethod
+def get_states_from_qroutine_wrapper(
+    qroutw: QRoutineWrapper,
+    link: Optional[list],
+) -> dict[str, list[int]]:
+
+    circ = qroutw.to_circ(link=link, inline=True)
+    rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.rregs = qroutw._qregnames_to_properties
+    states = rpr.get_result_by_name()
+    return states
 
 
 @staticmethod
