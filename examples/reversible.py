@@ -1,7 +1,7 @@
 from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, X
 from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
-from qatext.qpus.reversible import RProgram, inspect_rprogram_state
+from qatext.qpus.reversible import RProgram, inspect_state_reversible_program
 from qatext.qroutines.qregs_init import initialize_qureg_given_int
 from qatext.utils.qatmgmt.program import ProgramWrapper
 
@@ -48,7 +48,7 @@ def ex2(n):
                                                    little_endian=False)
         pr.apply(qroutine_init, qarray_ints[i])
 
-    state_str = inspect_rprogram_state(prw, [])
+    state_str = inspect_state_reversible_program(prw, [])
     print(state_str)
 
 
