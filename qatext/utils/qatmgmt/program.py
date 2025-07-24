@@ -48,14 +48,25 @@ class ProgramWrapper:
         name: str,
         qtype: Type[Union[bool, int, str]],
     ):
-        """Register allocation logic for an array of `n` quantum registers, each
-        cell composed of `size` qubits. The array will be associated to the given
-        `name`. The variable `qtype` can be equal to `bool`, `int` or `str`, and it
-        is used both to specify the myqlm type of the quantum register, and in
-        quantum state related functions in order to interpret the qubits as ints,
-        booleans or directly print them as bitstrings.
+        """Allocates a quantum register array consisting of `n` elements, each
+        composed of `size` qubits.
+
+        The array will be associated with the specified `name`. The `qtype`
+        parameter defines both the internal type used by MyQLM for the register
+        and how the register is interpreted in quantum state inspection
+        functions. It can be one of:
+        - `bool`: interpret each element as a boolean value;
+        - `int`: interpret each element as an integer;
+        - `str`: represent each element as a bitstring.
+
+        Parameters:
+            n (int): Number of elements in the register array.
+            size (int): Number of qubits per element.
+            name (str): Name associated with the register.
+            qtype (type): Interpretation type (`bool`, `int`, or `str`).
 
         """
+
         regs = []
         if qtype == int:
             qtype_myqlm = QInt
@@ -80,20 +91,35 @@ class ProgramWrapper:
                             start_idx: int,
                             qtype,
                             unknown_size=False):
-        """Register declaration, without allocation, for a register of `n`
-        elements, each cell having `size` qubits. Since there is no allocation, you
-        should specify the qubit index `start_idx` from which this array starts.
-        This function can be also used to allocate ancillary qubits of unknown
-        length (such as the ones automatically generated inside QRoutine) by
-        setting `unknown_size=True`.
+        """Declares a quantum register without allocating new qubits.
 
-        The variable `qtype` can be equal to `bool`, `int` or `str`, and it is used
-        in quantum state related functions in order to interpret the qubits as
-        ints, booleans or directly print them as bitstrings.
+        This function declares a register of `n` elements, where each element
+        (or cell) consists of `size` qubits. Since no qubits are allocated, you
+        must specify the starting qubit index via `start_idx`. If `start_idx`
+        is `None`, the register will begin from the highest currently used
+        qubit index. This behavior is particularly useful for capturing
+        ancillary qubits that are automatically created by quantum subroutines.
+
+        Additionally, by setting `unknown_size=True`, this function can be used
+        to define ancillary qubits of unknown or dynamic size, such as those
+        generated internally by a `QRoutine`.
+
+        The `qtype` argument specifies how the register should be interpreted
+        in quantum state analysis or visualization. It can be set to: - `bool`:
+        interpret each element as a boolean value; - `int`: interpret each
+        element as an integer; - `str`: display each element as a bitstring.
+
+        Parameters:
+            n (int): Number of elements in the register.
+            size (int): Number of qubits per element.
+            start_idx (int or None): Starting index for the register.
+            unknown_size (bool): Whether the size is dynamic/unknown.
+            qtype (type): Type used for interpreting qubit content (`bool`, `int`, or `str`).
 
         """
+
         key = f"{name}"
-        start = start_idx
+        start = start_idx if start_idx is not None else self._program.qbit_count
         if size is None:
             unknown_size = True
             n = None
