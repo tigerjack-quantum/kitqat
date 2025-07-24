@@ -78,7 +78,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
                                 str,
                                 unknown_size=True)
 
-        qf = insert(m, n)
+        qf = insert(n, m)
         prw.apply(qf, qr_x, *qrs_data)
 
         res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
@@ -168,7 +168,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
                                 str,
                                 unknown_size=True)
 
-        qf = delete(m, n)
+        qf = delete(n, m)
         prw.apply(qf, qr_x, *qrs_data)
 
         # circ = pr.to_circ(link=[qat.lang.AQASM.classarith], inline=True)

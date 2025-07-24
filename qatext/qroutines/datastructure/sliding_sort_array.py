@@ -4,8 +4,8 @@ from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
 
 
-@build_gate('SLIDING_SORT_INSERT', [int, int], lambda m, n: n * m + m)
-def insert(m, n):
+@build_gate('SLIDING_SORT_INSERT', [int, int], lambda n, m: n * m + m)
+def insert(n, m):
     """n cells, each one of size m.
     Expect qregs in this order: X, A
     """
@@ -65,10 +65,10 @@ def insert(m, n):
     return qf
 
 
-@build_gate('SLIDING_SORT_DELETE', [int, int], lambda m, n: n * m + m)
-def delete(m, n):
+@build_gate('SLIDING_SORT_DELETE', [int, int], lambda n, m: n * m + m)
+def delete(n, m):
     qf = QRoutine()
     qw = qf.new_wires(n * m + m)
-    qf1 = insert(m, n).dag()
+    qf1 = insert(n, m).dag()
     qf.apply(qf1, *qw)
     return qf
