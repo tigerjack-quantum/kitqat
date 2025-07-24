@@ -1,4 +1,5 @@
-from test.common_pytest import CircuitTestHelpers
+from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
+                                CircuitTestHelpers)
 
 import numpy as np
 import pytest
@@ -12,7 +13,6 @@ from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 from qatext.utils.qatmgmt.program import ProgramWrapper
 
-from test.conftest import REVERSIBLE_ON, REVERSIBLE_ON_REASON
 
 @pytest.mark.usefixtures("setup_simulator", "setup_logger")
 class TestQroutineSlidingSort(CircuitTestHelpers):

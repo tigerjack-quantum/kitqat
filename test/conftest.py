@@ -1,20 +1,9 @@
 """File automatically read from pytest"""
 import logging
 from os import getenv
+from test.common_pytest import SIMULATOR
 
 import pytest
-
-# Constants and flags
-SLOW_TEST_ON = getenv("SLOW_ON") is not None
-SLOW_TEST_ON_REASON = "slow test"
-
-QLM_ON = getenv("QLM_ON") is not None
-QLM_ON_REASON = "not using QLM"
-
-REVERSIBLE_ON = getenv("REVERSIBLE_ON") is not None
-REVERSIBLE_ON_REASON = "not using reversible simulator"
-
-SIMULATOR = getenv("SIMULATOR", "linalg" if QLM_ON else "pylinalg")
 
 LOGGER = logging.getLogger(__name__)
 

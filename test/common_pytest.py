@@ -1,4 +1,5 @@
 import logging
+from os import getenv
 from typing import TYPE_CHECKING, Optional
 
 from qat.core.console import display
@@ -6,11 +7,21 @@ from qat.core.console import display
 from qatext.qpus.reversible import RProgram
 
 if TYPE_CHECKING:
-    from qat.lang.AQASM.program import Program
     from qat.core.wrappers.circuit import Circuit
     from qat.core.wrappers.result import Result
+    from qat.lang.AQASM.program import Program
 
-from test.conftest import REVERSIBLE_ON
+# Constants and flags
+SLOW_TEST_ON = getenv("SLOW_ON") is not None
+SLOW_TEST_ON_REASON = "slow test"
+
+QLM_ON = getenv("QLM_ON") is not None
+QLM_ON_REASON = "not using QLM"
+
+REVERSIBLE_ON = getenv("REVERSIBLE_ON") is not None
+REVERSIBLE_ON_REASON = "not using reversible simulator"
+
+SIMULATOR = getenv("SIMULATOR", "linalg" if QLM_ON else "pylinalg")
 
 LOGGER = logging.getLogger(__name__)
 
