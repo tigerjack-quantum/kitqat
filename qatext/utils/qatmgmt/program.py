@@ -88,7 +88,7 @@ class ProgramWrapper:
                             n: int | None,
                             size: int | None,
                             name: str,
-                            start_idx: int,
+                            start_idx: int | None,
                             qtype,
                             unknown_size=False):
         """Declares a quantum register without allocating new qubits.
