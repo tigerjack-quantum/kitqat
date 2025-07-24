@@ -10,7 +10,7 @@ from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
 
-from .common_circuit import CircuitTestCase
+from test.common_circuit import CircuitTestCase
 
 
 # TODO check the generate_gate_from_circuit_op functions and their variables_map parameter

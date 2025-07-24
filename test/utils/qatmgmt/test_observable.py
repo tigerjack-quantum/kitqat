@@ -4,7 +4,7 @@ from qatext.utils.qatmgmt.observables import produce_term_gates
 from qatext.utils.qatmgmt.results import get_sample_for_basis_str_from_res
 from copy import deepcopy
 
-from .common_circuit import CircuitTestCase
+from test.common_circuit import CircuitTestCase
 
 
 class TestQatUtils(CircuitTestCase):

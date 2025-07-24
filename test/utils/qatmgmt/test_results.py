@@ -5,7 +5,7 @@ from qatext.utils.qatmgmt.results import (
 )
 from qat.lang.AQASM import H, Program, X
 
-from .common_circuit import CircuitTestCase
+from test.common_circuit import CircuitTestCase
 
 
 class TestQatmgmtResults(CircuitTestCase):
