@@ -15,7 +15,7 @@ class QRoutineWrapper:
     def __getattr__(self, name):
         return getattr(self._qroutine, name)
 
-    def qregs_array_wires(
+    def qarray_wires(
         self,
         n: int,
         size: int,
@@ -47,7 +47,7 @@ class QRoutineWrapper:
             slice(start, stop), n, size, regs, qtype)
         return regs
 
-    def qregs_array_wires_noalloc(self,
+    def qarray_wires_noalloc(self,
                             n: int | None,
                             size: int | None,
                             name: str,

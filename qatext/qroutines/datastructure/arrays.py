@@ -26,10 +26,10 @@ def membership_check(n, m):
 
     """
     routinew = QRoutineWrapper(QRoutine())
-    qreg_value = routinew.qregs_array_wires(1, m, "value", int)[0]
-    qarray = routinew.qregs_array_wires(n, m, "array", int)
-    qbit_out = routinew.qregs_array_wires(1, 1, "out", str)[0][0]
-    qarray2 = routinew.qregs_array_wires(n, 1, "array2", str)
+    qreg_value = routinew.qarray_wires(1, m, "value", int)[0]
+    qarray = routinew.qarray_wires(n, m, "array", int)
+    qbit_out = routinew.qarray_wires(1, 1, "out", str)[0][0]
+    qarray2 = routinew.qarray_wires(n, 1, "array2", str)
     routinew.set_ancillae(qarray2)
 
     with routinew.compute():

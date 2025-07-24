@@ -47,7 +47,7 @@ class BixTestCase(CircuitTestCase):
         is_runtime = runtime_data is not None
 
         prw = ProgramWrapper(Program())
-        wreg = prw.qregs_array_alloc(1, n, "wreg", str)
+        wreg = prw.qarray_alloc(1, n, "wreg", str)
         prw.apply(
             qregs_init.initialize_qureg_given_bitstring(bitstring,
                                                         little_endian=False),
@@ -55,7 +55,7 @@ class BixTestCase(CircuitTestCase):
         )
         qregs_data = None
         if is_runtime:
-            qregs_data = prw.qregs_array_alloc(
+            qregs_data = prw.qarray_alloc(
                 n * cols,
                 m,
                 "qregs_data",
@@ -69,31 +69,31 @@ class BixTestCase(CircuitTestCase):
                                                           m,
                                                           little_endian=False),
                     *qregs_data[i])
-        qregs1s = prw.qregs_array_alloc(
+        qregs1s = prw.qarray_alloc(
             weight * cols,
             m,
             "qregs1s",
             int,
         )
-        prw.qregs_array_noalloc(
+        prw.qarray_noalloc(
             weight,
             m,
             "qregs1s_bits",
             qregs1s[0].start,
             str,
         )
-        qregs0s = prw.qregs_array_alloc(
+        qregs0s = prw.qarray_alloc(
             (n - weight) * cols,
             m,
             "qregs0s",
             int,
         )
-        prw.qregs_array_noalloc(n - weight, m, "qregs0s_bits",
+        prw.qarray_noalloc(n - weight, m, "qregs0s_bits",
                                 qregs0s[0].start, str)
 
         anc_start = qregs0s[-1].start + qregs0s[-1].length
         if has_support_registers:
-            prw.qregs_array_noalloc(
+            prw.qarray_noalloc(
                 1,
                 m,
                 "qregs1s_add",
@@ -102,7 +102,7 @@ class BixTestCase(CircuitTestCase):
             )
             anc_start += m
             LOGGER.debug("zeros will be rotated")
-            prw.qregs_array_noalloc(
+            prw.qarray_noalloc(
                 1,
                 m,
                 "qregs0s_add",
@@ -111,7 +111,7 @@ class BixTestCase(CircuitTestCase):
             )
             anc_start += m
         # ancillary register of unknown size, catch all
-        prw.qregs_array_noalloc(None,
+        prw.qarray_noalloc(None,
                                 None,
                                 "anc",
                                 anc_start,

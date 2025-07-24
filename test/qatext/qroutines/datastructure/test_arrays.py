@@ -30,10 +30,10 @@ class TestArrays(CircuitTestHelpers):
         n = len(array)
         m = max(array).bit_length()
         prw = ProgramWrapper(Program())
-        qreg_elem = prw.qregs_array_alloc(1, m, "element", int)[0]
-        qarray = prw.qregs_array_alloc(n, m, "array", int)
-        qbit_out = prw.qregs_array_alloc(1, 1, "out", str)[0][0]
-        prw.qregs_array_noalloc(None, None, "anc", None, str, True)
+        qreg_elem = prw.qarray_alloc(1, m, "element", int)[0]
+        qarray = prw.qarray_alloc(n, m, "array", int)
+        qbit_out = prw.qarray_alloc(1, 1, "out", str)[0][0]
+        prw.qarray_noalloc(None, None, "anc", None, str, True)
 
         qroutw = initialize_qureg_given_int(element, m, False)
         prw.apply(qroutw, qreg_elem)

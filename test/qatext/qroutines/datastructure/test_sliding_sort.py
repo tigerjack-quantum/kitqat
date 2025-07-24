@@ -51,24 +51,24 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         n = len(values) + 1
         prw = ProgramWrapper(Program())
         # qregs_properties: dict[str, QRegsProperties] = {}
-        qr_x = prw.qregs_array_alloc(1, m, "x", int)
+        qr_x = prw.qarray_alloc(1, m, "x", int)
         qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
         prw.apply(qfun, qr_x)
 
-        qrs_data = prw.qregs_array_alloc(n, m, "a", int)
+        qrs_data = prw.qarray_alloc(n, m, "a", int)
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
-        prw.qregs_array_noalloc(n, m, "a1",
+        prw.qarray_noalloc(n, m, "a1",
                                 qrs_data[-1].start + qrs_data[-1].length, int)
-        prw.qregs_array_noalloc(
+        prw.qarray_noalloc(
             n,
             1,
             "a2",
             qrs_data[-1].start + qrs_data[-1].length + n * m,
             int,
         )
-        prw.qregs_array_noalloc(None,
+        prw.qarray_noalloc(None,
                                 None,
                                 "anc",
                                 qrs_data[-1].start + qrs_data[-1].length +
@@ -141,24 +141,24 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         n = len(values)
         prw = ProgramWrapper(Program())
 
-        qr_x = prw.qregs_array_alloc(1, m, "x", int)
+        qr_x = prw.qarray_alloc(1, m, "x", int)
         qfun = qregs.initialize_qureg_given_int(value_to_delete, m, False)
         prw.apply(qfun, qr_x)
 
-        qrs_data = prw.qregs_array_alloc(n, m, "a", int)
+        qrs_data = prw.qarray_alloc(n, m, "a", int)
         for i, value in enumerate(values):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
-        prw.qregs_array_noalloc(n, m, "a1",
+        prw.qarray_noalloc(n, m, "a1",
                                 qrs_data[-1].start + qrs_data[-1].length, int)
-        prw.qregs_array_noalloc(
+        prw.qarray_noalloc(
             n,
             1,
             "a2",
             qrs_data[-1].start + qrs_data[-1].length + n * m,
             int,
         )
-        prw.qregs_array_noalloc(None,
+        prw.qarray_noalloc(None,
                                 None,
                                 "anc",
                                 qrs_data[-1].start + qrs_data[-1].length +

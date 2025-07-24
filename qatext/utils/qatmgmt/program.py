@@ -41,7 +41,7 @@ class ProgramWrapper:
                 absgate = fake_gate(f"{k}_{i}", 1)
                 self._program.apply(absgate, qbit)
 
-    def qregs_array_alloc(
+    def qarray_alloc(
         self,
         n: int,
         size: int,
@@ -84,7 +84,7 @@ class ProgramWrapper:
             slice(start, stop), n, size, regs, qtype)
         return regs
 
-    def qregs_array_noalloc(self,
+    def qarray_noalloc(self,
                             n: int | None,
                             size: int | None,
                             name: str,
