@@ -41,6 +41,8 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
             ([3], 3, 2),
             # Single-element list, insert after
             ([2], 4, 3),
+            # 0-element list, insert after
+            ([], 4, 3),
             # Insertion of existing max value
             ([1, 2], 3, 3),
         ])
