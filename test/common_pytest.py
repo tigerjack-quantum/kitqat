@@ -31,8 +31,8 @@ class CircuitTestHelpers:
     qpu = None
     logger: Optional[logging.Logger] = None
 
-    @staticmethod
-    def simulate_program(program, circ_args=None, links=None, job_args=None):
+    @classmethod
+    def simulate_program(cls, program, circ_args=None, links=None, job_args=None):
         circ_args = circ_args or {}
         job_args = job_args or {}
 
@@ -41,17 +41,18 @@ class CircuitTestHelpers:
             circ_args["link"] = links
 
         circuit = program.to_circ(**circ_args)
-        return CircuitTestHelpers.simulate_circuit(circuit, job_args)
+        return cls.simulate_circuit(circuit, job_args)
 
-    @staticmethod
-    def simulate_circuit(circuit, qpu, job_args=None):
+    @classmethod
+    def simulate_circuit(cls, circuit, job_args=None):
         job_args = job_args or {}
         job = circuit.to_job(**job_args)
-        return qpu.submit(job)
+        return cls.simulate_job(job)
 
-    @staticmethod
-    def simulate_job(job, qpu):
-        res = qpu.submit(job)
+    @classmethod
+    def simulate_job(cls, job):
+        assert cls.qpu is not None
+        res = cls.qpu.submit(job)
         return res
 
     @staticmethod
@@ -68,14 +69,15 @@ class CircuitTestHelpers:
         for sample in result:
             print(sample)
 
-    @staticmethod
-    def run_and_get_bitstring_for_reversible(circ, reg_name_to_slice, qpu):
+    @classmethod
+    def run_and_get_bitstring_for_reversible(cls, circ, reg_name_to_slice):
         """Circuit submission and result retrieval for a reversible simulator class."""
-        if REVERSIBLE_ON:
+        if cls.reversible_on:
             rpr = RProgram.circuit_to_rprogram(circ, reg_name_to_slice)
             obtained = rpr.rbits.to01()
         else:
-            res = qpu.submit(circ.to_job())
+            assert cls.qpu is not None
+            res = cls.qpu.submit(circ.to_job())
             assert len(
                 res) == 1, "Expected no. of results is 1, got %d" % len(res)
             sample = next(iter(res))
