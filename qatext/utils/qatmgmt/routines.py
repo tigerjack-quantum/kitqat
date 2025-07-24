@@ -46,3 +46,50 @@ class QRoutineWrapper:
         self._qregnames_to_properties[key] = QRegsProperties(
             slice(start, stop), n, size, regs, qtype)
         return regs
+
+    def qregs_array_wires_noalloc(self,
+                            n: int | None,
+                            size: int | None,
+                            name: str,
+                            start_idx: int | None,
+                            qtype,
+                            unknown_size=False):
+        """Declares a quantum register without creating new QRoutine wires.
+
+        This function declares a register of `n` elements, where each element
+        (or cell) consists of `size` qubits. Since no qubits are allocated, you
+        must specify the starting qubit index via `start_idx`. If `start_idx`
+        is `None`, the register will begin from the highest currently used
+        qubit index. This behavior is particularly useful for capturing
+        ancillary qubits that are automatically created by quantum subroutines.
+
+        Additionally, by setting `unknown_size=True`, this function can be used
+        to define ancillary qubits of unknown or dynamic size, such as those
+        generated internally by a `QRoutine`.
+
+        The `qtype` argument specifies how the register should be interpreted in
+        quantum state analysis or visualization. It can be set to:
+        - `bool`: interpret each element as a boolean value;
+        - `int`: interpret each element as an integer;
+        - `str`: display each element as a bitstring.
+
+        Parameters:
+            n (int): Number of elements in the register.
+            size (int): Number of qubits per element.
+            start_idx (int or None): Starting index for the register.
+            unknown_size (bool): Whether the size is dynamic/unknown.
+            qtype (type): Type used for interpreting qubit content (`bool`, `int`, or `str`).
+
+        """
+        key = f"{name}"
+        start = start_idx if start_idx is not None else self._qroutine.max_wire + 1
+        if size is None:
+            unknown_size = True
+            n = None
+
+        if unknown_size:
+            stop = None
+        else:
+            stop = start_idx + size * n  # type: ignore
+        self._qregnames_to_properties[key] = QRegsProperties(
+            slice(start, stop), n, size, None, qtype, unknown_size)
