@@ -7,7 +7,7 @@ from qatext.synthesis.mctrls import mry
 from qat.lang.AQASM.gates import RY, H
 from qat.lang.AQASM.program import Program
 
-from .common_circuit import CircuitTestCase
+from test.common_circuit import CircuitTestCase
 
 # from qat.core.console import display
 

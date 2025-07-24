@@ -6,7 +6,7 @@ from qat.lang.AQASM.program import Program
 from qatext.synthesis.mctrls import mcx
 from qatext.utils.qatmgmt.program import ProgramWrapper
 
-from .common_circuit import CircuitTestCase
+from test.common_circuit import CircuitTestCase
 
 
 class MctrlsTest(CircuitTestCase):

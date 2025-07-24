@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from qatext.interop.quirk import parse, quirk
 
-from .common_circuit import CircuitTestCase
+from test.common_circuit import CircuitTestCase
 
 DATA_DIR = "test/data/interop/quirk/"
 FILE = DATA_DIR + "{filename}"
