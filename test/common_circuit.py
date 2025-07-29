@@ -103,20 +103,3 @@ class CircuitTestCase(BasicTestCase):
     def print_result(result: "Result"):
         for sample in result:
             print(sample)
-
-    @classmethod
-    def run_and_get_bitstring_for_reversible(cls, circ, reg_name_to_slice):
-        """Circuit submission and result retrieval for a reversible simulator class."""
-        if cls.REVERSIBLE_ON:
-            rpr = RProgram.circuit_to_rprogram(circ, reg_name_to_slice)
-            obtained = rpr.rbits.to01()
-        else:
-            res = cls.qpu.submit(circ.to_job())
-            assert len(
-                res) == 1, "Expected no. of results is 1, got %d" % len(res)
-            sample = next(iter(res))
-            if cls.SIMULATOR == "linalg":
-                assert sample.probability == 1, "Expected probability is 1, got %f" % sample.probability
-            obtained = sample.state.bitstring
-        assert obtained is not None
-        return obtained

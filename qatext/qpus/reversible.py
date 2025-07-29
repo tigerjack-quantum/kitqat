@@ -149,8 +149,8 @@ class RProgram:
 
         self.apply(rgate, *ctrls, *trgts)
 
-    def get_result(self) -> bitarray:
-        return self.rbits
+    def get_result(self) -> str:
+        return self.rbits.to01()
 
     def get_result_by_name(self):
         res = {}
@@ -268,7 +268,7 @@ class RProgram:
 def get_state_from_program(
     pr,
     link: Optional[list],
-) -> bitarray:
+) -> str:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     res = rpr.get_result()

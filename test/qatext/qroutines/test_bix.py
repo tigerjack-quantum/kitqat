@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import inspect_state_reversible_program
+from qatext.qpus.reversible import get_state_from_program, get_states_from_circuit, get_states_from_program_wrapper, inspect_state_reversible_program
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
@@ -20,9 +20,9 @@ LOGGER = logging.getLogger(__name__)
 
 class BixTestCase(CircuitTestCase):
 
-    def _extract_and_check_named_regs(self, bitstring, expected_map,
-                                      qregs_properties: dict[str,
-                                                             'QRegsProperties']):
+    def _extract_and_check_named_regs(
+            self, bitstring, expected_map,
+            qregs_properties: dict[str, 'QRegsProperties']):
         """Post-processing checks"""
         for name, expected in expected_map.items():
             bits = bitstring[qregs_properties[name].slic]
@@ -88,8 +88,8 @@ class BixTestCase(CircuitTestCase):
             "qregs0s",
             int,
         )
-        prw.qarray_noalloc(n - weight, m, "qregs0s_bits",
-                                qregs0s[0].start, str)
+        prw.qarray_noalloc(n - weight, m, "qregs0s_bits", qregs0s[0].start,
+                           str)
 
         anc_start = qregs0s[-1].start + qregs0s[-1].length
         if has_support_registers:
@@ -112,11 +112,11 @@ class BixTestCase(CircuitTestCase):
             anc_start += m
         # ancillary register of unknown size, catch all
         prw.qarray_noalloc(None,
-                                None,
-                                "anc",
-                                anc_start,
-                                str,
-                                unknown_size=True)
+                           None,
+                           "anc",
+                           anc_start,
+                           str,
+                           unknown_size=True)
         LOGGER.debug("Applying bix_func of arity %d", bix_func.arity)
         if is_runtime:
             prw.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
@@ -127,9 +127,8 @@ class BixTestCase(CircuitTestCase):
             inspect_state_reversible_program(
                 prw, [cuccaro_arith.adder, cuccaro_arith.subtractor]))
 
-        circ = prw.to_circ(link=[cuccaro_arith.adder, cuccaro_arith.subtractor])
-        obtained = self.run_and_get_bitstring_for_reversible(
-            circ, prw._qregnames_to_properties)
+        obtained = get_state_from_program(
+            prw, [cuccaro_arith.adder, cuccaro_arith.subtractor])
 
         expected = {
             "wreg": bitstring,
