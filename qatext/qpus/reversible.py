@@ -345,13 +345,15 @@ def get_rprogram_regs_values_from_states(
             val = v
         elif qreg_properties.qtype == str:
             val = v
+        elif qreg_properties.qtype == bool:
+            val = v
         elif qreg_properties.qtype == int:
             assert qreg_properties.n is not None
             assert qreg_properties.m is not None
             val = get_ints_from_bitarray(v, qreg_properties.n,
                                          qreg_properties.m, False)
         else:
-            raise Exception("Unknown qtype")
+            raise Exception("Unknown qtype %s" % qreg_properties.qtype)
         dic[k] = val
     return dic
 
