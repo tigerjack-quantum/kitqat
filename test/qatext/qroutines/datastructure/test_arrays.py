@@ -5,7 +5,7 @@ import pytest
 import qat.lang.AQASM.classarith
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines.datastructure.arrays import membership_check
+from qatext.qroutines.datastructure.arrays import contains
 from qatext.qroutines.qregs_init import initialize_qureg_given_int
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
@@ -43,7 +43,7 @@ class TestArrays(CircuitTestHelpers):
             qroutw = initialize_qureg_given_int(val, m, False)
             prw.apply(qroutw, qreg_val)
 
-        qroutw = membership_check(n, m, False)
+        qroutw = contains(n, m, False)
         prw.apply(qroutw, qreg_elem, *qarray, qbit_out)
         # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
 
@@ -84,7 +84,7 @@ class TestArrays(CircuitTestHelpers):
             qroutw = initialize_qureg_given_int(val, m, False)
             prw.apply(qroutw, qreg_val)
 
-        qroutw = membership_check(n, m, True)
+        qroutw = contains(n, m, True)
         prw.apply(qroutw, qreg_elem, *qarray, qbit_out)
         # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
 

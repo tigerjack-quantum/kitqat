@@ -13,9 +13,9 @@ from qatext.utils.qatmgmt.routines import QRoutineWrapper
 LOGGER = logging.getLogger(__name__)
 
 
-@build_gate("ARRAY_MEMBERSHIP_CHECK", [int, int, bool],
+@build_gate("ARRAY_CONTAINS", [int, int, bool],
             lambda n, m, _: n * m + m + 1)
-def membership_check(n, m, repeated_values_possible=False):
+def contains(n, m, repeated_values_possible=False):
     """Given an array of quantum registers of $n$ cells, each one having $m$
     qubits, returns 1 on an output qubit if the array contains a specific value.
 
