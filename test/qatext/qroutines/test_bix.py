@@ -1,12 +1,13 @@
 import logging
-import unittest
 from itertools import chain
-from test.common_circuit import CircuitTestCase
+from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
+                                CircuitTestHelpers)
 from typing import TYPE_CHECKING
 
-from parameterized import parameterized
+import pytest
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import get_state_from_program, get_states_from_circuit, get_states_from_program_wrapper, inspect_state_reversible_program
+from qatext.qpus.reversible import (get_state_from_program,
+                                    inspect_state_reversible_program)
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
@@ -18,7 +19,8 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class BixTestCase(CircuitTestCase):
+@pytest.mark.usefixtures("setup_simulator", "setup_logger")
+class TestBix(CircuitTestHelpers):
 
     def _extract_and_check_named_regs(
             self, bitstring, expected_map,
@@ -26,9 +28,8 @@ class BixTestCase(CircuitTestCase):
         """Post-processing checks"""
         for name, expected in expected_map.items():
             bits = bitstring[qregs_properties[name].slic]
-            self.assertEqual(
-                bits, expected,
-                "key %s, bits %s, expected %s" % (name, bits, expected))
+            assert bits == expected, "key %s, bits %s, expected %s" % (
+                name, bits, expected)
 
     def _run_test_bix(
             self,
@@ -141,7 +142,7 @@ class BixTestCase(CircuitTestCase):
         self._extract_and_check_named_regs(obtained, expected,
                                            prw._qregnames_to_properties)
 
-    @parameterized.expand([
+    @pytest.mark.parametrize("bitstring", [
         "0101",
         "1001",
         "0001",
@@ -155,8 +156,7 @@ class BixTestCase(CircuitTestCase):
         "11001011",
         "111001011",
     ])
-    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         "Only enabled with reversible simulation")
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
     def test_bix_indexes(self, bitstring):
         self._test_bix_indexes(bitstring)
 
@@ -192,7 +192,7 @@ class BixTestCase(CircuitTestCase):
                 qfun,
             )
 
-    @parameterized.expand([
+    @pytest.mark.parametrize("bitstring, elements", [
         ("0101", [0, 1, 2, 3]),
         ("0101", [2, 8, 10, 12]),
         ("0001", [3, 5, 7, 9]),
@@ -206,29 +206,28 @@ class BixTestCase(CircuitTestCase):
         ("11001011", [0, 1, 5, 6, 8, 10, 11, 13]),
         ("111001011", [0, 1, 2, 6, 7, 9, 11, 13, 14]),
     ])
-    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         "Only enabled with reversible simulation")
-    def test_bix_elems(self, bitstring, elems):
-        self._test_bix_elems(bitstring, elems)
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
+    def test_bix_elements(self, bitstring, elements):
+        self._test_bix_elements(bitstring, elements)
 
-    def _test_bix_elems(self, bitstring, elems):
+    def _test_bix_elements(self, bitstring, elements):
         LOGGER.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
         LOGGER.debug("Len %d, weight %d", n, weight)
-        assert len(bitstring) == len(elems)
-        m = max(elems).bit_length()
+        assert len(bitstring) == len(elements)
+        m = max(elements).bit_length()
         onesexp = "".join([
-            get_bitstring_from_int(elems[i], m)
+            get_bitstring_from_int(elements[i], m)
             for i, j in enumerate(bitstring) if j == "1"
         ])
         zerosexp = "".join([
-            get_bitstring_from_int(elems[i], m)
+            get_bitstring_from_int(elements[i], m)
             for i, j in enumerate(bitstring) if j == "0"
         ])
         LOGGER.debug("onesexp %s", onesexp)
         LOGGER.debug("zerosexp %s", zerosexp)
-        qfun = bix.bix_data_compile_time(n, m, weight, elems)
+        qfun = bix.bix_data_compile_time(n, m, weight, elements)
         LOGGER.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
@@ -240,26 +239,27 @@ class BixTestCase(CircuitTestCase):
             qfun,
         )
 
-    @parameterized.expand([
-        # 3 rows, select middle row
-        ("010", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
-        ("001", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
-        ("100", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+    @pytest.mark.parametrize(
+        "bitstring, matrix",
+        [
+            # 3 rows, select middle row
+            ("010", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+            ("001", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+            ("100", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
 
-        # 4 rows, select outer rows
-        ("1001", [[10, 20], [30, 40], [50, 60], [70, 80]]),
+            # 4 rows, select outer rows
+            ("1001", [[10, 20], [30, 40], [50, 60], [70, 80]]),
 
-        # 5 rows, select middle three
-        ("01110", [[1], [2], [3], [4], [5]]),
+            # 5 rows, select middle three
+            ("01110", [[1], [2], [3], [4], [5]]),
 
-        # 2 rows, select all
-        ("10", [[100, 101, 102], [200, 201, 202]]),
+            # 2 rows, select all
+            ("10", [[100, 101, 102], [200, 201, 202]]),
 
-        # 6 rows, select alternating rows
-        ("101010", [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]),
-    ])
-    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         "Only enabled with reversible simulation")
+            # 6 rows, select alternating rows
+            ("101010", [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]),
+        ])
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
     def test_bix_matrix(self, bitstring, matrix):
         self._test_bix_matrix(bitstring, matrix)
 
@@ -304,26 +304,27 @@ class BixTestCase(CircuitTestCase):
             has_support_registers=False,
         )
 
-    @parameterized.expand([
-        # select middle row
-        ("010", [0, 1, 2]),
-        ("001", [0, 1, 2]),
-        ("100", [0, 1, 2]),
+    @pytest.mark.parametrize(
+        "bitstring, elements",
+        [
+            # select middle row
+            ("010", [0, 1, 2]),
+            ("001", [0, 1, 2]),
+            ("100", [0, 1, 2]),
 
-        # select outer rows
-        ("1001", [10, 20, 30, 40]),
+            # select outer rows
+            ("1001", [10, 20, 30, 40]),
 
-        # select middle three
-        ("01110", [1, 2, 3, 4, 5]),
+            # select middle three
+            ("01110", [1, 2, 3, 4, 5]),
 
-        # select
-        ("10", [100, 101]),
+            # select
+            ("10", [100, 101]),
 
-        # select alternating rows
-        ("101010", [5, 15, 30, 45, 75, 120]),
-    ])
-    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         "Only enabled with reversible simulation")
+            # select alternating rows
+            ("101010", [5, 15, 30, 45, 75, 120]),
+        ])
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
     def test_bix_data_runtime(self, bitstring, elements):
         self._test_bix_data_runtime(bitstring, elements)
 
@@ -359,26 +360,27 @@ class BixTestCase(CircuitTestCase):
             runtime_data=elements,
         )
 
-    @parameterized.expand([
-        # 3 rows, select middle row
-        ("010", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
-        ("001", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
-        ("100", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+    @pytest.mark.parametrize(
+        "bitstring, matrix",
+        [
+            # 3 rows, select middle row
+            ("010", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+            ("001", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
+            ("100", [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]),
 
-        # 4 rows, select outer rows
-        ("1001", [[10, 20], [30, 40], [50, 60], [70, 80]]),
+            # 4 rows, select outer rows
+            ("1001", [[10, 20], [30, 40], [50, 60], [70, 80]]),
 
-        # 5 rows, select middle three
-        ("01110", [[1], [2], [3], [4], [5]]),
+            # 5 rows, select middle three
+            ("01110", [[1], [2], [3], [4], [5]]),
 
-        # 2 rows, select all
-        ("10", [[100, 101, 102], [200, 201, 202]]),
+            # 2 rows, select all
+            ("10", [[100, 101, 102], [200, 201, 202]]),
 
-        # 6 rows, select alternating rows
-        ("101010", [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]),
-    ])
-    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON,
-                         "Only enabled with reversible simulation")
+            # 6 rows, select alternating rows
+            ("101010", [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]),
+        ])
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
     def test_bix_matrix_runtime(self, bitstring, matrix):
         self._test_bix_matrix_runtime(bitstring, matrix)
 
@@ -425,36 +427,36 @@ class BixTestCase(CircuitTestCase):
         )
 
 
-if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.WARNING,
-        format='%(filename)s %(asctime)s - %(levelname)s - %(message)s')
-    logging.getLogger("qatext.qroutines.bix").setLevel(logging.DEBUG)
-    logging.getLogger("test.common_circuit").setLevel(logging.DEBUG)
-    logging.getLogger(__name__).setLevel(logging.DEBUG)
-    # test = BixTestCase("test_bix_indexes")
-    test = BixTestCase()
-    test.setUpClass()
-    test.setUp()  # optional, if you have a setUp method
-    test.REVERSIBLE_ON = True
-    # Example bitstring and matrix
-    # bitstring = "0001"
-    # test._test_bix_indexes(bitstring)
+# if __name__ == '__main__':
+#     logging.basicConfig(
+#         level=logging.WARNING,
+#         format='%(filename)s %(asctime)s - %(levelname)s - %(message)s')
+#     logging.getLogger("qatext.qroutines.bix").setLevel(logging.DEBUG)
+#     logging.getLogger("test.common_circuit").setLevel(logging.DEBUG)
+#     logging.getLogger(__name__).setLevel(logging.DEBUG)
+#     # test = BixTestCase("test_bix_indexes")
+#     test = BixTestCase()
+#     test.setUpClass()
+#     test.setUp()  # optional, if you have a setUp method
+#     test.REVERSIBLE_ON = True
+#     # Example bitstring and matrix
+#     # bitstring = "0001"
+#     # test._test_bix_indexes(bitstring)
 
-    # bitstring, elems = ("0101", [2, 8, 10, 12])
-    # test._test_bix_elems(bitstring, elems)
+#     # bitstring, elements = ("0101", [2, 8, 10, 12])
+#     # test._test_bix_elements(bitstring, elements)
 
-    bitstring, array = (
-        "010",
-        [2, 5, 8],
-    )
-    test._test_bix_data_runtime(bitstring, array)
+#     bitstring, array = (
+#         "010",
+#         [2, 5, 8],
+#     )
+#     test._test_bix_data_runtime(bitstring, array)
 
-    # bitstring, matrix = ("010", [
-    #     [1, 2],
-    #     [4, 5],
-    #     [7, 8],
-    # ])
-    # test._test_bix_matrix(bitstring, matrix)
-    test.tearDown()
-    test.tearDownClass()
+#     # bitstring, matrix = ("010", [
+#     #     [1, 2],
+#     #     [4, 5],
+#     #     [7, 8],
+#     # ])
+#     # test._test_bix_matrix(bitstring, matrix)
+#     test.tearDown()
+#     test.tearDownClass()
