@@ -8,7 +8,8 @@ import qat.lang.AQASM.classarith
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines import qregs_init as qregs
-from qatext.qroutines.datastructure.sliding_sort_array import delete, insert
+from qatext.qroutines.datastructure.sliding_sort_array import (delete, insert,
+                                                               insert_lw)
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 from qatext.utils.qatmgmt.program import ProgramWrapper
@@ -62,7 +63,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
         prw.qarray_noalloc(n, m, "a1",
-                                qrs_data[-1].start + qrs_data[-1].length, int)
+                           qrs_data[-1].start + qrs_data[-1].length, int)
         prw.qarray_noalloc(
             n,
             1,
@@ -71,12 +72,12 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
             int,
         )
         prw.qarray_noalloc(None,
-                                None,
-                                "anc",
-                                qrs_data[-1].start + qrs_data[-1].length +
-                                n * m + n,
-                                str,
-                                unknown_size=True)
+                           None,
+                           "anc",
+                           qrs_data[-1].start + qrs_data[-1].length + n * m +
+                           n,
+                           str,
+                           unknown_size=True)
 
         qf = insert(n, m)
         prw.apply(qf, qr_x, *qrs_data)
@@ -96,6 +97,74 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         assert (tuple(sorted(values)) == a_vals)
         assert (ai_vals == tuple(0 for _ in range(n)))
         assert (aii_vals == tuple(0 for _ in range(n)))
+        assert (any(ax_val) == False)
+
+    @pytest.mark.parametrize(
+        "values, max_bits, value_to_insert",
+        [
+            # Insert in the middle
+            ([1, 2, 4], 4, 3),
+            ([2, 4, 6], 7, 3),
+            # Insert at the beginning
+            ([2, 3, 4], 5, 1),
+            # Insert at the end
+            ([1, 3, 4], 5, 5),
+            # Insert duplicate in the middle
+            ([1, 2, 3], 3, 2),
+            # Insert duplicate at the end
+            ([1, 2, 3], 3, 3),
+            # Insert into empty list
+            ([], 5, 2),
+            # Insert below lower bound
+            ([1, 2, 3], 3, 0),
+            # Insert above upper bound
+            ([1, 2, 3], 3, 4),
+            # Single-element list, insert before
+            ([3], 3, 2),
+            # Single-element list, insert after
+            ([2], 4, 3),
+            # 0-element list, insert after
+            ([], 4, 3),
+            # Insertion of existing max value
+            ([1, 2], 3, 3),
+        ])
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
+    def test_insertion_low_width(self, values, max_bits, value_to_insert):
+        m = max_bits
+        # last one is the empty cell, used as temporary
+        n = len(values) + 1
+        prw = ProgramWrapper(Program())
+        # qregs_properties: dict[str, QRegsProperties] = {}
+        qr_x = prw.qarray_alloc(1, m, "x", int)
+        qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
+        prw.apply(qfun, qr_x)
+
+        qrs_data = prw.qarray_alloc(n, m, "a", int)
+        for i, value in enumerate(values):
+            qfun = qregs.initialize_qureg_given_int(value, m, False)
+            prw.apply(qfun, qrs_data[i])
+        prw.qarray_noalloc(None,
+                           None,
+                           "anc",
+                           qrs_data[-1].start + qrs_data[-1].length + n * m +
+                           n,
+                           str,
+                           unknown_size=True)
+
+        qf = insert_lw(n, m)
+        prw.apply(qf, qr_x, *qrs_data)
+        # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
+
+        res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
+        # self.print_rprogram_regs_from_rprogram_states(states, qregs_properties)
+
+        x_val = get_int_from_bitarray(res['x'], False)
+        a_vals = get_ints_from_bitarray(res['a'], n, m, False)
+        ax_val = res['anc']
+
+        values.append(value_to_insert)
+        assert (x_val == value_to_insert)
+        assert (tuple(sorted(values)) == a_vals)
         assert (any(ax_val) == False)
 
     @pytest.mark.parametrize(
@@ -152,7 +221,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
             qfun = qregs.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
         prw.qarray_noalloc(n, m, "a1",
-                                qrs_data[-1].start + qrs_data[-1].length, int)
+                           qrs_data[-1].start + qrs_data[-1].length, int)
         prw.qarray_noalloc(
             n,
             1,
@@ -161,12 +230,12 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
             int,
         )
         prw.qarray_noalloc(None,
-                                None,
-                                "anc",
-                                qrs_data[-1].start + qrs_data[-1].length +
-                                n * m + n,
-                                str,
-                                unknown_size=True)
+                           None,
+                           "anc",
+                           qrs_data[-1].start + qrs_data[-1].length + n * m +
+                           n,
+                           str,
+                           unknown_size=True)
 
         qf = delete(n, m)
         prw.apply(qf, qr_x, *qrs_data)
@@ -197,6 +266,23 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
 #     # print(f"to insert [2, 4, 6], m = 7, x = 3")
 #     # test_insertion([2, 4, 6], 7, 3)
 #     print(f"to insert [1, 2, 4, 7], m = 4, x = 3")
-#     test_insertion([1, 2, 4, 7], 3, 3)
+#     test_insertion_([1, 2, 4, 7], 3, 3)
 #     # print(f"to delete [0, 1, 2, 3], m = 4, x = 2")
 #     # test_deletion([0, 1, 2, 3], 2)
+
+if __name__ == '__main__':
+    import logging
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(filename)s %(asctime)s - %(levelname)s - %(message)s')
+    logging.getLogger(
+        "qatext.qroutines.datastructure.sliding_sort_array").setLevel(
+            logging.DEBUG)
+    logging.getLogger("test.common_circuit").setLevel(logging.DEBUG)
+    logging.getLogger(__name__).setLevel(logging.DEBUG)
+
+    # pytest.main(['-k'], "test_insertion")
+    values, max_bits, value_to_insert = ([1, 2, 4], 4, 3)
+
+    test = TestQroutineSlidingSort()
+    test.test_insertion_low_width(values, max_bits, value_to_insert)

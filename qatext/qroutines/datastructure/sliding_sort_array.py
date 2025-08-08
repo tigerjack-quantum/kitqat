@@ -2,6 +2,9 @@ from qat.lang.AQASM.gates import CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
+from qatext.qroutines.qregs_init import copy_register
+from qatext.qroutines.qubitshuffle.rotate import swap_qreg_cells
+from qatext.utils.qatmgmt.routines import QRoutineWrapper
 
 
 @build_gate('SLIDING_SORT_INSERT', [int, int], lambda n, m: n * m + m)
@@ -72,3 +75,24 @@ def delete(n, m):
     qf1 = insert(n, m).dag()
     qf.apply(qf1, *qw)
     return qf
+
+
+def insert_lw(n, m):
+    """Low-Width insert.
+    N cells, each one of size m.
+    Expect qregs in this order: X, A
+    """
+    qrw = QRoutineWrapper(QRoutine())
+    qr_val = qrw.qarray_wires(1, m, "X", int)
+    qarray = qrw.qarray_wires(n, m, "A", int)
+    qr_out = qrw.new_wires(1)
+    qrw.set_ancillae(qr_out)
+    qrw.qarray_wires_noalloc(1, 1, "out", qr_out[0].index, str, False)
+
+    qrw.apply(copy_register(m), qr_val, qarray[-1])
+
+    for j in range(n - 2, -1, -1):
+        (qarray[j] >= qr_val[0]).evaluate(output=qr_out)
+        qrw.apply(swap_qreg_cells(m).ctrl(), qr_out, qarray[j], qarray[j + 1])
+        (qarray[j] >= qr_val[0]).evaluate(output=qr_out)
+    return qrw
