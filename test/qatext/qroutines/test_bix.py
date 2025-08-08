@@ -191,6 +191,52 @@ class TestBix(CircuitTestHelpers):
                 zerosexp,
                 qfun,
             )
+    @pytest.mark.parametrize("bitstring, elements", [
+        ("0101", [0, 1, 2, 3]),
+        ("0101", [2, 8, 10, 12]),
+        ("0001", [3, 5, 7, 9]),
+        ("1000", [1, 4, 6, 8]),
+        ("1101", [0, 2, 5, 11]),
+        ("10011", [1, 3, 8, 9, 11]),
+        ("11011", [0, 6, 7, 13, 14]),
+        ("0001101", [2, 3, 4, 6, 9, 10, 11]),
+        ("1111000", [0, 1, 2, 3, 10, 12, 14]),
+        ("10110100", [1, 2, 4, 7, 8, 9, 11, 15]),
+        ("11001011", [0, 1, 5, 6, 8, 10, 11, 13]),
+        ("111001011", [0, 1, 2, 6, 7, 9, 11, 13, 14]),
+    ])
+    @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
+    def test_bix_data_diff_compile_time(self, bitstring, elements):
+        self._test_bix_data_diff_compile_time(bitstring, elements)
+
+    def _test_bix_data_diff_compile_time(self, bitstring, elements):
+        LOGGER.debug("bitstring %s", bitstring)
+        n = len(bitstring)
+        weight = bitstring.count("1")
+        LOGGER.debug("Len %d, weight %d", n, weight)
+        assert len(bitstring) == len(elements)
+        m = max(elements).bit_length()
+        onesexp = "".join([
+            get_bitstring_from_int(elements[i], m)
+            for i, j in enumerate(bitstring) if j == "1"
+        ])
+        zerosexp = "".join([
+            get_bitstring_from_int(elements[i], m)
+            for i, j in enumerate(bitstring) if j == "0"
+        ])
+        LOGGER.debug("onesexp %s", onesexp)
+        LOGGER.debug("zerosexp %s", zerosexp)
+        qfun = bix.bix_data_diff_compile_time(n, m, weight, elements)
+        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self._run_test_bix(
+            n,
+            m,
+            weight,
+            bitstring,
+            onesexp,
+            zerosexp,
+            qfun,
+        )
 
     @pytest.mark.parametrize("bitstring, elements", [
         ("0101", [0, 1, 2, 3]),
@@ -207,10 +253,10 @@ class TestBix(CircuitTestHelpers):
         ("111001011", [0, 1, 2, 6, 7, 9, 11, 13, 14]),
     ])
     @pytest.mark.skipif(not REVERSIBLE_ON, reason=REVERSIBLE_ON_REASON)
-    def test_bix_elements(self, bitstring, elements):
-        self._test_bix_elements(bitstring, elements)
+    def test_bix_data_compile_time(self, bitstring, elements):
+        self._test_bix_data_compile_time(bitstring, elements)
 
-    def _test_bix_elements(self, bitstring, elements):
+    def _test_bix_data_compile_time(self, bitstring, elements):
         LOGGER.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
@@ -237,6 +283,7 @@ class TestBix(CircuitTestHelpers):
             onesexp,
             zerosexp,
             qfun,
+            has_support_registers=False,
         )
 
     @pytest.mark.parametrize(

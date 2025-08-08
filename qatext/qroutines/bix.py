@@ -131,8 +131,8 @@ def bix_indexes_compile_time(n: int, weight: int, idx_start_at_one: bool):
     return qrout
 
 
-@build_gate("BIX_DATA", [int, int, int, List], lambda n, m, w, x: n + n * m)
-def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
+@build_gate("BIX_DATAD_DIFF", [int, int, int, List], lambda n, m, w, x: n + n * m)
+def bix_data_diff_compile_time(n: int, m: int, weight: int, elems: List):
     """Given a bitstring of length `n`, having exactly `weight` qubits set to
     1, store into `weight` registers the values `elems[i]` if `dicke[i] == 1`,
     and `n - weight` registers the values `elems[i]` if `dicke[i] == 0`.
@@ -242,6 +242,58 @@ def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
 
     return qrout
 
+@build_gate("BIX_DATA", [int, int, int, List], lambda n, m, w, x: n + n * m)
+def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
+    """Given a bitstring of length `n`, having exactly `weight` qubits set to
+    1, store into `weight` registers the values `elems[i]` if `dicke[i] == 1`,
+    and `n - weight` registers the values `elems[i]` if `dicke[i] == 0`.
+
+    It should be applied to the following registers:
+    - qreg_dicke: the register containing the dicke state
+    - qreg_ones: the register that will contain the `weight` element for which the corresponding indexes is 1
+    - qreg_zeros: the register that will contain the `weight` element for which the corresponding indexes is 0
+
+    Internally, it invokes left rotate circuit and addition circuits; last one
+    is abstract and must be specialized.
+
+    """
+    # main difference with the _diff one is that it works directly on the data,
+    # not using additional ancillae for the diff
+
+    if weight < 1 or weight >= n:
+        raise ArgumentError("Weight should be >=1 and < n, given {}" % weight)
+
+    qrout = QRoutine()
+    wreg = qrout.new_wires(n)
+    oregs = []
+    zregs = []
+    for i in range(weight):
+        oregs.append(qrout.new_wires(m))
+    for i in range(n - weight):
+        zregs.append(qrout.new_wires(m))
+
+    #
+    qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
+    qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
+
+    for i in range(n):
+        # copy the first element
+        qrout_init = qregs_init.initialize_qureg_given_int(elems[i], m, False)
+        qrout.apply(qrout_init.ctrl(1), wreg[i], oregs[0])
+        if weight > 1:
+            # if wreg[i] is 1, we left rotate the ones
+            qrout.apply(qleftrotones.ctrl(1), wreg[i], *oregs)
+
+        # ...otw, we left rotate the zeros
+        qrout.apply(X, wreg[i])
+        qrout.apply(qrout_init.ctrl(1), wreg[i], zregs[0])
+        if n - weight > 1:
+            # if wreg[i] is 0, we left rotate the zeros
+            qrout.apply(qleftrotzeros.ctrl(1), wreg[i], *zregs)
+        qrout.apply(X, wreg[i])
+
+
+    return qrout
 
 @build_gate("BIX_MATRIX", [int, int, int, int, List],
             lambda n, r, m, w, x: n * r * m + n)
