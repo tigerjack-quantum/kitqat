@@ -85,9 +85,8 @@ def insert_lw(n, m):
     qrw = QRoutineWrapper(QRoutine())
     qr_val = qrw.qarray_wires(1, m, "X", int)
     qarray = qrw.qarray_wires(n, m, "A", int)
-    qr_out = qrw.new_wires(1)
+    qr_out = qrw.qarray_wires(1, 1, "out", str)
     qrw.set_ancillae(qr_out)
-    qrw.qarray_wires_noalloc(1, 1, "out", qr_out[0].index, str, False)
 
     qrw.apply(copy_register(m), qr_val, qarray[-1])
 
@@ -95,4 +94,5 @@ def insert_lw(n, m):
         (qarray[j] >= qr_val[0]).evaluate(output=qr_out)
         qrw.apply(swap_qreg_cells(m).ctrl(), qr_out, qarray[j], qarray[j + 1])
         (qarray[j] >= qr_val[0]).evaluate(output=qr_out)
-    return qrw
+    # it seems that returning qrw does not work in some cases
+    return qrw._qroutine
