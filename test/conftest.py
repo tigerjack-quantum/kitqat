@@ -26,13 +26,12 @@ def setup_logger(request):
             logger.setLevel(logging_level)
         cls.logger = logger
 
-    yield  # run the tests
+    yield  # execute tests, all teardown logic should be put after this
 
     # teardown: remove handlers if needed
     if cls is not None:
         for handler in list(cls.logger.handlers):
             cls.logger.removeHandler(handler)
-    yield  # execute tests, all teardown logic should be put after this
 
 
 # Simulator setup
