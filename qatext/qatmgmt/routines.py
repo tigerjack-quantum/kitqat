@@ -1,16 +1,16 @@
-# TODO change location of QRegsProperties
+# TODO change location of QArray
 from typing import Type, Union
 
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-from qatext.qatmgmt.program import QRegsProperties
+from qatext.qatmgmt.program import QArray
 
 
 class QRoutineWrapper:
 
     def __init__(self, qroutine_instance):
         self._qroutine = qroutine_instance
-        self._qregnames_to_properties: dict[str, QRegsProperties] = {}
+        self._name_to_qarray: dict[str, QArray] = {}
 
     def __getattr__(self, name):
         return getattr(self._qroutine, name)
@@ -43,7 +43,7 @@ class QRoutineWrapper:
         key = f"{name}"
         start = regs[0][0].index
         stop = regs[-1][-1].index + 1
-        self._qregnames_to_properties[key] = QRegsProperties(
+        self._name_to_qarray[key] = QArray(
             slice(start, stop), n, size, regs, qtype)
         return regs
 
@@ -91,5 +91,5 @@ class QRoutineWrapper:
             stop = None
         else:
             stop = start_idx + size * n  # type: ignore
-        self._qregnames_to_properties[key] = QRegsProperties(
+        self._name_to_qarray[key] = QArray(
             slice(start, stop), n, size, None, qtype, unknown_size)

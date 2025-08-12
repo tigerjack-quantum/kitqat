@@ -3,10 +3,12 @@ from typing import TYPE_CHECKING, Dict, List
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
 
+from qatext.utils.bits.conversion import get_ints_from_bitstring
+
 if TYPE_CHECKING:
     from qat.core.wrappers.result import Sample
     from qat.lang.AQASM.bits import QRegister
-    from qatext.qatmgmt.program import QRegsProperties
+    from qatext.qatmgmt.program import QArray
 
 
 def extract_qubit_bitstring(qbit_idxs: List[int], sample: "Sample") -> str:
@@ -77,18 +79,19 @@ def extract_qreg_values_by_names(
         dicc[name] = value
     return dicc
 
-def extract_qreg_values_by_qregs_properties(
-            qregs_properties: dict[str, 'QRegsProperties'],
+def extract_qarray_values_by_named_qarrays(
+            named_qarrays: dict[str, 'QArray'],
             sample: "Sample") -> Dict[str, int | list[bool] | str]:
     """Given a Sample object, returns the state value for the register.
     """
     dicc = {}
 
-    for name, qreg_properties in qregs_properties.items():
-        bitstring = sample.state.bitstring[qregs_properties[name].slic]
-        if qreg_properties.qtype == int:
-            value = int(bitstring, 2)
-        elif qreg_properties.qtype == bool:
+    for name, qarray in named_qarrays.items():
+        bitstring = sample.state.bitstring[named_qarrays[name].slic]
+        if qarray.qtype == int:
+            value = get_ints_from_bitstring(bitstring, qarray.n,
+                                         qarray.m, False)
+        elif qarray.qtype == bool:
             value = []
             for bit in bitstring:
                 value.append(bool(int(bit)))

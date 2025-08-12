@@ -12,7 +12,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
 from qatext.utils.bits.conversion import get_ints_from_bitarray
-from qatext.qatmgmt.program import ProgramWrapper, QRegsProperties
+from qatext.qatmgmt.program import ProgramWrapper, QArray
 from qatext.qatmgmt.routines import QRoutineWrapper
 
 if TYPE_CHECKING:
@@ -47,7 +47,7 @@ class RProgram:
         self.ops = [
         ]  # should contain the list of operations for logging purposes
         self.rbits: bitarray = bitarray()
-        self.rregs: dict[str, QRegsProperties] = {}
+        self.rregs: dict[str, QArray] = {}
 
     def ralloc(self, n=1, name: Optional[str] = None):
         """Allocate a register of `n` reversible bits.
@@ -63,8 +63,8 @@ class RProgram:
             raise ValueError("Already another register with the same name")
         # TODO once changed to ProgramWrapper subclass, replace None w/ proper
         # register
-        qreg_property = QRegsProperties(slic, 1, n, None, str)
-        self.rregs[name] = qreg_property
+        qarray = QArray(slic, 1, n, None, str)
+        self.rregs[name] = qarray
         self.rbits.extend(util.zeros(n))
 
     def apply(self, gate: RGate, *rbits: int):
@@ -154,22 +154,22 @@ class RProgram:
 
     def get_result_by_name(self):
         res = {}
-        for name, qreg_property in self.rregs.items():
-            res[name] = self.rbits[qreg_property.slic]
+        for name, qarray in self.rregs.items():
+            res[name] = self.rbits[qarray.slic]
         return res
 
     def filter_result_by_name(self, *name: str):
         res = {}
-        for _name, qreg_property in self.rregs.items():
+        for _name, qarray in self.rregs.items():
             if _name in name:
-                res[_name] = self.rbits[qreg_property.slic]
+                res[_name] = self.rbits[qarray.slic]
         return res
 
     @classmethod
     def circuit_to_rprogram(
         cls,
         qcirc: Circuit,
-        qregs_properties: dict[str, QRegsProperties] = dict()
+        name_to_qarray: dict[str, QArray] = dict()
     ) -> RProgram:
         """Convert a qat Circuit object to a reversible program
         :class:`~qatext.qpus.reversible.RProgram`, applying all the
@@ -177,8 +177,8 @@ class RProgram:
         rprogram = RProgram()
         # qreg_names_inv = dict((v, k) for k, v in reg_names.items())
         qreg_slices_to_names: dict[slice, str] = {}
-        for name, qreg_properties in qregs_properties.items():
-            qreg_slices_to_names[qreg_properties.slic] = name
+        for name, qarray in name_to_qarray.items():
+            qreg_slices_to_names[qarray.slic] = name
         for qr in qcirc.qregs:
             slic = slice(qr.start, qr.start + qr.length)
             name = qreg_slices_to_names.get(slic, None)
@@ -278,7 +278,7 @@ def get_state_from_program(
 @staticmethod
 def get_states_from_program(
     pr,
-    reg_names_to_properties: dict[str, QRegsProperties],
+    reg_names_to_properties: dict[str, QArray],
     # reg_names_to_sizes,
     link: Optional[list],
 ) -> dict[str, list[int]]:
@@ -292,7 +292,7 @@ def get_states_from_program(
 @staticmethod
 def get_states_from_circuit(
     circ,
-    reg_names_to_properties: dict[str, QRegsProperties],
+    reg_names_to_properties: dict[str, QArray],
 ) -> dict[str, list[int]]:
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_properties
@@ -307,7 +307,7 @@ def get_states_from_program_wrapper(
 ) -> dict[str, list[int]]:
     circ = prw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = prw._qregnames_to_properties
+    rpr.rregs = prw._name_to_qarray
     res = rpr.get_result_by_name()
     return res
 
@@ -320,7 +320,7 @@ def get_states_from_qroutine_wrapper(
 
     circ = qroutw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = qroutw._qregnames_to_properties
+    rpr.rregs = qroutw._name_to_qarray
     states = rpr.get_result_by_name()
     return states
 
@@ -334,26 +334,26 @@ def get_rprogram_regs(pr: "Program", reg_name_to_slice, link: list):
 @staticmethod
 def get_rprogram_regs_values_from_states(
     states,
-    qregs_properties: dict[str, QRegsProperties],
+    name_to_qarray: dict[str, QArray],
 ):
     dic = {}
     for k, v in states.items():
         LOGGER.debug(f"%s: %s", k, v)
-        qreg_properties = qregs_properties[k]
-        LOGGER.debug("qreg_properties %s", qreg_properties)
-        if qreg_properties.unknown_size:
+        qarray = name_to_qarray[k]
+        LOGGER.debug("qarray %s", qarray)
+        if qarray.unknown_size:
             val = v
-        elif qreg_properties.qtype == str:
+        elif qarray.qtype == str:
             val = v
-        elif qreg_properties.qtype == bool:
+        elif qarray.qtype == bool:
             val = v
-        elif qreg_properties.qtype == int:
-            assert qreg_properties.n is not None
-            assert qreg_properties.m is not None
-            val = get_ints_from_bitarray(v, qreg_properties.n,
-                                         qreg_properties.m, False)
+        elif qarray.qtype == int:
+            assert qarray.n is not None
+            assert qarray.m is not None
+            val = get_ints_from_bitarray(v, qarray.n,
+                                         qarray.m, False)
         else:
-            raise Exception("Unknown qtype %s" % qreg_properties.qtype)
+            raise Exception("Unknown qtype %s" % qarray.qtype)
         dic[k] = val
     return dic
 
@@ -364,7 +364,7 @@ def inspect_state_reversible_program(prw: ProgramWrapper, link):
     circ = prw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr_bits = rpr.rbits
-    rpr.rregs = prw._qregnames_to_properties
+    rpr.rregs = prw._name_to_qarray
     state = rpr.get_result_by_name()
     st = "\n"
     st += f"n qbits {circ.nbqbits}\n"
@@ -373,8 +373,8 @@ def inspect_state_reversible_program(prw: ProgramWrapper, link):
     st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
 
     for key, value in get_rprogram_regs_values_from_states(
-            state, prw._qregnames_to_properties).items():
-        slic = prw._qregnames_to_properties[key].slic
+            state, prw._name_to_qarray).items():
+        slic = prw._name_to_qarray[key].slic
         st += f"{key:<20} [{slic}] ->\t{value}\n"
 
     return st
@@ -386,7 +386,7 @@ def inspect_state_reversible_qroutine(qroutw: QRoutineWrapper, link):
     circ = qroutw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr_bits = rpr.rbits
-    rpr.rregs = qroutw._qregnames_to_properties
+    rpr.rregs = qroutw._name_to_qarray
     state = rpr.get_result_by_name()
     st = "\n"
     st += f"n qbits {circ.nbqbits}\n"
@@ -395,8 +395,8 @@ def inspect_state_reversible_qroutine(qroutw: QRoutineWrapper, link):
     st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
 
     for key, value in get_rprogram_regs_values_from_states(
-            state, qroutw._qregnames_to_properties).items():
-        slic = qroutw._qregnames_to_properties[key].slic
+            state, qroutw._name_to_qarray).items():
+        slic = qroutw._name_to_qarray[key].slic
         st += f"{key:<20} [{slic}] ->\t{value}\n"
 
     return st

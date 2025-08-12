@@ -2,14 +2,14 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Type, Union
 
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-# from qatext.qatmgmt.qbits import QRegsProperties
+# from qatext.qatmgmt.qbits import QArray
 from qatext.qroutines.fake import fake_gate
 
 if TYPE_CHECKING:
     from qat.lang.AQASM.bits import Qbit, QRegister
 
 
-class QRegsProperties(NamedTuple):
+class QArray(NamedTuple):
     # This is for 1 or more collection of qregs
     slic: slice
     # number of qregs aggregated
@@ -27,7 +27,7 @@ class ProgramWrapper:
 
     def __init__(self, program_instance):
         self._program = program_instance
-        self._qregnames_to_properties: dict[str, QRegsProperties] = {}
+        self._name_to_qarray: dict[str, QArray] = {}
 
     def __getattr__(self, name):
         return getattr(self._program, name)
@@ -80,7 +80,7 @@ class ProgramWrapper:
         key = f"{name}"
         start = regs[0].start
         stop = regs[-1].start + size
-        self._qregnames_to_properties[key] = QRegsProperties(
+        self._name_to_qarray[key] = QArray(
             slice(start, stop), n, size, regs, qtype)
         return regs
 
@@ -128,5 +128,5 @@ class ProgramWrapper:
             stop = None
         else:
             stop = start_idx + size * n  # type: ignore
-        self._qregnames_to_properties[key] = QRegsProperties(
+        self._name_to_qarray[key] = QArray(
             slice(start, stop), n, size, None, qtype, unknown_size)

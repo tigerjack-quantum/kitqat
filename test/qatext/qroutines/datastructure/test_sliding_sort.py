@@ -53,7 +53,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         # last one is the empty cell, used as temporary
         n = len(values) + 1
         prw = ProgramWrapper(Program())
-        # qregs_properties: dict[str, QRegsProperties] = {}
+        # named_qarrays: dict[str, QArray] = {}
         qr_x = prw.qarray_alloc(1, m, "x", int)
         qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
         prw.apply(qfun, qr_x)
@@ -83,7 +83,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         prw.apply(qf, qr_x, *qrs_data)
 
         res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
-        # self.print_rprogram_regs_from_rprogram_states(states, qregs_properties)
+        # self.print_rprogram_regs_from_rprogram_states(states, named_qarrays)
 
         x_val = get_int_from_bitarray(res['x'], False)
         a_vals = get_ints_from_bitarray(res['a'], n, m, False)
@@ -134,7 +134,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         # last one is the empty cell, used as temporary
         n = len(values) + 1
         prw = ProgramWrapper(Program())
-        # qregs_properties: dict[str, QRegsProperties] = {}
+        # named_qarrays: dict[str, QArray] = {}
         qr_x = prw.qarray_alloc(1, m, "x", int)
         qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
         prw.apply(qfun, qr_x)
@@ -156,7 +156,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
 
         res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
-        # self.print_rprogram_regs_from_rprogram_states(states, qregs_properties)
+        # self.print_rprogram_regs_from_rprogram_states(states, named_qarrays)
 
         x_val = get_int_from_bitarray(res['x'], False)
         a_vals = get_ints_from_bitarray(res['a'], n, m, False)

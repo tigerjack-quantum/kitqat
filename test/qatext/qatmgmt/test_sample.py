@@ -9,7 +9,7 @@ from qat.lang.AQASM.qint import QInt
 from qatext.qatmgmt.sample import (
     extract_qreg_bitstring, extract_qreg_bitstrings_by_names,
     extract_qreg_value, extract_qreg_values_by_names,
-    extract_qreg_values_by_qregs_properties, extract_qregs_bitstring,
+    extract_qarray_values_by_named_qarrays, extract_qregs_bitstring,
     extract_qubit_bitstring)
 
 
@@ -211,24 +211,24 @@ class TestSample(CircuitTestHelpers):
                     "third": "1",
                 }
 
-    def test_extract_qreg_values_by_qregs_properties_real(self):
+    def test_extract_qarray_values_by_named_qarrays_real(self):
         prw = self._create_real_program_wrapper()
         res = self.simulate_program(prw)
         for sample in res:
-            result = extract_qreg_values_by_qregs_properties(
-                prw._qregnames_to_properties, sample)
+            result = extract_qarray_values_by_named_qarrays(
+                prw._name_to_qarray, sample)
             bitss2 = result['second']
             assert isinstance(bitss2, list)
             # result = extract_qreg_values_by_names(name_to_reg, sample)
             if not bitss2[0]:
                 assert result == {
-                    "first": 0,
+                    "first": (0, ),
                     "second": [False],
                     "third": "0",
                 }
             else:
                 assert result == {
-                    "first": 2,
+                    "first": (2,),
                     "second": [True],
                     "third": "1",
                 }
@@ -249,4 +249,4 @@ if __name__ == '__main__':
     TestSample.qpu = PyLinalg()  # or some dummy/mock QPU
     # test.reversible_on = False
 
-    test.test_extract_qreg_values_by_qregs_properties_real()
+    test.test_extract_qarray_values_by_named_qarrays_real()

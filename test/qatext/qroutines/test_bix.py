@@ -14,7 +14,7 @@ from qatext.utils.bits.conversion import get_bitstring_from_int
 from qatext.qatmgmt.program import ProgramWrapper
 
 if TYPE_CHECKING:
-    from qatext.qatmgmt.program import QRegsProperties
+    from qatext.qatmgmt.program import QArray
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,10 +24,10 @@ class TestBix(CircuitTestHelpers):
 
     def _extract_and_check_named_regs(
             self, bitstring, expected_map,
-            qregs_properties: dict[str, 'QRegsProperties']):
+            named_qarrays: dict[str, 'QArray']):
         """Post-processing checks"""
         for name, expected in expected_map.items():
-            bits = bitstring[qregs_properties[name].slic]
+            bits = bitstring[named_qarrays[name].slic]
             assert bits == expected, "key %s, bits %s, expected %s" % (
                 name, bits, expected)
 
@@ -44,7 +44,7 @@ class TestBix(CircuitTestHelpers):
             has_support_registers=True,  # bix_matrix, for example, doesn't have them
             runtime_data=None,  # If it is applied to bix_runtime, it must be != None
     ):
-        # qregs_properties: dict[str, QRegsProperties] = {}
+        # named_qarrays: dict[str, QArray] = {}
         is_runtime = runtime_data is not None
 
         prw = ProgramWrapper(Program())
@@ -140,7 +140,7 @@ class TestBix(CircuitTestHelpers):
             expected["qregs1s_add"] = "0" * m
             expected["qregs0s_add"] = "0" * m
         self._extract_and_check_named_regs(obtained, expected,
-                                           prw._qregnames_to_properties)
+                                           prw._name_to_qarray)
 
     @pytest.mark.parametrize("bitstring", [
         "0101",
