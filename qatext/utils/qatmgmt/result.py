@@ -1,11 +1,9 @@
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 if TYPE_CHECKING:
     from qat.lang.AQASM import Result
-    from qat.lang.AQASM.bits import QRegister
-    from qat.core.wrappers.result import Sample
 
 
 def get_state_vector_from_result(res: "Result", nqubits: int) -> np.array:
@@ -16,9 +14,9 @@ def get_state_vector_from_result(res: "Result", nqubits: int) -> np.array:
     return state_vec
 
 
-def get_sample_for_basis_dec_from_res(
-    res: "Result", basis_state_dec: int, little_endian=False
-):
+def get_sample_for_basis_dec_from_result(res: "Result",
+                                         basis_state_dec: int,
+                                         little_endian=False):
     attr = "lsb_int" if little_endian else "int"
     for sample in res:
         if getattr(sample.state, attr) == basis_state_dec:
@@ -31,7 +29,7 @@ def get_sample_for_basis_dec_from_res(
     return None
 
 
-def get_sample_for_basis_str_from_res(res: "Result", basis_str_dec: int):
+def get_sample_for_basis_str_from_result(res: "Result", basis_str_dec: int):
     for sample in res:
         if sample.state.bitstring == basis_str_dec:
             return sample

@@ -1,14 +1,13 @@
-from numpy import testing as nptesting
-from qatext.utils.qatmgmt.results import (
-    get_sample_for_basis_dec_from_res,
-    get_state_vector_from_result,
-)
-from qat.lang.AQASM import H, Program, X
-
 from test.common_circuit import CircuitTestCase
+
+from numpy import testing as nptesting
+from qat.lang.AQASM import H, Program, X
+from qatext.utils.qatmgmt.result import (get_sample_for_basis_dec_from_result,
+                                         get_state_vector_from_result)
 
 
 class TestQatmgmtResults(CircuitTestCase):
+
     @staticmethod
     def _sample_program():
         p = Program()
@@ -17,7 +16,9 @@ class TestQatmgmtResults(CircuitTestCase):
         p.apply(H, q[0])
         p.apply(X.ctrl(), q[0], q[1])
         p.apply(H, q[2])
-        expected_vector = [0.5 + 0j, 0.5 + 0j, 0j, 0j, 0j, 0j, -0.5 + 0j, -0.5 + 0j]
+        expected_vector = [
+            0.5 + 0j, 0.5 + 0j, 0j, 0j, 0j, 0j, -0.5 + 0j, -0.5 + 0j
+        ]
         return p, dict(enumerate(expected_vector))
 
     def test_get_state_vector_from_result(self):
@@ -26,12 +27,13 @@ class TestQatmgmtResults(CircuitTestCase):
         sv = get_state_vector_from_result(res, p.qbit_count)
         nptesting.assert_array_almost_equal(sv, list(exp_dict.values()))
 
-    def test_get_sample_for_basis_state_from_res(self):
+    def test_get_sample_for_basis_state_from_result(self):
         p, exp_dict = self._sample_program()
         res = self.qpu.submit(p.to_circ().to_job())
         for state, value in exp_dict.items():
             with self.subTest(state=state, value=value):
-                obtained_value = get_sample_for_basis_dec_from_res(res, state)
+                obtained_value = get_sample_for_basis_dec_from_result(
+                    res, state)
                 if value == 0:
                     self.assertIsNone(obtained_value)
                 else:

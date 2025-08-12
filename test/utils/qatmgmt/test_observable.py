@@ -1,22 +1,21 @@
-from qat.core import Observable, Term
-from qat.lang.AQASM import H, Program, X, Y, RX, QRoutine, RZ, RY, Z, CNOT
-from qatext.utils.qatmgmt.observables import produce_term_gates
-from qatext.utils.qatmgmt.results import get_sample_for_basis_str_from_res
-from copy import deepcopy
-
 from test.common_circuit import CircuitTestCase
+
+from qat.core import Observable, Term
+from qat.lang.AQASM import CNOT, RX, RY, RZ, H, Program, QRoutine, X, Y, Z
+from qatext.utils.qatmgmt.observables import produce_term_gates
+from qatext.utils.qatmgmt.result import get_sample_for_basis_str_from_result
 
 
 class TestQatUtils(CircuitTestCase):
+
     def _compare_expvalue_to_splitter_res(self, qfun, observable):
         nbqbits = qfun.arity
         prog = Program()
         qbits = prog.qalloc(nbqbits)
 
         prog.apply(qfun, qbits)
-        res = self.qpu.submit(
-            prog.to_circ().to_job(job_type="OBS", observable=observable)
-        )
+        res = self.qpu.submit(prog.to_circ().to_job(job_type="OBS",
+                                                    observable=observable))
         final_amp = observable.constant_coeff
         for term in observable.terms:
             prog2 = Program()
@@ -26,10 +25,9 @@ class TestQatUtils(CircuitTestCase):
                 for gate in gates:
                     prog2.apply(gate, qbits2[qbidx])
             prog2.apply(qfun.dag(), qbits2)
-            from qat.core.console import display
 
             res2 = self.qpu.submit(prog2.to_circ().to_job())
-            sample = get_sample_for_basis_str_from_res(res2, "0" * nbqbits)
+            sample = get_sample_for_basis_str_from_result(res2, "0" * nbqbits)
             amp = term.coeff * sample.amplitude
             final_amp += amp
         self.assertAlmostEqual(final_amp, res.value)
