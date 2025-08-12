@@ -217,9 +217,10 @@ class TestSample(CircuitTestHelpers):
         for sample in res:
             result = extract_qreg_values_by_qregs_properties(
                 prw._qregnames_to_properties, sample)
-            bits2 = result['second'][0]
+            bitss2 = result['second']
+            assert isinstance(bitss2, list)
             # result = extract_qreg_values_by_names(name_to_reg, sample)
-            if not bits2:
+            if not bitss2[0]:
                 assert result == {
                     "first": 0,
                     "second": [False],
