@@ -9,20 +9,30 @@ LOGGER = logging.getLogger(__name__)
 
 
 # Autouse logger setup
-@pytest.fixture(autouse=True)
-def setup_logger():
-    logger = logging.getLogger(__name__)
-    level = getenv("LOG_LEVEL")
-    if level:
-        logging_level = getattr(logging, level.upper(), logging.ERROR)
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(module)-4s %(levelname)-8s %(funcName)-12s %(message)s")
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-        logger.setLevel(logging_level)
-    yield
+@pytest.fixture(scope="class", autouse=True)
+def setup_logger(request):
+    cls = request.cls
+    if cls is not None:
+        logger = logging.getLogger(cls.__name__)
+        level = getenv("LOG_LEVEL")
+        if level:
+            logging_level = getattr(logging, level.upper(), logging.ERROR)
+            if not logger.handlers:
+                handler = logging.StreamHandler()
+                formatter = logging.Formatter(
+                    "%(module)-4s %(levelname)-8s %(funcName)-12s %(message)s")
+                handler.setFormatter(formatter)
+                logger.addHandler(handler)
+            logger.setLevel(logging_level)
+        cls.logger = logger
+
+    yield  # run the tests
+
+    # teardown: remove handlers if needed
+    if cls is not None:
+        for handler in list(cls.logger.handlers):
+            cls.logger.removeHandler(handler)
+    yield  # execute tests, all teardown logic should be put after this
 
 
 # Simulator setup
@@ -41,6 +51,7 @@ def setup_simulator(request):
         cls.qpu = LinAlg()
     elif SIMULATOR.lower() == "stabs":
         from qat.qpus import Stabs  # type:ignore
+
         from qatext.synthesis.mctrls.mcx import ccnot, x
         cls.qpu = Stabs()
         cls.links = [ccnot, x]

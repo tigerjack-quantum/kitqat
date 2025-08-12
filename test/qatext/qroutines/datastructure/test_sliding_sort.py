@@ -15,7 +15,7 @@ from qatext.utils.bits.conversion import (get_int_from_bitarray,
 from qatext.utils.qatmgmt.program import ProgramWrapper
 
 
-@pytest.mark.usefixtures("setup_simulator", "setup_logger")
+# @pytest.mark.usefixtures("setup_simulator", "setup_logger")
 class TestQroutineSlidingSort(CircuitTestHelpers):
 
     @pytest.mark.parametrize(

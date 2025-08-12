@@ -36,7 +36,8 @@ class FakeSample:
         self.amplitude = amplitude
 
 
-@pytest.mark.usefixtures("setup_simulator", "setup_logger")
+# @pytest.mark.usefixtures("setup_simulator", "setup_logger")
+# Not needed, since both fixtures have autouse=True and scope=class
 class TestSample(CircuitTestHelpers):
 
     def _create_real_program(self):

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-@pytest.mark.usefixtures("setup_simulator", "setup_logger")
+# @pytest.mark.usefixtures("setup_simulator", "setup_logger")
 class TestBix(CircuitTestHelpers):
 
     def _extract_and_check_named_regs(
