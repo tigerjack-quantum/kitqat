@@ -1,7 +1,7 @@
 """File automatically read from pytest"""
 import logging
 from os import getenv
-from test.common_pytest import REVERSIBLE_ON, SIMULATOR
+from test.common_pytest import REVERSIBLE_ON, SIMULATOR, CircuitTestHelpers
 
 import pytest
 
@@ -9,60 +9,54 @@ LOGGER = logging.getLogger(__name__)
 
 
 # Autouse logger setup
-@pytest.fixture(scope="class", autouse=True)
-def setup_logger(request):
-    cls = request.cls
-    if cls is not None:
-        logger = logging.getLogger(cls.__name__)
-        level = getenv("LOG_LEVEL")
-        if level:
-            logging_level = getattr(logging, level.upper(), logging.ERROR)
-            if not logger.handlers:
-                handler = logging.StreamHandler()
-                formatter = logging.Formatter(
-                    "%(module)-4s %(levelname)-8s %(funcName)-12s %(message)s")
-                handler.setFormatter(formatter)
-                logger.addHandler(handler)
-            logger.setLevel(logging_level)
-        cls.logger = logger
+@pytest.fixture(scope="session", autouse=True)
+def global_logger():
+    """Create one logger for all tests and attach to helper base class."""
+    logger = logging.getLogger("tests")
+    level = getenv("LOG_LEVEL", "ERROR").upper()
+    logging_level = getattr(logging, level, logging.ERROR)
 
-    yield  # execute tests, all teardown logic should be put after this
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            "%(module)-4s %(levelname)-8s %(funcName)-12s %(message)s"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
-    # teardown: remove handlers if needed
-    if cls is not None:
-        for handler in list(cls.logger.handlers):
-            cls.logger.removeHandler(handler)
+    logger.setLevel(logging_level)
+    CircuitTestHelpers.logger = logger
+    yield
 
 
-# Simulator setup
-@pytest.fixture(scope="class", autouse=True)
-def setup_simulator(request):
-    cls = request.cls
-    cls.logger = logging.getLogger(cls.__name__)
-    cls.qpu = None  # Override this in subclasses if needed
-    cls.reversible_on = True if REVERSIBLE_ON else False
+@pytest.fixture(scope="session", autouse=True)
+def global_qpu():
+    # Create once for the whole test session
     if SIMULATOR.lower() == "pylinalg":
         from qat.pylinalg import PyLinalg  # type:ignore
-        cls.qpu = PyLinalg()
+        qpu_instance = PyLinalg()
     elif SIMULATOR.lower() == "linalg":
         # default to linalg
         from qat.qpus import LinAlg  # type:ignore
-        cls.qpu = LinAlg()
+        qpu_instance = LinAlg()
     elif SIMULATOR.lower() == "stabs":
         from qat.qpus import Stabs  # type:ignore
 
         from qatext.synthesis.mctrls.mcx import ccnot, x
-        cls.qpu = Stabs()
-        cls.links = [ccnot, x]
+        qpu_instance = Stabs()
+        CircuitTestHelpers.links = [ccnot, x]
     elif SIMULATOR.lower() == "feynman":
         from qat.qpus import Feynman  # type:ignore
-        cls.qpu = Feynman()
+        qpu_instance = Feynman()
     elif SIMULATOR.lower() == "mps":
         from qat.qpus import MPS  # type:ignore
-        cls.qpu = MPS(lnnize=True)
+        qpu_instance = MPS(lnnize=True)
     elif SIMULATOR.lower() == "bdd":
         from qat.qpus import Bdd  # type:ignore
-        cls.qpu = Bdd(48)
+        qpu_instance = Bdd(48)
     else:
         raise Exception(f"Simulator choice {SIMULATOR} not correct")
-    yield
+    CircuitTestHelpers.qpu = qpu_instance
+    yield qpu_instance
+    # Optional teardown
+    # qpu_instance.shutdown()

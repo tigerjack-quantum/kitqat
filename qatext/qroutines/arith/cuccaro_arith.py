@@ -75,20 +75,20 @@ def _common(qfun, a, b, cout, bits, overflow_qbit):
 
 
 def _maj_chain(qfun, a, b, cin, mrange):
-    LOGGER.debug("MAJ %d, %d, %d", cin[0], b[0], a[0])
+    LOGGER.debug("MAJ %s, %s, %s", cin[0], b[0], a[0])
     qfun.apply(_majority(f"cin, b{0}, a{0}"), cin[0], b[0], a[0])
     for j in mrange:
         LOGGER.debug("j is %d", j)
-        LOGGER.debug("MAJ %d, %d, %d", a[j], b[j + 1], a[j + 1])
+        LOGGER.debug("MAJ %s, %s, %s", a[j], b[j + 1], a[j + 1])
         qfun.apply(_majority(f"a{j}, b{j+1}, a{j+1}"), a[j], b[j + 1], a[j + 1])
 
 
 def _maj_chain_dag(qfun, a, b, cin, mrange):
     for j in reversed(mrange):
         LOGGER.debug("j is %d", j)
-        LOGGER.debug("MAJD %d, %d, %d", a[j], b[j + 1], a[j + 1])
+        LOGGER.debug("MAJD %s, %s, %s", a[j], b[j + 1], a[j + 1])
         qfun.apply(_majority(f"a{j}, b{j+1}, a{j+1}").dag(), a[j], b[j + 1], a[j + 1])
-    LOGGER.debug("MAJD %d, %d, %d", cin[0], b[0], a[0])
+    LOGGER.debug("MAJD %s, %s, %s", cin[0], b[0], a[0])
     qfun.apply(_majority(f"cin, b{0}, a{0}").dag(), cin[0], b[0], a[0])
 
 
@@ -99,15 +99,15 @@ def _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger):
     if not b_is_bigger:
         outbit = cout[0] if overflow_qbit else b[end]
         LOGGER.debug("b is not bigger")
-        LOGGER.debug("CNOT %d, %d", a[end], outbit)
+        LOGGER.debug("CNOT %s, %s", a[end], outbit)
 
         qfun.apply(CNOT, a[ends], outbit)
         if not overflow_qbit and a_l == b_l:
             # Simple modulo 2^b_l operation, as in Cuccaro's paper
-            LOGGER.debug("CNOT %d, %d", a[ends], outbit)
+            LOGGER.debug("CNOT %s, %s", a[ends], outbit)
             qfun.apply(CNOT, a[end], outbit)
         elif a_l > b_l:
-            LOGGER.debug("CNOT %d, %d", a[ends + 1], outbit)
+            LOGGER.debug("CNOT %s, %s", a[ends + 1], outbit)
             qfun.apply(CNOT, a[ends + 1], outbit)
     else:
         # b_l > bits -> b extends past end
@@ -118,7 +118,7 @@ def _middle_logic(qfun, a, b, cout, end, ends, overflow_qbit, b_is_bigger):
         nslice = b[end + 2 : b_l : 1]
         LOGGER.debug("nslice %s", nslice)
         chain = itertools.chain(nslice, cout) if overflow_qbit else nslice
-        LOGGER.debug("CNOT %d, %d", a[end], b[end + 1])
+        LOGGER.debug("CNOT %s, %s", a[end], b[end + 1])
         qfun.apply(CNOT, a[ends], b[end + 1])
         prv_tgt_1 = a[ends]
         prv_tgt = b[end + 1]
@@ -136,9 +136,9 @@ def _unmaj_chain(qfun, a, b, cin, mrange):
     # UNM CHAIN ###
     for j in reversed(mrange):
         LOGGER.debug("j is %d", j)
-        LOGGER.debug("UNM %d, %d, %d", a[j], b[j + 1], a[j + 1])
+        LOGGER.debug("UNM %s, %s, %s", a[j], b[j + 1], a[j + 1])
         qfun.apply(_unmajority(f"a{j}, b{j+1}, a{j+1}"), a[j], b[j + 1], a[j + 1])
-    LOGGER.debug("UNM %d, %d, %d", cin[0], b[0], a[0])
+    LOGGER.debug("UNM %s, %s, %s", cin[0], b[0], a[0])
     qfun.apply(_unmajority(f"cin, b{0}, a{0}"), cin[0], b[0], a[0])
 
 

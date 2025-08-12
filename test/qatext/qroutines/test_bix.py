@@ -16,8 +16,6 @@ from qatext.qatmgmt.program import ProgramWrapper
 if TYPE_CHECKING:
     from qatext.qatmgmt.program import QArray
 
-LOGGER = logging.getLogger(__name__)
-
 
 # @pytest.mark.usefixtures("setup_simulator", "setup_logger")
 class TestBix(CircuitTestHelpers):
@@ -63,7 +61,7 @@ class TestBix(CircuitTestHelpers):
                 int,
             )
             for i in range(n * cols):
-                LOGGER.debug("qregs_data[%d] = %s", i, qregs_data[i])
+                self.logger.debug("qregs_data[%d] = %s", i, qregs_data[i])
 
                 prw.apply(
                     qregs_init.initialize_qureg_given_int(runtime_data[i],
@@ -102,7 +100,7 @@ class TestBix(CircuitTestHelpers):
                 str,
             )
             anc_start += m
-            LOGGER.debug("zeros will be rotated")
+            self.logger.debug("zeros will be rotated")
             prw.qarray_noalloc(
                 1,
                 m,
@@ -118,12 +116,12 @@ class TestBix(CircuitTestHelpers):
                            anc_start,
                            str,
                            unknown_size=True)
-        LOGGER.debug("Applying bix_func of arity %d", bix_func.arity)
+        self.logger.debug("Applying bix_func of arity %d", bix_func.arity)
         if is_runtime:
             prw.apply(bix_func, wreg, qregs_data, *qregs1s, *qregs0s)
         else:
             prw.apply(bix_func, wreg, *qregs1s, *qregs0s)
-        LOGGER.debug(
+        self.logger.debug(
             "%s",
             inspect_state_reversible_program(
                 prw, [cuccaro_arith.adder, cuccaro_arith.subtractor]))
@@ -161,14 +159,14 @@ class TestBix(CircuitTestHelpers):
         self._test_bix_indexes(bitstring)
 
     def _test_bix_indexes(self, bitstring):
-        LOGGER.debug("bitstring %s", bitstring)
+        self.logger.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
-        LOGGER.debug("Len %d, weight %d", n, weight)
+        self.logger.debug("Len %d, weight %d", n, weight)
         for index_start_at_one in (False, True):
             add = 1 if index_start_at_one else 0
             m = (n - 1 + add).bit_length()
-            LOGGER.debug("add %d, m %d (index_start_at_one is %s)", add, m,
+            self.logger.debug("add %d, m %d (index_start_at_one is %s)", add, m,
                          index_start_at_one)
             onesexp = "".join([
                 get_bitstring_from_int(i + add, m)
@@ -178,10 +176,10 @@ class TestBix(CircuitTestHelpers):
                 get_bitstring_from_int(i + add, m)
                 for i, j in enumerate(bitstring) if j == "0"
             ])
-            LOGGER.debug("onesexp %s", onesexp)
-            LOGGER.debug("zerosexp %s", zerosexp)
+            self.logger.debug("onesexp %s", onesexp)
+            self.logger.debug("zerosexp %s", zerosexp)
             qfun = bix.bix_indexes_compile_time(n, weight, index_start_at_one)
-            LOGGER.debug("Got qfun with arity %d", qfun.arity)
+            self.logger.debug("Got qfun with arity %d", qfun.arity)
             self._run_test_bix(
                 n,
                 m,
@@ -210,10 +208,10 @@ class TestBix(CircuitTestHelpers):
         self._test_bix_data_diff_compile_time(bitstring, elements)
 
     def _test_bix_data_diff_compile_time(self, bitstring, elements):
-        LOGGER.debug("bitstring %s", bitstring)
+        self.logger.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
-        LOGGER.debug("Len %d, weight %d", n, weight)
+        self.logger.debug("Len %d, weight %d", n, weight)
         assert len(bitstring) == len(elements)
         m = max(elements).bit_length()
         onesexp = "".join([
@@ -224,10 +222,10 @@ class TestBix(CircuitTestHelpers):
             get_bitstring_from_int(elements[i], m)
             for i, j in enumerate(bitstring) if j == "0"
         ])
-        LOGGER.debug("onesexp %s", onesexp)
-        LOGGER.debug("zerosexp %s", zerosexp)
+        self.logger.debug("onesexp %s", onesexp)
+        self.logger.debug("zerosexp %s", zerosexp)
         qfun = bix.bix_data_diff_compile_time(n, m, weight, elements)
-        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self.logger.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
             m,
@@ -257,10 +255,10 @@ class TestBix(CircuitTestHelpers):
         self._test_bix_data_compile_time(bitstring, elements)
 
     def _test_bix_data_compile_time(self, bitstring, elements):
-        LOGGER.debug("bitstring %s", bitstring)
+        self.logger.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
-        LOGGER.debug("Len %d, weight %d", n, weight)
+        self.logger.debug("Len %d, weight %d", n, weight)
         assert len(bitstring) == len(elements)
         m = max(elements).bit_length()
         onesexp = "".join([
@@ -271,10 +269,10 @@ class TestBix(CircuitTestHelpers):
             get_bitstring_from_int(elements[i], m)
             for i, j in enumerate(bitstring) if j == "0"
         ])
-        LOGGER.debug("onesexp %s", onesexp)
-        LOGGER.debug("zerosexp %s", zerosexp)
+        self.logger.debug("onesexp %s", onesexp)
+        self.logger.debug("zerosexp %s", zerosexp)
         qfun = bix.bix_data_compile_time(n, m, weight, elements)
-        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self.logger.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
             m,
@@ -311,25 +309,25 @@ class TestBix(CircuitTestHelpers):
         self._test_bix_matrix(bitstring, matrix)
 
     def _test_bix_matrix(self, bitstring, matrix):
-        LOGGER.debug("bitstring %s", bitstring)
+        self.logger.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
-        LOGGER.debug("Len %d, weight %d", n, weight)
+        self.logger.debug("Len %d, weight %d", n, weight)
         rows, cols = len(matrix), len(matrix[0])
-        LOGGER.debug("n %d, rows %d, cols %d", n, rows, cols)
+        self.logger.debug("n %d, rows %d, cols %d", n, rows, cols)
         assert rows == n, "bitstring should have same length of rows, got n %d, rows %d" % (
             n, rows)
         matrix_flat = [int(i) for i in chain.from_iterable(matrix)]
         m = max(matrix_flat).bit_length()
-        LOGGER.debug("m %d", m)
+        self.logger.debug("m %d", m)
         onesexp_rows = [
             matrix[idx] for idx, val in enumerate(bitstring) if val == "1"
         ]
         zerosexp_rows = [
             matrix[idx] for idx, val in enumerate(bitstring) if val == "0"
         ]
-        LOGGER.debug("onesexp %s", onesexp_rows)
-        LOGGER.debug("zerosexp %s", zerosexp_rows)
+        self.logger.debug("onesexp %s", onesexp_rows)
+        self.logger.debug("zerosexp %s", zerosexp_rows)
         onesexp = "".join(
             get_bitstring_from_int(i, m)
             for i in chain.from_iterable(onesexp_rows))
@@ -338,7 +336,7 @@ class TestBix(CircuitTestHelpers):
             for i in chain.from_iterable(zerosexp_rows))
 
         qfun = bix.bix_matrix_compile_time(rows, cols, m, weight, matrix_flat)
-        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self.logger.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
             m,
@@ -376,12 +374,12 @@ class TestBix(CircuitTestHelpers):
         self._test_bix_data_runtime(bitstring, elements)
 
     def _test_bix_data_runtime(self, bitstring, elements):
-        LOGGER.debug("bitstring %s", bitstring)
+        self.logger.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
-        LOGGER.debug("Len %d, weight %d", n, weight)
+        self.logger.debug("Len %d, weight %d", n, weight)
         m = max(elements).bit_length()
-        LOGGER.debug("m %d", m)
+        self.logger.debug("m %d", m)
         onesexp = "".join([
             get_bitstring_from_int(elements[idx], m, False)
             for idx, val in enumerate(bitstring) if val == "1"
@@ -390,11 +388,11 @@ class TestBix(CircuitTestHelpers):
             get_bitstring_from_int(elements[idx], m, False)
             for idx, val in enumerate(bitstring) if val == "0"
         ])
-        LOGGER.debug("onesexp %s", onesexp)
-        LOGGER.debug("zerosexp %s", zerosexp)
+        self.logger.debug("onesexp %s", onesexp)
+        self.logger.debug("zerosexp %s", zerosexp)
 
         qfun = bix.bix_data_runtime(n, m, weight)
-        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self.logger.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
             m,
@@ -432,25 +430,25 @@ class TestBix(CircuitTestHelpers):
         self._test_bix_matrix_runtime(bitstring, matrix)
 
     def _test_bix_matrix_runtime(self, bitstring, matrix):
-        LOGGER.debug("bitstring %s", bitstring)
+        self.logger.debug("bitstring %s", bitstring)
         n = len(bitstring)
         weight = bitstring.count("1")
-        LOGGER.debug("Len %d, weight %d", n, weight)
+        self.logger.debug("Len %d, weight %d", n, weight)
         rows, cols = len(matrix), len(matrix[0])
-        LOGGER.debug("n %d, rows %d, cols %d", n, rows, cols)
+        self.logger.debug("n %d, rows %d, cols %d", n, rows, cols)
         assert rows == n, "bitstring should have same length of rows, got n %d, rows %d" % (
             n, rows)
         matrix_flat = [int(i) for i in chain.from_iterable(matrix)]
         m = max(matrix_flat).bit_length()
-        LOGGER.debug("m %d", m)
+        self.logger.debug("m %d", m)
         onesexp_rows = [
             matrix[idx] for idx, val in enumerate(bitstring) if val == "1"
         ]
         zerosexp_rows = [
             matrix[idx] for idx, val in enumerate(bitstring) if val == "0"
         ]
-        LOGGER.debug("onesexp %s", onesexp_rows)
-        LOGGER.debug("zerosexp %s", zerosexp_rows)
+        self.logger.debug("onesexp %s", onesexp_rows)
+        self.logger.debug("zerosexp %s", zerosexp_rows)
         onesexp = "".join(
             get_bitstring_from_int(i, m)
             for i in chain.from_iterable(onesexp_rows))
@@ -459,7 +457,7 @@ class TestBix(CircuitTestHelpers):
             for i in chain.from_iterable(zerosexp_rows))
 
         qfun = bix.bix_matrix_runtime(rows, cols, m, weight)
-        LOGGER.debug("Got qfun with arity %d", qfun.arity)
+        self.logger.debug("Got qfun with arity %d", qfun.arity)
         self._run_test_bix(
             n,
             m,

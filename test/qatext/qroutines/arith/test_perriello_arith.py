@@ -19,10 +19,6 @@ class SArithTestCase(CircuitTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        if cls.logger.level != 0:
-            perriello_arith.LOGGER.setLevel(cls.logger.level)
-            for handler in cls.logger.handlers:
-                perriello_arith.LOGGER.addHandler(handler)
 
     @parameterized.expand(
         [

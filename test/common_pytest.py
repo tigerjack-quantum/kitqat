@@ -28,6 +28,7 @@ LOGGER = logging.getLogger(__name__)
 
 class CircuitTestHelpers:
     links = []
+    # set from conftest
     qpu = None
     logger: Optional[logging.Logger] = None
 
@@ -51,7 +52,7 @@ class CircuitTestHelpers:
 
     @classmethod
     def simulate_job(cls, job) -> "Result":
-        assert cls.qpu is not None
+        assert cls.qpu is not None, "QPU has not been initialized"
         res = cls.qpu.submit(job)
         return res
 
