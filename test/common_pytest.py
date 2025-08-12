@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from qat.core.console import display
 
-from qatext.qpus.reversible import RProgram
+# from qatext.qpus.reversible import RProgram
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -32,7 +32,7 @@ class CircuitTestHelpers:
     logger: Optional[logging.Logger] = None
 
     @classmethod
-    def simulate_program(cls, program, circ_args=None, links=None, job_args=None):
+    def simulate_program(cls, program, circ_args=None, links=None, job_args=None) -> "Result":
         circ_args = circ_args or {}
         job_args = job_args or {}
 
@@ -44,13 +44,13 @@ class CircuitTestHelpers:
         return cls.simulate_circuit(circuit, job_args)
 
     @classmethod
-    def simulate_circuit(cls, circuit, job_args=None):
+    def simulate_circuit(cls, circuit, job_args=None) -> "Result":
         job_args = job_args or {}
         job = circuit.to_job(**job_args)
         return cls.simulate_job(job)
 
     @classmethod
-    def simulate_job(cls, job):
+    def simulate_job(cls, job) -> "Result":
         assert cls.qpu is not None
         res = cls.qpu.submit(job)
         return res
