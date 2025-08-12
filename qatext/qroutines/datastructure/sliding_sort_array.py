@@ -4,7 +4,7 @@ from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines.qregs_init import copy_register
 from qatext.qroutines.qubitshuffle.rotate import swap_qreg_cells
-from qatext.utils.qatmgmt.routines import QRoutineWrapper
+from qatext.qatmgmt.routines import QRoutineWrapper
 
 
 @build_gate('SLIDING_SORT_INSERT', [int, int], lambda n, m: n * m + m)

@@ -3,7 +3,7 @@ from typing import Type, Union
 
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-from qatext.utils.qatmgmt.program import QRegsProperties
+from qatext.qatmgmt.program import QRegsProperties
 
 
 class QRoutineWrapper:

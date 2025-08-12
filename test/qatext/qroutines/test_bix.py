@@ -11,10 +11,10 @@ from qatext.qpus.reversible import (get_state_from_program,
 from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits.conversion import get_bitstring_from_int
-from qatext.utils.qatmgmt.program import ProgramWrapper
+from qatext.qatmgmt.program import ProgramWrapper
 
 if TYPE_CHECKING:
-    from qatext.utils.qatmgmt.program import QRegsProperties
+    from qatext.qatmgmt.program import QRegsProperties
 
 LOGGER = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ from test.common_circuit import CircuitTestCase
 
 from numpy import testing as nptesting
 from qat.lang.AQASM import H, Program, X
-from qatext.utils.qatmgmt.result import (get_sample_for_basis_dec_from_result,
+from qatext.qatmgmt.result import (get_sample_for_basis_dec_from_result,
                                          get_state_vector_from_result)
 
 

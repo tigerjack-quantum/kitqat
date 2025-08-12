@@ -9,7 +9,7 @@ from qatext.qroutines.datastructure.arrays import contains
 from qatext.qroutines.qregs_init import initialize_qureg_given_int
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
-from qatext.utils.qatmgmt.program import ProgramWrapper
+from qatext.qatmgmt.program import ProgramWrapper
 
 
 # @pytest.mark.usefixtures("setup_simulator", "setup_logger")

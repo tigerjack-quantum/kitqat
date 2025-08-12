@@ -12,8 +12,8 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
 from qatext.utils.bits.conversion import get_ints_from_bitarray
-from qatext.utils.qatmgmt.program import ProgramWrapper, QRegsProperties
-from qatext.utils.qatmgmt.routines import QRoutineWrapper
+from qatext.qatmgmt.program import ProgramWrapper, QRegsProperties
+from qatext.qatmgmt.routines import QRoutineWrapper
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit

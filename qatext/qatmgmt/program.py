@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Type, Union
 
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-# from qatext.utils.qatmgmt.qbits import QRegsProperties
+# from qatext.qatmgmt.qbits import QRegsProperties
 from qatext.qroutines.fake import fake_gate
 
 if TYPE_CHECKING:

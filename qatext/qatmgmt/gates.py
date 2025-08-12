@@ -33,7 +33,7 @@ from qatext.utils.numpy.qstate_manipulation import (
     get_dagger_from_matrix,
     get_transpose_from_matrix,
 )
-from qatext.utils.qatmgmt import variables
+from qatext.qatmgmt import variables
 from qat.lang.AQASM.gates import (
     CCNOT,
     CNOT,

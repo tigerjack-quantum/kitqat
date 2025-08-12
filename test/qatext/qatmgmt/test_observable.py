@@ -2,8 +2,8 @@ from test.common_circuit import CircuitTestCase
 
 from qat.core import Observable, Term
 from qat.lang.AQASM import CNOT, RX, RY, RZ, H, Program, QRoutine, X, Y, Z
-from qatext.utils.qatmgmt.observables import produce_term_gates
-from qatext.utils.qatmgmt.result import get_sample_for_basis_str_from_result
+from qatext.qatmgmt.observables import produce_term_gates
+from qatext.qatmgmt.result import get_sample_for_basis_str_from_result
 
 
 class TestQatUtils(CircuitTestCase):

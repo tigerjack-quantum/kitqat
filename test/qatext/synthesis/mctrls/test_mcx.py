@@ -4,7 +4,7 @@ from parameterized import parameterized
 from qat.lang.AQASM.gates import CCNOT, H, X
 from qat.lang.AQASM.program import Program
 from qatext.synthesis.mctrls import mcx
-from qatext.utils.qatmgmt.program import ProgramWrapper
+from qatext.qatmgmt.program import ProgramWrapper
 
 from test.common_circuit import CircuitTestCase
 

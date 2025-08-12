@@ -1,4 +1,4 @@
-from qatext.utils.qatmgmt.program import ProgramWrapper
+from qatext.qatmgmt.program import ProgramWrapper
 from test.common_pytest import CircuitTestHelpers
 
 import pytest
@@ -6,7 +6,7 @@ from qat.lang.AQASM.gates import H, X
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-from qatext.utils.qatmgmt.sample import (
+from qatext.qatmgmt.sample import (
     extract_qreg_bitstring, extract_qreg_bitstrings_by_names,
     extract_qreg_value, extract_qreg_values_by_names,
     extract_qreg_values_by_qregs_properties, extract_qregs_bitstring,
@@ -239,7 +239,7 @@ if __name__ == '__main__':
     logging.basicConfig(
         level=logging.WARNING,
         format='%(filename)s %(asctime)s - %(levelname)s - %(message)s')
-    logging.getLogger("qatext.utils.qatmgmt").setLevel(logging.DEBUG)
+    logging.getLogger("qatext.qatmgmt").setLevel(logging.DEBUG)
     logging.getLogger(__name__).setLevel(logging.DEBUG)
 
     test = TestSample()

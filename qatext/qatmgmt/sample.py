@@ -6,7 +6,7 @@ from qat.lang.AQASM.qint import QInt
 if TYPE_CHECKING:
     from qat.core.wrappers.result import Sample
     from qat.lang.AQASM.bits import QRegister
-    from qatext.utils.qatmgmt.program import QRegsProperties
+    from qatext.qatmgmt.program import QRegsProperties
 
 
 def extract_qubit_bitstring(qbit_idxs: List[int], sample: "Sample") -> str:

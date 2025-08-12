@@ -5,7 +5,7 @@ from functools import reduce
 from qat.lang.AQASM.gates import CNOT
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
-from qatext.utils.qatmgmt.routines import QRoutineWrapper
+from qatext.qatmgmt.routines import QRoutineWrapper
 
 # membership_check = AbstractGate("ARRAY_MEMBERSHIP_CHECK", [int],
 #                                 arity=lambda n, m: n * m + m + 1)
