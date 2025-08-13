@@ -130,3 +130,15 @@ class ProgramWrapper:
             stop = start_idx + size * n  # type: ignore
         self._name_to_qarray[key] = QArray(
             slice(start, stop), n, size, None, qtype, unknown_size)
+
+    def qmatrix_alloc(
+        self,
+        r: int,
+        c: int,
+        size: int,
+        name: str,
+        qtype: Type[Union[bool, int, str]],
+    ):
+        qreg_arr = self.qarray_alloc(r*c, size, name, qtype)
+        qreg_matrix = [qreg_arr[i*c:(i+1)*c] for i in range(r)]
+        return qreg_matrix
