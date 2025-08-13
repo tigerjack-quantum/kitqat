@@ -5,7 +5,7 @@ import pytest
 import qat.lang.AQASM.classarith
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines.datastructure.arrays import contains
+from qatext.qroutines.datastructure.array import contains
 from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_int
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
@@ -13,7 +13,7 @@ from qatext.qatmgmt.program import ProgramWrapper
 
 
 # @pytest.mark.usefixtures("setup_simulator", "setup_logger")
-class TestArrays(CircuitTestHelpers):
+class TestArray(CircuitTestHelpers):
 
     @pytest.mark.parametrize(
         "element, array, expected",
