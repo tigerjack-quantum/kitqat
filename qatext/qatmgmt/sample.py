@@ -89,9 +89,9 @@ def extract_qarray_values_by_named_qarrays(
 
     for name, qarray in named_qarrays.items():
         bitstring = sample.state.bitstring[named_qarrays[name].slic]
-        assert qarray.n
-        assert qarray.m
         if qarray.qtype == int:
+            assert qarray.n
+            assert qarray.m
             value = get_ints_from_bitstring(bitstring, qarray.n, qarray.m,
                                             False)
         elif qarray.qtype == bool:
