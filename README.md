@@ -155,13 +155,14 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
   * Linear algebra
     * [x] Matrix init
     * [x] Row/Column swap
-    * [x] Gauss-Jordan Elimination (useful to compute the inverse of a matrix)
-    * [x] Moving columns to the start/end of the matrix
+    * [x] Gauss-Jordan Elimination (useful to compute the inverse of a matrix) [link](https://doi.org/10.1145/3607256)
+    * [x] Moving columns to the start/end of the matrix [link](https://doi.org/10.1109/QCE52317.2021.00056)
   * Crypto
-    * [x] DES Sbox
+    * [x] DES Sbox [link](https://doi.org/10.1109/QCE60285.2024.00011)
   * DataStructure
-    * [x] Sliding sort array [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
-    * [x] Low-Width sliding sort array [TODO link]()
+    * [x] Sorted array insertion/deletion [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
+    * [x] Low-Width insertion/deletion into sorted array [TODO link]()
+    * [x] Sorted array check existence
   * Arithmetic
     * [x] Cuccaro arithmetic
       * [x] Adder/subtractor
@@ -187,6 +188,8 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
   * Various
     * [x] Computing Hamming Weight of a subset of qubits
     * [x] Check Hamming Weight of a subset of qubits
+    * [x] Binary Index eXtractor (BIX, convert a Dicke state into an ordered set of integers) [link](https://doi.org/10.1145/3649329.3657337)
+    * [x] Vertex Binary Encodng (VBE, similar to BIX) [TODO link](TODO add link)
   * Extensions to QAT
     * [x] ProgramWrapper and QRoutineWrapper objects to extend the built-in Program and QRoutine objects
     * [x] Helper functions for Gate, Observable, Result and Sample objects (under `qatext.qatmgmt`)
