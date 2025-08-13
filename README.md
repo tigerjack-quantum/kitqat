@@ -153,12 +153,10 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [ ] Higher order embedding - [link](https://arxiv.org/pdf/1804.11326.pdf)
     * [ ] Variational/trained embedding - [link](https://arxiv.org/pdf/2001.03622.pdf)
   * Linear algebra
-    * [x] Matrix init
-    * [x] Row/Column swap
     * [x] Gauss-Jordan Elimination (useful to compute the inverse of a matrix) [link](https://doi.org/10.1145/3607256)
     * [x] Moving columns to the start/end of the matrix [link](https://doi.org/10.1109/QCE52317.2021.00056)
   * Crypto
-    * [x] DES Sbox [link](https://doi.org/10.1109/QCE60285.2024.00011)
+    * [x] DES (Kwan) Sbox [link](https://doi.org/10.1109/QCE60285.2024.00011)
   * DataStructure
     * [x] Sorted array insertion/deletion [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
     * [x] Low-Width insertion/deletion into sorted array [TODO link]()
@@ -182,9 +180,13 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [x] My arithmetic
       * [x] 2bit adder
       * [x] 2bit comparator
-  * Qreg management
+  * Qreg layout
     * [x] Qreg reversal
-    * [x] Qreg shift (left/right)
+    * [x] Qreg rotation (left/right)
+  * Qreg init
+    * [x] Data init (from compile time bitstring, bitarray, int)
+    * [x] Matrix init (...)
+        * [x] Row/Column swap
   * Various
     * [x] Computing Hamming Weight of a subset of qubits
     * [x] Check Hamming Weight of a subset of qubits
