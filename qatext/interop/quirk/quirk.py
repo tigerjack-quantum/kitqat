@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union
 
 import numpy as np
 from qatext.interop.quirk import parse
-from qatext.qroutines.qubitshuffle.rotate import rotate
+from qatext.qroutines import qregs_layout as ql
 from qat.lang.AQASM import gates
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
@@ -323,7 +323,7 @@ def _get_gate(gate_pre, additional_gates, var):
         elif gate_id in OTHER_MAPS:
             gate = OTHER_MAPS[gate_id]
         elif gate_id.startswith("<<"):
-            gate = rotate(int(gate_id[2]), 1)
+            gate = ql.rotate(int(gate_id[2]), 1)
         elif gate_id == "Swap":
             gate = gates.__dict__["SWAP"]
         elif gate_id in gates.__dict__:

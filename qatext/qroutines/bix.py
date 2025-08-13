@@ -7,7 +7,7 @@ from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines import qregs_init
 from qatext.qroutines.arith import adder
-from qatext.qroutines.qubitshuffle import rotate
+from qatext.qroutines import qregs_layout as ql
 from qatext.utils.bits.conversion import get_bitarray_from_int
 
 LOGGER = logging.getLogger(__name__)
@@ -68,8 +68,8 @@ def bix_indexes_compile_time(n: int, weight: int, idx_start_at_one: bool):
     qset1 = qregs_init.initialize_qureg_given_int(1, m, little_endian=False)
     qadd = adder(m, m, False, False)
     qxor = qregs_init.copy_register(m)
-    qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
-    qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
+    qleftrotones = ql.reg_rotate(len(oregs), m, 1)
+    qleftrotzeros = ql.reg_rotate(len(zregs), m, 1)
     final_clean = n if idx_start_at_one else n - 1
     qsetfinal = qregs_init.initialize_qureg_given_int(final_clean,
                                                       m,
@@ -175,8 +175,8 @@ def bix_data_diff_compile_time(n: int, m: int, weight: int, elems: List):
     #
     qadd = adder(m, m, False, False)
     qxor = qregs_init.copy_register(m)
-    qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
-    qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
+    qleftrotones = ql.reg_rotate(len(oregs), m, 1)
+    qleftrotzeros = ql.reg_rotate(len(zregs), m, 1)
 
     # _otmp = [0] * (weight+1)
     # _ztmp = [0] * (n-weight+1)
@@ -273,8 +273,8 @@ def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
         zregs.append(qrout.new_wires(m))
 
     #
-    qleftrotones = rotate.reg_reversal(len(oregs), m, 1)
-    qleftrotzeros = rotate.reg_reversal(len(zregs), m, 1)
+    qleftrotones = ql.reg_rotate(len(oregs), m, 1)
+    qleftrotzeros = ql.reg_rotate(len(zregs), m, 1)
 
     for i in range(n):
         # copy the first element
@@ -343,8 +343,8 @@ def bix_matrix_compile_time(n: int, columns: int, m: int, weight: int,
     # LOGGER.debug(zmatrix_flat)
 
     #
-    qleftrotones = rotate.reg_reversal(len(omatrix_flat), m, columns)
-    qleftrotzeros = rotate.reg_reversal(len(zmatrix_flat), m, columns)
+    qleftrotones = ql.reg_rotate(len(omatrix_flat), m, columns)
+    qleftrotzeros = ql.reg_rotate(len(zmatrix_flat), m, columns)
 
     for row in range(rows):
         for col in range(columns):
@@ -418,8 +418,8 @@ def bix_data_runtime(n: int, m: int, weight: int):
         q0regs.append(qrout.new_wires(m))
     LOGGER.debug("Len q0regs %d", len(q0regs))
 
-    qleftrotones = rotate.reg_reversal(len(q1regs), m, 1)
-    qleftrotzeros = rotate.reg_reversal(len(q0regs), m, 1)
+    qleftrotones = ql.reg_rotate(len(q1regs), m, 1)
+    qleftrotzeros = ql.reg_rotate(len(q0regs), m, 1)
 
     qcell_copy = qregs_init.copy_register(m)
     for i in range(n):
@@ -493,8 +493,8 @@ def bix_matrix_runtime(rows: int, columns: int, m: int, weight: int):
     # LOGGER.debug(zmatrix_flat)
 
     #
-    qleftrotones = rotate.reg_reversal(len(q1matrix_flat), m, columns)
-    qleftrotzeros = rotate.reg_reversal(len(q0matrix_flat), m, columns)
+    qleftrotones = ql.reg_rotate(len(q1matrix_flat), m, columns)
+    qleftrotzeros = ql.reg_rotate(len(q0matrix_flat), m, columns)
 
     qcell_copy = qregs_init.copy_register(m)
     for row in range(rows):

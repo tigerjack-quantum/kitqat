@@ -1,37 +1,36 @@
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qatext.qpus.reversible import RProgram
-from qatext.qroutines import qregs_init
-from qatext.qroutines.qubitshuffle import reverse, rotate
 from qat.lang.AQASM.program import Program
+from qatext.qpus.reversible import RProgram
+from qatext.qroutines import qregs_init as qi
+from qatext.qroutines import qregs_layout as ql
 
 # from qat.lang.AQASM.aqasm_util import InvalidGateArguments
 
 
-class QubitShuffleTestCase(CircuitTestCase):
-    @parameterized.expand(
-        [
-            "0111",
-            "0001",
-            "1000",
-            "1101",
-            "10011",
-            "1111000",
-            "10110100",
-            "11001011",
-            "111001011",
-        ]
-    )
+class TestQregsLayout(CircuitTestCase):
+
+    @parameterized.expand([
+        "0111",
+        "0001",
+        "1000",
+        "1101",
+        "10011",
+        "1111000",
+        "10110100",
+        "11001011",
+        "111001011",
+    ])
     def test_reverse(self, bitstring):
         n = len(bitstring)
         pr = Program()
         qr = pr.qalloc(n)
 
-        qfun = qregs_init.initialize_qureg_given_bitstring(bitstring, False)
+        qfun = qi.initialize_qureg_given_bitstring(bitstring, False)
         pr.apply(qfun, qr)
 
-        qfun = reverse.reverse(n)
+        qfun = ql.reverse(n)
         pr.apply(qfun, qr)
 
         circ = pr.to_circ()
@@ -52,19 +51,17 @@ class QubitShuffleTestCase(CircuitTestCase):
                 obtained = sample.state.bitstring
         self.assertEqual(obtained, exp)
 
-    @parameterized.expand(
-        [
-            ("0111", 1),
-            ("0001", 2),
-            ("1000", 3),
-            ("1101", 4),
-            ("10011", 3),
-            ("1111000", 2),
-            ("10110100", 1),
-            ("11001011", 5),
-            ("111001011", 6),
-        ]
-    )
+    @parameterized.expand([
+        ("0111", 1),
+        ("0001", 2),
+        ("1000", 3),
+        ("1101", 4),
+        ("10011", 3),
+        ("1111000", 2),
+        ("10110100", 1),
+        ("11001011", 5),
+        ("111001011", 6),
+    ])
     def test_rotate_qubits(self, bitstring, dshift):
         n = len(bitstring)
         for d in (-dshift, dshift):
@@ -72,10 +69,11 @@ class QubitShuffleTestCase(CircuitTestCase):
                 pr = Program()
                 qr = pr.qalloc(n)
 
-                qfun = qregs_init.initialize_qureg_given_bitstring(bitstring, False)
+                qfun = qi.initialize_qureg_given_bitstring(
+                    bitstring, False)
                 pr.apply(qfun, qr)
 
-                qfun = rotate.reversal(n, d)
+                qfun = ql.rotate(n, d)
                 pr.apply(qfun, qr)
                 circ = pr.to_circ()
 
@@ -85,7 +83,7 @@ class QubitShuffleTestCase(CircuitTestCase):
                     exp = bitstring[d1:] + bitstring[:d1]
                 else:
                     # right rotate
-                    exp = bitstring[n - d1 :] + bitstring[: n - d1]
+                    exp = bitstring[n - d1:] + bitstring[:n - d1]
 
                 obtained = None
                 if self.REVERSIBLE_ON:
@@ -102,17 +100,15 @@ class QubitShuffleTestCase(CircuitTestCase):
                         obtained = sample.state.bitstring
                 self.assertEqual(obtained, exp)
 
-    @parameterized.expand(
-        [
-            (["0111", "0001", "0110"], 1),
-            (["0111", "0001", "0110"], 2),
-            (["0111", "0001", "0110"], 3),
-            (["0111", "0001", "0110"], 4),
-            # (["011", "0001", "0110"], 4), # different sizes, should fail
-            (["10011", "11100", "11000", "10010", "10011"], 3),
-            # (["10011", "11100", "11000", "10010", "10011"], 8),
-        ]
-    )
+    @parameterized.expand([
+        (["0111", "0001", "0110"], 1),
+        (["0111", "0001", "0110"], 2),
+        (["0111", "0001", "0110"], 3),
+        (["0111", "0001", "0110"], 4),
+        # (["011", "0001", "0110"], 4), # different sizes, should fail
+        (["10011", "11100", "11000", "10010", "10011"], 3),
+        # (["10011", "11100", "11000", "10010", "10011"], 8),
+    ])
     def test_rotate_qregs(self, bitstrings: list[str], dshift: int):
         nstrings = len(bitstrings)
         # for the rotate routine to work, every string should be of the same size
@@ -124,11 +120,12 @@ class QubitShuffleTestCase(CircuitTestCase):
                 qregs = []
                 for bitstring in bitstrings:
                     qr = pr.qalloc(lstrings)
-                    qfun = qregs_init.initialize_qureg_given_bitstring(bitstring, False)
+                    qfun = qi.initialize_qureg_given_bitstring(
+                        bitstring, False)
                     pr.apply(qfun, qr)
                     qregs.append(qr)
 
-                qfun = rotate.reg_reversal(nstrings, lstrings, d)
+                qfun = ql.reg_rotate(nstrings, lstrings, d)
                 pr.apply(qfun, *qregs)
                 circ = pr.to_circ()
 
@@ -138,7 +135,8 @@ class QubitShuffleTestCase(CircuitTestCase):
                     exp = bitstrings[d1:] + bitstrings[:d1]
                 else:
                     # right rotate
-                    exp = bitstrings[nstrings - d1 :] + bitstrings[: nstrings - d1]
+                    exp = bitstrings[nstrings - d1:] + bitstrings[:nstrings -
+                                                                  d1]
                 # Since the result is a unique, long string
                 exp = "".join([str(i) for i in exp])
 

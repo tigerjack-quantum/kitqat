@@ -3,7 +3,7 @@ from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines.qregs_init import copy_register
-from qatext.qroutines.qubitshuffle.rotate import swap_qreg_cells
+from qatext.qroutines import qregs_layout as ql
 from qatext.qatmgmt.routines import QRoutineWrapper
 
 
@@ -92,7 +92,7 @@ def insert_lw(n, m):
 
     for j in range(n - 2, -1, -1):
         (qarray[j] >= qr_val[0]).evaluate(output=qr_out)
-        qrw.apply(swap_qreg_cells(m).ctrl(), qr_out, qarray[j], qarray[j + 1])
+        qrw.apply(ql.swap_qreg_cells(m).ctrl(), qr_out, qarray[j], qarray[j + 1])
         (qarray[j] >= qr_val[0]).evaluate(output=qr_out)
     # it seems that returning qrw does not work in some cases
     return qrw._qroutine
