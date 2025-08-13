@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
+import numpy as np
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-
 from qatext.utils.bits.conversion import get_ints_from_bitstring
 
 if TYPE_CHECKING:
@@ -79,18 +79,21 @@ def extract_qreg_values_by_names(
         dicc[name] = value
     return dicc
 
+
 def extract_qarray_values_by_named_qarrays(
-            named_qarrays: dict[str, 'QArray'],
-            sample: "Sample") -> Dict[str, int | list[bool] | str]:
+        named_qarrays: dict[str, 'QArray'],
+        sample: "Sample") -> Dict[str, int | list[bool] | str]:
     """Given a Sample object, returns the state value for the register.
     """
     dicc = {}
 
     for name, qarray in named_qarrays.items():
         bitstring = sample.state.bitstring[named_qarrays[name].slic]
+        assert qarray.n
+        assert qarray.m
         if qarray.qtype == int:
-            value = get_ints_from_bitstring(bitstring, qarray.n,
-                                         qarray.m, False)
+            value = get_ints_from_bitstring(bitstring, qarray.n, qarray.m,
+                                            False)
         elif qarray.qtype == bool:
             value = []
             for bit in bitstring:
@@ -99,3 +102,80 @@ def extract_qarray_values_by_named_qarrays(
             value = bitstring
         dicc[name] = value
     return dicc
+
+
+def build_matrix_from_sample(sample: "Sample", qreg_range: Set[int],
+                             shape: Tuple[int, int]) -> np.ndarray:
+    return build_matrix_from_bitstring(sample.state.bitstring, qreg_range,
+                                       shape)
+
+
+def build_matrix_from_bitstring(bitstring: str, qreg_range: Set[int],
+                                shape: Tuple[int, int]) -> np.ndarray:
+    matrix = np.zeros(shape, dtype=np.ubyte)
+    interesting_bits = [
+        val for i, val in enumerate(bitstring) if i in qreg_range
+    ]
+    for i, val in enumerate(interesting_bits):
+        row = i // shape[1]
+        col = i % shape[1]
+        matrix[row][col] = val
+    return matrix
+
+
+def build_u_matrix_from_sample(sample, nsquare):
+    """Build the matrix of transformations applied to obtain the RREF. I.e., if
+    original matrix was A and its RREF is B, we have U * B = A.
+
+    This function will return the U matrix by analyzing the intermediate
+    measurements on the ancilla (swap and add) qubits produced by the RREF
+    gate.
+
+    """
+    if len(sample.intermediate_measurements) != 2:
+        return
+    # this creates a bitlist
+    inter_meas_aout, inter_meas_bout = [
+        i.cbits for i in sample.intermediate_measurements
+    ]
+    return build_u_matrix_from_bitlists(inter_meas_aout, inter_meas_bout,
+                                        nsquare)
+
+
+def build_u_matrix_from_bitstrings(swaps: str, adds: str, nsquare):
+    return build_u_matrix_from_bitlists([int(i) for i in swaps],
+                                        [int(i) for i in adds], nsquare)
+
+
+def build_u_matrix_from_bitlists(swaps: list, adds: list, nsquare):
+    """Build the matrix of transformations applied to obtain the RREF. I.e., if
+    original matrix was A and its RREF is B, we have U * B = A.
+
+    This function will return the U matrix by analyzing the ancilla qubits
+    produced by the RREF gate.
+
+    """
+    swap_idx = 0
+    add_idx = 0
+    u = np.eye(nsquare, dtype=np.uint8)
+    for i in range(nsquare):
+        for j in range(i + 1, nsquare):
+            if swaps[swap_idx]:
+                u[
+                    i,
+                ] += u[
+                    j,
+                ]
+            swap_idx += 1
+        for j in range(nsquare):
+            if j == i:
+                continue
+            if adds[add_idx]:
+                u[
+                    j,
+                ] += u[
+                    i,
+                ]
+            add_idx += 1
+    u = u % 2
+    return u

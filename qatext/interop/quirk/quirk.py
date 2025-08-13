@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Union
 
 import numpy as np
 from qatext.interop.quirk import parse
-from qatext.qroutines import qregs_layout as ql
+from qatext.qroutines.qregs_mgmt import qregs_layout as ql
 from qat.lang.AQASM import gates
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine

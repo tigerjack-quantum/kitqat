@@ -13,27 +13,6 @@ if TYPE_CHECKING:
     from qat.lang.AQASM.bits import Qbit, QRegister
 
 
-@build_gate("MATRIX_INIT", [np.ndarray])
-def initialize_qureg_to_binary_matrix(matrix):
-    """Initialize a set of quregs to the value of the binary matrix, row-wise.
-    I.e. matrix [[1, 0], [1, 0]] will produce qreg [1, 0, 1, 0].
-
-    :param matrix: The binary matrix
-    :param little_endian:  The endiannes
-    :returns: QRoutine
-    """
-    n_rows, n_cols = matrix.shape
-    qfun = QRoutine()
-    for row_idx in range(n_rows):
-        qreg = qfun.new_wires(n_cols)
-        qrout = qregs_init.initialize_qureg_given_bitarray(
-            # tolist to avoid typing errors
-            matrix[row_idx, :].tolist(),
-            False,
-        )
-        qfun.apply(qrout, qreg)
-
-    return qfun
 
 
 def get_rows_as_qubit_list(
@@ -71,24 +50,6 @@ def get_columns_as_index_list(
         lis = [qreg[i].index for i in range(col_idx, nrows * ncols, ncols)]
         cols_qbits.append(lis)
     return cols_qbits
-
-
-def build_matrix_from_sample(
-    sample: "Sample", qreg_range: Set[int], shape: Tuple[int, int]
-) -> np.ndarray:
-    return build_matrix_from_bitstring(sample.state.bitstring, qreg_range, shape)
-
-
-def build_matrix_from_bitstring(
-    bitstring: str, qreg_range: Set[int], shape: Tuple[int, int]
-) -> np.ndarray:
-    matrix = np.zeros(shape, dtype=np.ubyte)
-    interesting_bits = [val for i, val in enumerate(bitstring) if i in qreg_range]
-    for i, val in enumerate(interesting_bits):
-        row = i // shape[1]
-        col = i % shape[1]
-        matrix[row][col] = val
-    return matrix
 
 
 @build_gate("SWAP_COLS", [int])

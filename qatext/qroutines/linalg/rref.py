@@ -23,58 +23,6 @@ def get_required_ancillae(nrows: int, ncols: int):
     return swap_ancilla_n, add_ancilla_n
 
 
-def build_u_matrix_from_sample(sample, nsquare):
-    """Build the matrix of transformations applied to obtain the RREF. I.e.,
-    if.
-
-    original matrix was A and its RREF is B, we have U * B = A.
-
-    This function will return the U matrix by analyzing the intermediate
-    measurements on the ancilla (swap and add) qubits produced by the RREF
-    gate.
-    """
-    if len(sample.intermediate_measurements) != 2:
-        return
-    # this creates a bitlist
-    inter_meas_aout, inter_meas_bout = [
-        i.cbits for i in sample.intermediate_measurements
-    ]
-    return build_u_matrix_from_bitlists(inter_meas_aout, inter_meas_bout, nsquare)
-
-
-def build_u_matrix_from_bitstrings(swaps: str, adds: str, nsquare):
-    return build_u_matrix_from_bitlists(
-        [int(i) for i in swaps], [int(i) for i in adds], nsquare
-    )
-
-
-def build_u_matrix_from_bitlists(swaps: list, adds: list, nsquare):
-    """Build the matrix of transformations applied to obtain the RREF. I.e.,
-    if.
-
-    original matrix was A and its RREF is B, we have U * B = A.
-
-    This function will return the U matrix by analyzing the ancilla qubits
-    produced by the RREF gate.
-    """
-    swap_idx = 0
-    add_idx = 0
-    u = np.eye(nsquare, dtype=np.uint8)
-    for i in range(nsquare):
-        for j in range(i + 1, nsquare):
-            if swaps[swap_idx]:
-                u[i,] += u[j,]
-            swap_idx += 1
-        for j in range(nsquare):
-            if j == i:
-                continue
-            if adds[add_idx]:
-                u[j,] += u[i,]
-            add_idx += 1
-    u = u % 2
-    return u
-
-
 @build_gate("RREF_OPS", [int, int])
 def gate_same_ops_for_vector(nrows: int, ncols: int):
     """Apply the same operations applied to obtain the matrix RREF to a vector.

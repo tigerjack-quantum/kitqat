@@ -3,7 +3,7 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qatext.utils.bits import conversion, misc
-from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qat.lang.AQASM.program import Program
 
 
@@ -20,7 +20,7 @@ class QregInitTestCase(CircuitTestCase):
             (15, True),
         ]
     )
-    def test_adder(self, int_dec, little_endian):
+    def test_init(self, int_dec, little_endian):
         prog = Program()
         bits = misc.get_required_bits(int_dec)
 
@@ -37,7 +37,7 @@ class QregInitTestCase(CircuitTestCase):
         else:
             int_dec_new = int_dec
         qreg = prog.qalloc(bits)
-        qfun = qregs.initialize_qureg_given_int(int_dec, bits, little_endian)
+        qfun = qi.initialize_qureg_given_int(int_dec, bits, little_endian)
         prog.apply(qfun, qreg)
 
         circ = prog.to_circ()

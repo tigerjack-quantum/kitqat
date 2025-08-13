@@ -8,7 +8,7 @@ from qat.lang.AQASM.misc import build_gate
 
 from qatext.utils.bits import conversion
 from qatext.qroutines.arith import cuccaro_arith as adder
-from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
 
 if TYPE_CHECKING:
     from qat.lang.AQASM.bits import QRegister
@@ -172,7 +172,7 @@ def get_qroutine_for_qubits_weight_check(
     result_qubits = get_to_measure_qubits(a_qs, cout_qs, patterns_dict)
     # We already have the string in little endian, so we don't have to reverse
     # it again
-    qfun = qregs.initialize_qureg_to_complement_of_bitstring(equal_str, False)
+    qfun = qi.initialize_qureg_to_complement_of_bitstring(equal_str, False)
     circuit.apply(qfun, result_qubits)
 
     if compute_eq:

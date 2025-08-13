@@ -1,7 +1,7 @@
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.qregs_mgmt import qregs_init as qregs
 from qatext.qroutines.arith import perriello_arith
 from qat.lang.AQASM.program import Program
 

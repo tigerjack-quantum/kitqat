@@ -1,10 +1,13 @@
 import unittest
+from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qpus.reversible import RProgram
 from test.common_circuit import CircuitTestCase
 
 import numpy as np
 from parameterized import parameterized
-from qatext.qroutines.linalg import matrix as qmatrix
+# from qatext.qroutines.linalg import matrix as qmatrix
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
+from qatext.qatmgmt.sample import build_matrix_from_bitstring, build_u_matrix_from_bitlists
 from qatext.qroutines.linalg import rref
 from qat.lang.AQASM.program import Program
 from sympy import Matrix
@@ -14,28 +17,32 @@ from sympy import Matrix
 
 class RrefTestCase(CircuitTestCase):
     def _prepare_circuit(self, matrix):
-        self.pr = Program()
+        self.prw = ProgramWrapper(Program())
         nrows, ncols = matrix.shape
         self.nsquare = min(matrix.shape)
         # qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix.tolist())
-        qrout = qmatrix.initialize_qureg_to_binary_matrix(matrix)
-        qr_matrix = self.pr.qalloc(nrows * ncols)
-        self.pr.apply(qrout, qr_matrix)
-        self.qregs_rows = qmatrix.get_rows_as_qubit_list(nrows, ncols, qr_matrix)
+        qrout = qi.initialize_qureg_to_binary_matrix(matrix)
+        # qr_matrix = self.prw.qalloc(nrows * ncols)
+        # self.qregs_rows = qi.get_rows_as_qubit_list(nrows, ncols, qr_matrix)
+        self.qmatrix = self.prw.qmatrix_alloc(nrows, ncols, 1, "matrix", str)
+        self.prw.apply(qrout, self.qmatrix)
 
-        self.qbit_range = set(q.index for qreg in self.qregs_rows for q in qreg)
+        # self.qbit_range = set(q.index for qreg in self.qregs_rows for q in qreg)
+        self.qbit_range = set(range(self.prw._name_to_qarray["matrix"].slic.start,
+                                    self.prw._name_to_qarray["matrix"].slic.stop
+                                    ))
         swap_anc_n, add_anc_n = rref.get_required_ancillae(nrows, ncols)
-        self.swap_qregs = self.pr.qalloc(swap_anc_n)
-        self.add_qregs = self.pr.qalloc(add_anc_n)
+        self.swap_qregs = self.prw.qalloc(swap_anc_n)
+        self.add_qregs = self.prw.qalloc(add_anc_n)
 
     def _common_test(self, matrix, test_u=False, test_iden=False, should_fail=False):
         self._prepare_circuit(matrix)
 
         nrows, ncols = matrix.shape
         rref_gate = rref.get_rref(nrows, ncols)
-        self.pr.apply(rref_gate, self.qregs_rows, self.swap_qregs, self.add_qregs)
+        self.prw.apply(rref_gate, *self.qmatrix, self.swap_qregs, self.add_qregs)
 
-        cr = self.pr.to_circ()
+        cr = self.prw.to_circ()
         tomeasure = [qb for qb in self.qbit_range]
         if test_u:
             tomeasure.extend([qb.index for qb in self.swap_qregs])
@@ -53,7 +60,7 @@ class RrefTestCase(CircuitTestCase):
             if sample is None:
                 raise Exception("Unknown flow")
             bitstring = sample.state.bitstring
-        mat_rref = qmatrix.build_matrix_from_bitstring(
+        mat_rref = build_matrix_from_bitstring(
             bitstring, self.qbit_range, matrix.shape
         )
         mat_rref_sim = Matrix(matrix).rref(pivots=False)
@@ -82,8 +89,8 @@ class RrefTestCase(CircuitTestCase):
             add_idxs = [qb.index for qb in self.add_qregs]
             swap_vals = [int(bitstring[i]) for i in swap_idxs]
             add_vals = [int(bitstring[i]) for i in add_idxs]
-            unew = rref.build_u_matrix_from_bitlists(swap_vals, add_vals, self.nsquare)
-            # u = rref.build_u_matrix_from_sample(sample, self.nsquare)
+            unew = build_u_matrix_from_bitlists(swap_vals, add_vals, self.nsquare)
+            # u = build_u_matrix_from_sample(sample, self.nsquare)
             np.testing.assert_array_equal(unew @ matrix % 2, mat_rref)
 
     @parameterized.expand(

@@ -4,7 +4,7 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qatext.qpus.reversible import RProgram
-from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.qregs_mgmt import qregs_init as qregs
 from qatext.qroutines.hamming_weight_compute import fpc
 from qat.lang.AQASM.program import Program
 

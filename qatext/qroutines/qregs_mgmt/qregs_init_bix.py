@@ -5,9 +5,9 @@ from typing import List
 from qat.lang.AQASM.gates import SWAP, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
-from qatext.qroutines import qregs_init
 from qatext.qroutines.arith import adder
-from qatext.qroutines import qregs_layout as ql
+from qatext.qroutines.qregs_mgmt import qregs_init
+from qatext.qroutines.qregs_mgmt import qregs_layout as ql
 from qatext.utils.bits.conversion import get_bitarray_from_int
 
 LOGGER = logging.getLogger(__name__)
@@ -131,7 +131,8 @@ def bix_indexes_compile_time(n: int, weight: int, idx_start_at_one: bool):
     return qrout
 
 
-@build_gate("BIX_DATAD_DIFF", [int, int, int, List], lambda n, m, w, x: n + n * m)
+@build_gate("BIX_DATAD_DIFF", [int, int, int, List],
+            lambda n, m, w, x: n + n * m)
 def bix_data_diff_compile_time(n: int, m: int, weight: int, elems: List):
     """Given a bitstring of length `n`, having exactly `weight` qubits set to
     1, store into `weight` registers the values `elems[i]` if `dicke[i] == 1`,
@@ -242,6 +243,7 @@ def bix_data_diff_compile_time(n: int, m: int, weight: int, elems: List):
 
     return qrout
 
+
 @build_gate("BIX_DATA", [int, int, int, List], lambda n, m, w, x: n + n * m)
 def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
     """Given a bitstring of length `n`, having exactly `weight` qubits set to
@@ -292,8 +294,8 @@ def bix_data_compile_time(n: int, m: int, weight: int, elems: List):
             qrout.apply(qleftrotzeros.ctrl(1), wreg[i], *zregs)
         qrout.apply(X, wreg[i])
 
-
     return qrout
+
 
 @build_gate("BIX_MATRIX", [int, int, int, int, List],
             lambda n, r, m, w, x: n * r * m + n)

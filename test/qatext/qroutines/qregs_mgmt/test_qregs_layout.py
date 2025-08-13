@@ -3,8 +3,8 @@ from test.common_circuit import CircuitTestCase
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import RProgram
-from qatext.qroutines import qregs_init as qi
-from qatext.qroutines import qregs_layout as ql
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
+from qatext.qroutines.qregs_mgmt import qregs_layout as ql
 
 # from qat.lang.AQASM.aqasm_util import InvalidGateArguments
 

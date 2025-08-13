@@ -2,8 +2,8 @@ from qat.lang.AQASM.gates import CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.qint import QInt
 from qat.lang.AQASM.routines import QRoutine
-from qatext.qroutines.qregs_init import copy_register
-from qatext.qroutines import qregs_layout as ql
+from qatext.qroutines.qregs_mgmt.qregs_init import copy_register
+from qatext.qroutines.qregs_mgmt import qregs_layout as ql
 from qatext.qatmgmt.routines import QRoutineWrapper
 
 

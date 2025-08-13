@@ -3,7 +3,7 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qatext.qpus.reversible import RProgram
-from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits import conversion, misc
 from qat.lang.AQASM.program import Program
@@ -56,11 +56,11 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("little endian %s", little_endian)
                 self.logger.debug("overflow %s", overflow)
 
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     b_int, len(self.b), little_endian
                 )
                 self.qc.apply(qfun, self.b)
@@ -144,11 +144,11 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("a %d", len(self.a))
                 self.logger.debug("b %d", len(self.b))
 
-                qfun1 = qregs.initialize_qureg_given_int(
+                qfun1 = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun1, self.a)
-                qfun2 = qregs.initialize_qureg_given_int(
+                qfun2 = qi.initialize_qureg_given_int(
                     b_int, len(self.b), little_endian
                 )
                 self.qc.apply(qfun2, self.b)
@@ -211,11 +211,11 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("b %d", len(self.b))
                 self.logger.debug("little endian %s", little_endian)
                 self.logger.debug("overflow %s", overflow)
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     b_int, len(self.b), little_endian
                 )
                 self.qc.apply(qfun, self.b)
@@ -296,11 +296,11 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("b %d", len(self.b))
                 self.logger.debug("little endian %s", little_endian)
                 self.logger.debug("overflow %s", overflow)
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     b_int, len(self.b), little_endian
                 )
                 self.qc.apply(qfun, self.b)
@@ -375,7 +375,7 @@ class AdderTestCase(CircuitTestCase):
                 self._prepare_adder_circuit(bits, 0, overflow)
 
                 # Initialize a to its value
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
@@ -472,11 +472,11 @@ class AdderTestCase(CircuitTestCase):
                 self.logger.debug("little endian %s", little_endian)
                 self.logger.debug("overflow %s", overflow)
 
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     b_int, len(self.b), little_endian
                 )
                 self.qc.apply(qfun, self.b)
@@ -560,12 +560,12 @@ class AdderTestCase(CircuitTestCase):
             with self.subTest(little_endian=little_endian):
                 self._prepare_adder_circuit(bits, bits, True)
 
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     a_int, len(self.a), little_endian
                 )
                 self.qc.apply(qfun, self.a)
 
-                qfun = qregs.initialize_qureg_given_int(
+                qfun = qi.initialize_qureg_given_int(
                     b_int, len(self.b), little_endian
                 )
                 self.qc.apply(qfun, self.b)

@@ -7,7 +7,7 @@ import qat.lang.AQASM.classarith
 # from parameterized import parameterized
 from qat.lang.AQASM.program import Program
 from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines import qregs_init as qregs
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.qroutines.datastructure.sliding_sort_array import (delete, insert,
                                                                insert_lw)
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
@@ -55,12 +55,12 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         prw = ProgramWrapper(Program())
         # named_qarrays: dict[str, QArray] = {}
         qr_x = prw.qarray_alloc(1, m, "x", int)
-        qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
+        qfun = qi.initialize_qureg_given_int(value_to_insert, m, False)
         prw.apply(qfun, qr_x)
 
         qrs_data = prw.qarray_alloc(n, m, "a", int)
         for i, value in enumerate(values):
-            qfun = qregs.initialize_qureg_given_int(value, m, False)
+            qfun = qi.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
         prw.qarray_noalloc(n, m, "a1",
                            qrs_data[-1].start + qrs_data[-1].length, int)
@@ -136,12 +136,12 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         prw = ProgramWrapper(Program())
         # named_qarrays: dict[str, QArray] = {}
         qr_x = prw.qarray_alloc(1, m, "x", int)
-        qfun = qregs.initialize_qureg_given_int(value_to_insert, m, False)
+        qfun = qi.initialize_qureg_given_int(value_to_insert, m, False)
         prw.apply(qfun, qr_x)
 
         qrs_data = prw.qarray_alloc(n, m, "a", int)
         for i, value in enumerate(values):
-            qfun = qregs.initialize_qureg_given_int(value, m, False)
+            qfun = qi.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
         prw.qarray_noalloc(None,
                            None,
@@ -213,12 +213,12 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         prw = ProgramWrapper(Program())
 
         qr_x = prw.qarray_alloc(1, m, "x", int)
-        qfun = qregs.initialize_qureg_given_int(value_to_delete, m, False)
+        qfun = qi.initialize_qureg_given_int(value_to_delete, m, False)
         prw.apply(qfun, qr_x)
 
         qrs_data = prw.qarray_alloc(n, m, "a", int)
         for i, value in enumerate(values):
-            qfun = qregs.initialize_qureg_given_int(value, m, False)
+            qfun = qi.initialize_qureg_given_int(value, m, False)
             prw.apply(qfun, qrs_data[i])
         prw.qarray_noalloc(n, m, "a1",
                            qrs_data[-1].start + qrs_data[-1].length, int)

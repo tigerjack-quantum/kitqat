@@ -8,6 +8,7 @@ will be |100>. So it can be thougth as big-endianness.
 """
 import functools
 import logging
+import numpy as np
 from typing import TYPE_CHECKING, Sequence
 
 from qat.lang.AQASM.gates import CNOT, X
@@ -206,3 +207,25 @@ def copy_array_of_registers(n: int, m: int):
     for qr_in, qr_out in zip(qarr_in, qarr_out):
         qrout.apply(qrout_copy_cell, qr_in, qr_out)
     return qrout
+
+@build_gate("MATRIX_INIT", [np.ndarray])
+def initialize_qureg_to_binary_matrix(matrix):
+    """Initialize a set of quregs to the value of the binary matrix, row-wise.
+    I.e. matrix [[1, 0], [1, 0]] will produce qreg [1, 0, 1, 0].
+
+    :param matrix: The binary matrix
+    :param little_endian:  The endiannes
+    :returns: QRoutine
+    """
+    n_rows, n_cols = matrix.shape
+    qfun = QRoutine()
+    for row_idx in range(n_rows):
+        qreg = qfun.new_wires(n_cols)
+        qrout = initialize_qureg_given_bitarray(
+            # tolist to avoid typing errors
+            matrix[row_idx, :].tolist(),
+            False,
+        )
+        qfun.apply(qrout, qreg)
+
+    return qfun

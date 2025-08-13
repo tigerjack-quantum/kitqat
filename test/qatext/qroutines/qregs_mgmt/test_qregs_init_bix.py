@@ -1,4 +1,3 @@
-import logging
 from itertools import chain
 from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
                                 CircuitTestHelpers)
@@ -6,12 +5,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 from qat.lang.AQASM.program import Program
+from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qpus.reversible import (get_state_from_program,
                                     inspect_state_reversible_program)
-from qatext.qroutines import bix, qregs_init
 from qatext.qroutines.arith import cuccaro_arith
+from qatext.qroutines.qregs_mgmt import qregs_init
+from qatext.qroutines.qregs_mgmt import qregs_init_bix as bix
 from qatext.utils.bits.conversion import get_bitstring_from_int
-from qatext.qatmgmt.program import ProgramWrapper
 
 if TYPE_CHECKING:
     from qatext.qatmgmt.program import QArray
@@ -20,9 +20,8 @@ if TYPE_CHECKING:
 # @pytest.mark.usefixtures("setup_simulator", "setup_logger")
 class TestBix(CircuitTestHelpers):
 
-    def _extract_and_check_named_regs(
-            self, bitstring, expected_map,
-            named_qarrays: dict[str, 'QArray']):
+    def _extract_and_check_named_regs(self, bitstring, expected_map,
+                                      named_qarrays: dict[str, 'QArray']):
         """Post-processing checks"""
         for name, expected in expected_map.items():
             bits = bitstring[named_qarrays[name].slic]
@@ -166,8 +165,8 @@ class TestBix(CircuitTestHelpers):
         for index_start_at_one in (False, True):
             add = 1 if index_start_at_one else 0
             m = (n - 1 + add).bit_length()
-            self.logger.debug("add %d, m %d (index_start_at_one is %s)", add, m,
-                         index_start_at_one)
+            self.logger.debug("add %d, m %d (index_start_at_one is %s)", add,
+                              m, index_start_at_one)
             onesexp = "".join([
                 get_bitstring_from_int(i + add, m)
                 for i, j in enumerate(bitstring) if j == "1"
@@ -189,6 +188,7 @@ class TestBix(CircuitTestHelpers):
                 zerosexp,
                 qfun,
             )
+
     @pytest.mark.parametrize("bitstring, elements", [
         ("0101", [0, 1, 2, 3]),
         ("0101", [2, 8, 10, 12]),
