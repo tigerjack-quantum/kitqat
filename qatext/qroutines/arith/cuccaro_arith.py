@@ -184,6 +184,11 @@ def subtractor(a_l: int, b_l: int, overflow_qbit=False, little_endian=False) -> 
 
 @build_gate("MADD", [int, int, bool, bool])
 def adder(a_l: int, b_l: int, overflow_qbit=False, little_endian=True) -> QRoutine:
+    """Add two quantum registers, a and b, of size a_l and b_l. It performs |a>|b> -> |a>|a+b>
+    If len(b) > 1, then it allocates a new qubit for the carry-in, as per cuccaro scheme.
+    If overflow qubit is True, it allocates a new qubit for the possible overflow
+
+    """
     qfun, a, b, cin, cout, bits, b_is_bigger = _common_init(
         a_l, b_l, overflow_qbit, little_endian
     )
