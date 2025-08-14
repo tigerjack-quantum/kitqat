@@ -1,6 +1,6 @@
 [project]
 name = "qatext"
-version = "2.3.3"
+version = "2.3.4"
 description = "Extensions and utilities to QAT"
 authors = [
     {name = "Simone Perriello"}

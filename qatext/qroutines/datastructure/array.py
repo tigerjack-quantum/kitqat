@@ -43,4 +43,5 @@ def contains(n, m, repeated_values_possible=False):
         for qreg_val in qarray:
             (qreg_val == qreg_value_to_check).evaluate(output=qbit_out)
 
-    return routinew
+    # it seems that returning qrw does not work in some cases
+    return routinew._qroutine
