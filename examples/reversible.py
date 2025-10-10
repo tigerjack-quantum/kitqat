@@ -2,8 +2,8 @@ from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, X
 from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
 from qatext.qpus.reversible import RProgram, inspect_state_reversible_program
-from qatext.qroutines.qregs_init import initialize_qureg_given_int
-from qatext.utils.qatmgmt.program import ProgramWrapper
+from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_int
+from qatext.qatmgmt.program import ProgramWrapper
 
 
 def ex1():
@@ -36,7 +36,7 @@ def ex2(n):
     # ProgramWrapper adds a few functionalities to Program
     prw = ProgramWrapper(pr)
     # allocate n quantum registers on pr, each one composed of n_qubits
-    qarray_ints = prw.qregs_array_alloc(
+    qarray_ints = prw.qarray_alloc(
         n,
         n_qubits,
         "MyQuantumArray",
