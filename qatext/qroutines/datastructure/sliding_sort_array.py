@@ -5,6 +5,7 @@ from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines.qregs_mgmt.qregs_init import copy_register
 from qatext.qroutines.qregs_mgmt import qregs_layout as ql
 from qatext.qatmgmt.routines import QRoutineWrapper
+from qatext.qroutines.datastructure.fanout import fanout
 
 
 @build_gate('SLIDING_SORT_INSERT', [int, int], lambda n, m: n * m + m)
@@ -27,9 +28,7 @@ def insert(n, m):
     # return qf # OK
 
     # fan out
-    for i in range(n):
-        for qb1, qb2 in zip(qr_val, qrs_ai[i]):
-            qf.apply(CNOT, qb1, qb2)
+    qf.apply(fanout(n, m), qr_val, qrs_ai)
 
     # ... also to the last cell of A
     for qb1, qb2 in zip(qr_val, qrs_a[n - 1]):
@@ -61,9 +60,7 @@ def insert(n, m):
         (qr_ai <= qr_a).evaluate(output=qb_aii)
 
     # fan out
-    for i in range(n):
-        for qb1, qb2 in zip(qr_val, qrs_ai[i]):
-            qf.apply(X.ctrl(), qb1, qb2)
+    qf.apply(fanout(n, m), qr_val, qrs_ai)
 
     return qf
 
