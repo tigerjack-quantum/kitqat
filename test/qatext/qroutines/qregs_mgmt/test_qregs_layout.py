@@ -39,6 +39,7 @@ class TestQregsLayout(CircuitTestCase):
         obtained = None
         if self.REVERSIBLE_ON:
             rpr = RProgram.circuit_to_rprogram(circ)
+            rpr.apply_gates_from_circuit(circ, circ)
             obtained = rpr.rbits.to01()
         else:
             res = self.qpu.submit(circ.to_job())
@@ -88,6 +89,7 @@ class TestQregsLayout(CircuitTestCase):
                 obtained = None
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(circ)
+                    rpr.apply_gates_from_circuit(circ, circ)
                     obtained = rpr.rbits.to01()
                 else:
                     res = self.qpu.submit(circ.to_job())
@@ -143,6 +145,7 @@ class TestQregsLayout(CircuitTestCase):
                 obtained = None
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(circ)
+                    rpr.apply_gates_from_circuit(circ, circ)
                     obtained = rpr.rbits.to01()
                 else:
                     res = self.qpu.submit(circ.to_job())

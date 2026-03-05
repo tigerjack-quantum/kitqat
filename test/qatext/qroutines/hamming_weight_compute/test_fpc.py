@@ -41,6 +41,7 @@ class PopulationCountTestCase(CircuitTestCase):
 
         if self.REVERSIBLE_ON:
             rpr = RProgram.circuit_to_rprogram(circ)
+            rpr.apply_gates_from_circuit(circ, circ)
             res = "".join([str(rpr.rbits[qbit.index]) for qbit in to_measure_qubits])
             # obtained = ''.join(
             #     [str(bit) for i, bit in enumerate(rpr.rbits) if i in qridxs])

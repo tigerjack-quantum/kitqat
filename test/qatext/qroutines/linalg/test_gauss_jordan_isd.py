@@ -80,6 +80,7 @@ class GjiTestCase(CircuitTestCase):
                 cr = pr.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     if test_u:
                         # we measure all the qubits
                         bitstring = rpr.rbits.to01()

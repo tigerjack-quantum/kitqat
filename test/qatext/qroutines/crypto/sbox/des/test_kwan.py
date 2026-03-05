@@ -74,6 +74,7 @@ class DESSboxTestCase(CircuitTestCase):
                 circ = pr.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(circ)
+                    rpr.apply_gates_from_circuit(circ, circ)
                     obtained = rpr.rbits.to01()
                     obtained_int = int(obtained[6:10], 2)
                     self.assertEqual(expected, obtained_int)
