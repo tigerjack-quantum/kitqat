@@ -18,4 +18,12 @@ def fanout(n, m):
         # for qb1, qb2 in zip(qr_val, qrs_a[i]):
         #     qf.apply(CNOT, qb1, qb2)
     return qf
+
+@build_gate('COPY', [int], lambda n: 2*n)
+def copy(n):
+    qf = QRoutine()
+    qr_val = qf.new_wires(n)
+    qr_val2 = qf.new_wires(n)
+    for qb1, qb2 in zip(qr_val, qr_val2):
+        qf.apply(CNOT, qb1, qb2)
     return qf
