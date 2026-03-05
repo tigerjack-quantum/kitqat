@@ -11,7 +11,7 @@ import operator
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
-from qatext.utils.bits.conversion import get_ints_from_bitarray
+from qatext.utils.bits.conversion import get_bitstring_array, get_ints_from_bitarray
 from qatext.qatmgmt.program import ProgramWrapper, QArray
 from qatext.qatmgmt.routines import QRoutineWrapper
 
@@ -349,7 +349,11 @@ def get_rprogram_regs_values_from_states(
         if qarray.unknown_size:
             val = v
         elif qarray.qtype == str:
-            val = v
+            # val = v
+            assert qarray.n is not None
+            assert qarray.m is not None
+            val = get_bitstring_array(v, qarray.n,
+                                         qarray.m)
         elif qarray.qtype == bool:
             val = v
         elif qarray.qtype == int:
