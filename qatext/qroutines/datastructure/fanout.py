@@ -5,6 +5,14 @@ from qat.lang.AQASM.routines import QRoutine
 
 @build_gate('FANOUT', [int, int], lambda n, m: n * m + m)
 def fanout(n, m):
+    """Propagate the content of a quantum register of m qubits into n quantum
+    registers of m qubits using logarithmic depth.
+
+    Input:
+    - Quantum register containing the value
+    - The n quantum registers to propagate to
+    """
+
     qf = QRoutine()
     qr_val = qf.new_wires(m)
     qrs_a = []
@@ -13,7 +21,6 @@ def fanout(n, m):
 
     # registers that already contain the value
     available = [qr_val]
-
     targets = list(qrs_a)
 
     while targets:
@@ -21,14 +28,10 @@ def fanout(n, m):
         for src in available:
             if not targets:
                 break
-
             tgt = targets.pop(0)
-
             # copy src -> tgt
             qf.apply(copy(m), src, tgt)
-
             new_available.append(tgt)
-
         # newly created copies can broadcast next round
         available += new_available
 
@@ -37,8 +40,8 @@ def fanout(n, m):
 @build_gate('COPY', [int], lambda n: 2*n)
 def copy(n):
     qf = QRoutine()
-    qr_val = qf.new_wires(n)
+    qr_val1 = qf.new_wires(n)
     qr_val2 = qf.new_wires(n)
-    for qb1, qb2 in zip(qr_val, qr_val2):
+    for qb1, qb2 in zip(qr_val1, qr_val2):
         qf.apply(CNOT, qb1, qb2)
     return qf
