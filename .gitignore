@@ -9,7 +9,7 @@ poetry.lock
 tmp/
 out/
 experiments/measures
-examples/
+examples/_tmp
 # others
 requirements-core.txt
 GPATH
