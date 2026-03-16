@@ -13,7 +13,7 @@ from qatext.qroutines.datastructure.sliding_sort_array import (delete, insert,
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
                                           get_ints_from_bitarray)
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import adder2bit, sub2bit, mul2bit, adder_n_bit
+from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import adder2bit, sub2bit, mul2bit, adder_n_bit, mul_n_bit
 
 
 class TestPintoBasicArith:
@@ -170,5 +170,62 @@ class TestPintoBasicArith:
         # Verifichiamo
         assert out_a == val_a
         assert out_b == expected_b, f"Errore con {nbits} bit: {val_a} + {val_b} doveva dare {expected_b}, ma ha dato {out_b}"
+        
+    @pytest.mark.parametrize(
+        "val_a, val_b, nbits",
+        [
+            # --- 1-bit cases ---
+            (1, 1, 1),  # 1 * 1 = 1
+            
+            # --- 2-bit cases ---
+            (0, 3, 2),  # Null element: 0 * (x+1) = 0
+            (1, 3, 2),  # Identity element: 1 * (x+1) = x+1 (i.e., 3)
+            (2, 2, 2),  # x * x = x^2 (i.e., 4)
+            (3, 3, 2),  # (x+1) * (x+1) = x^2 + 1 (i.e., 5, since 2x = 0 in GF(2))
+            
+            # --- 3-bit cases ---
+            (7, 3, 3),  # (x^2+x+1) * (x+1) = x^3 + 1 (i.e., 9)
+            (5, 5, 3),  # (x^2+1) * (x^2+1) = x^4 + 1 (i.e., 17)
+            (6, 7, 3),  # (x^2+x) * (x^2+x+1) = x^4 + x (i.e., 18)
+        ]
+    )
+    def test_mul_n_bit(self, val_a, val_b, nbits):
+        """Test the N-bit Classical (Schoolbook) Multiplication in GF(2^m)."""
+        prw = ProgramWrapper(Program())
+
+        # Allocate input registers of size 'nbits'
+        qr_a = prw.qarray_alloc(1, nbits, "a", int)
+        qr_b = prw.qarray_alloc(1, nbits, "b", int)
+        
+        # Allocate output register of size 2 * nbits, initialized to 0
+        qr_out = prw.qarray_alloc(1, nbits * 2, "out", int)
+
+        # Initialize qubits with the chosen values (CHANGED TO True for Little-Endian)
+        prw.apply(qi.initialize_qureg_given_int(val_a, nbits, True), qr_a[0])
+        prw.apply(qi.initialize_qureg_given_int(val_b, nbits, True), qr_b[0])
+
+        # Apply the multiplication circuit
+        gate_mul_n = mul_n_bit(nbits)
+        prw.apply(gate_mul_n, qr_a[0], qr_b[0], qr_out[0])
+
+        # Simulate the circuit instantly
+        res = get_states_from_program_wrapper(prw, [])
+
+        # Extract results and convert to integers 
+        out_a = get_int_from_bitarray(res['a'], True)
+        out_b = get_int_from_bitarray(res['b'], True)
+        final_out = get_int_from_bitarray(res['out'], True)
+        # -----------------------------------------------------------------
+        # CLASSICAL ORACLE: The actual GF(2^m) multiplication
+        expected_out = 0
+        for i in range(nbits):
+            if (val_a >> i) & 1:
+                expected_out ^= (val_b << i)
+        # -----------------------------------------------------------------
+        
+    
+            # Verify the multiplication result
+        assert final_out == expected_out, f"Multiplication error: {val_a} * {val_b} should be {expected_out}, but got {final_out}"
+
 if __name__ == '__main__':
     pytest.main([__file__])

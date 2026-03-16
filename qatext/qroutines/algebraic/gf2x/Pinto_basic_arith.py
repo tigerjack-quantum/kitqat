@@ -47,3 +47,21 @@ def adder_n_bit(n: int) -> QRoutine:
 
 # Alias for subtraction (since addition and subtraction are identical in GF(2^m))
 sub_n_bit = adder_n_bit
+
+@build_gate("MUL_N_BIT", [int], arity=lambda n: n * 4)
+def mul_n_bit(n: int) -> QRoutine:
+    
+    
+    qrout = QRoutine()
+    
+    # Allocate registers
+    reg_a = qrout.new_wires(n)
+    reg_b = qrout.new_wires(n)
+    reg_out = qrout.new_wires(n * 2) 
+    
+    # Double loop for the schoolbook multiplication
+    for i in range(n):
+        for j in range(n):
+            qrout.apply(CCNOT, reg_a[i], reg_b[j], reg_out[i + j])
+            
+    return qrout
