@@ -32,7 +32,7 @@ def test_karatsuba_performance():
     end_kara = time.perf_counter()
     time_kara = end_kara - start_kara
     
-    print(f"Native multiplication (*) time: {time_base:.6f} seconds")
-    print(f"Custom Karatsuba time:          {time_kara:.6f} seconds")
+    print(f"Native multiplication time: {time_base:.6f} seconds")
+    print(f"Karatsuba time:{time_kara:.6f} seconds")
     
     assert result == expected
