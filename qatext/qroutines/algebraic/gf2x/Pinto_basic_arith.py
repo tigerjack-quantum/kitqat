@@ -45,7 +45,7 @@ def adder_n_bit(n: int) -> QRoutine:
         
     return qrout
 
-# Alias for subtraction (since addition and subtraction are identical in GF(2^m))
+
 sub_n_bit = adder_n_bit
 
 @build_gate("MUL_N_BIT", [int], arity=lambda n: n * 4)
