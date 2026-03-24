@@ -86,7 +86,9 @@ class TestRProgram(CircuitTestCase):
         pr = Program()
         pr.apply(H, pr.qalloc(1))
 
-        part = functools.partial(RProgram.circuit_to_rprogram, pr.to_circ())
+        circ = pr.to_circ()
+        rpr = RProgram.circuit_to_rprogram(circ)
+        part = functools.partial(rpr.apply_gates_from_circuit, circ, circ)
         self.assertRaises(AttributeError, part)
 
     def test_qcircuit_to_rprogram_with_controlled(self):
@@ -103,6 +105,7 @@ class TestRProgram(CircuitTestCase):
             pass
         assert sample is not None
         rpr = RProgram.circuit_to_rprogram(circC)
+        rpr.apply_gates_from_circuit(circC, circC)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
 
@@ -128,6 +131,7 @@ class TestRProgram(CircuitTestCase):
             pass
         assert sample is not None
         rpr = RProgram.circuit_to_rprogram(cr)
+        rpr.apply_gates_from_circuit(cr, cr)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
     def test_qcircuit_to_rprogram_with_qroutines(self):
@@ -145,6 +149,7 @@ class TestRProgram(CircuitTestCase):
             pass
         assert sample is not None
         rpr = RProgram.circuit_to_rprogram(cr)
+        rpr.apply_gates_from_circuit(cr, cr)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
     def test_qcircuit_to_rprogram_with_build_gates(self):
@@ -162,6 +167,7 @@ class TestRProgram(CircuitTestCase):
             pass
         assert sample is not None
         rpr = RProgram.circuit_to_rprogram(cr)
+        rpr.apply_gates_from_circuit(cr, cr)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
     def test_qroutine_to_rprogram_apply(self):

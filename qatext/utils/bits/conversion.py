@@ -60,3 +60,15 @@ def get_int_from_bitstring(a_str: str, littleEndian=False) -> int:
 
 def get_int_from_bitarray(a_arr: List[int], littleEndian=False) -> int:
     return get_int_from_bitstring("".join(str(e) for e in a_arr), littleEndian)
+
+def get_bitstring_array(state_str: str, n: int, m: int) -> List[str]:
+    """Given a bitstring, split it into n substrings of length m."""
+    regs = []
+    for i in range(n):
+        slice_ = state_str[i * m:(i + 1) * m]
+        if not slice_:
+            raise ValueError(
+                f"Empty slice for i={i}, m={m}, state_str='{state_str}'"
+            )
+        regs.append(slice_)
+    return regs

@@ -32,6 +32,9 @@ class ProgramWrapper:
     def __getattr__(self, name):
         return getattr(self._program, name)
 
+    def get_name_to_qarray(self):
+        return self._name_to_qarray
+
     def add_name_to_qbits_following_pattern(self, pattern: Dict[str,
                                                                 List["Qbit"]]):
         """It allows to add a fake gate to a set of qbit in order to help their

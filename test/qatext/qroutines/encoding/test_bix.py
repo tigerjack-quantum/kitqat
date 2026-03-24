@@ -10,7 +10,7 @@ from qatext.qpus.reversible import (get_state_from_program,
                                     inspect_state_reversible_program)
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.qroutines.qregs_mgmt import qregs_init
-from qatext.qroutines.qregs_mgmt import qregs_init_bix as bix
+from qatext.qroutines.encoding import bix
 from qatext.utils.bits.conversion import get_bitstring_from_int
 
 if TYPE_CHECKING:

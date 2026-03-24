@@ -50,6 +50,7 @@ class RrefTestCase(CircuitTestCase):
 
         if self.REVERSIBLE_ON:
             rpr = RProgram.circuit_to_rprogram(cr)
+            rpr.apply_gates_from_circuit(cr, cr)
             bitstring = "".join([str(rpr.rbits[idx]) for idx in tomeasure])
         else:
             res = self.qpu.submit(cr.to_job(qubits=tomeasure))

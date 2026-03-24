@@ -28,6 +28,7 @@ class MctrlsXTest(CircuitTestCase):
                 cr = pr.to_circ(link=[mcx2.mnot], include_matrices=False, inline=True, include_locks=True)
                 # cr.display()
                 rpr = RProgram.circuit_to_rprogram(cr)
+                rpr.apply_gates_from_circuit(cr, cr)
                 obtained = rpr.rbits.to01()
                 if bitstring == '1'*nctrls:
                     self.assertEqual(obtained[nctrls], '1')

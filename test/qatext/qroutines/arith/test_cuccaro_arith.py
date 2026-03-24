@@ -100,6 +100,7 @@ class AdderTestCase(CircuitTestCase):
                 #     expected, len(to_measure_qbits))
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -171,6 +172,7 @@ class AdderTestCase(CircuitTestCase):
                 expected = 0
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     bits = rpr.rbits.to01()
                     self.assertEqual(int(bits, 2), expected)
                     return
@@ -247,6 +249,7 @@ class AdderTestCase(CircuitTestCase):
 
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -331,6 +334,7 @@ class AdderTestCase(CircuitTestCase):
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -414,6 +418,7 @@ class AdderTestCase(CircuitTestCase):
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -514,6 +519,7 @@ class AdderTestCase(CircuitTestCase):
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -578,6 +584,7 @@ class AdderTestCase(CircuitTestCase):
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
                     rpr = RProgram.circuit_to_rprogram(cr)
+                    rpr.apply_gates_from_circuit(cr, cr)
                     # bitstring = "".join([str(rpr.rbits[index]) for index in to_measure_qbits])
                     bitstring = rpr.rbits.to01()[self.cout[0].index]
                     bits = int(bitstring, 2)

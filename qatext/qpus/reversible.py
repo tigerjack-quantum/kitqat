@@ -11,7 +11,7 @@ import operator
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Sequence
 
-from qatext.utils.bits.conversion import get_ints_from_bitarray
+from qatext.utils.bits.conversion import get_bitstring_array, get_ints_from_bitarray
 from qatext.qatmgmt.program import ProgramWrapper, QArray
 from qatext.qatmgmt.routines import QRoutineWrapper
 
@@ -188,7 +188,7 @@ class RProgram:
             # there are ancillae automatically generated from subroutines
             rprogram.ralloc(qdiff, "auto_ancillae")
 
-        rprogram.apply_gates_from_circuit(qcirc, qcirc)
+        # rprogram.apply_gates_from_circuit(qcirc, qcirc)
         return rprogram
 
     def apply_gates_from_circuit(
@@ -271,6 +271,7 @@ def get_state_from_program(
 ) -> str:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.apply_gates_from_circuit(circ, circ)
     res = rpr.get_result()
     return res
 
@@ -284,6 +285,7 @@ def get_states_from_program(
 ) -> dict[str, list[int]]:
     circ = pr.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.apply_gates_from_circuit(circ, circ)
     rpr.rregs = reg_names_to_properties
     res = rpr.get_result_by_name()
     return res
@@ -296,6 +298,7 @@ def get_states_from_circuit(
 ) -> dict[str, list[int]]:
     rpr = RProgram.circuit_to_rprogram(circ)
     rpr.rregs = reg_names_to_properties
+    rpr.apply_gates_from_circuit(circ, circ)
     res = rpr.get_result_by_name()
     return res
 
@@ -304,9 +307,10 @@ def get_states_from_circuit(
 def get_states_from_program_wrapper(
     prw: ProgramWrapper,
     link: Optional[list],
-) -> dict[str, list[int]]:
+) -> dict[str, list]:
     circ = prw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.apply_gates_from_circuit(circ, circ)
     rpr.rregs = prw._name_to_qarray
     res = rpr.get_result_by_name()
     return res
@@ -316,10 +320,11 @@ def get_states_from_program_wrapper(
 def get_states_from_qroutine_wrapper(
     qroutw: QRoutineWrapper,
     link: Optional[list],
-) -> dict[str, list[int]]:
+) -> dict[str, list]:
 
     circ = qroutw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.apply_gates_from_circuit(circ, circ)
     rpr.rregs = qroutw._name_to_qarray
     states = rpr.get_result_by_name()
     return states
@@ -344,7 +349,11 @@ def get_rprogram_regs_values_from_states(
         if qarray.unknown_size:
             val = v
         elif qarray.qtype == str:
-            val = v
+            # val = v
+            assert qarray.n is not None
+            assert qarray.m is not None
+            val = get_bitstring_array(v, qarray.n,
+                                         qarray.m)
         elif qarray.qtype == bool:
             val = v
         elif qarray.qtype == int:
@@ -363,6 +372,7 @@ def inspect_state_reversible_program(prw: ProgramWrapper, link):
     # this is the get_states_from_program function, but I need circ
     circ = prw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.apply_gates_from_circuit(circ, circ)
     rpr_bits = rpr.rbits
     rpr.rregs = prw._name_to_qarray
     state = rpr.get_result_by_name()
@@ -385,6 +395,7 @@ def inspect_state_reversible_qroutine(qroutw: QRoutineWrapper, link):
     # this is the get_states_from_program function, but I need circ
     circ = qroutw.to_circ(link=link, inline=True)
     rpr = RProgram.circuit_to_rprogram(circ)
+    rpr.apply_gates_from_circuit(circ, circ)
     rpr_bits = rpr.rbits
     rpr.rregs = qroutw._name_to_qarray
     state = rpr.get_result_by_name()

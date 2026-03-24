@@ -81,6 +81,8 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
 
         qf = insert(n, m)
         prw.apply(qf, qr_x, *qrs_data)
+        # cr = prw.to_circ()
+        # print(cr.depth(default=1))
 
         res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
         # self.print_rprogram_regs_from_rprogram_states(states, named_qarrays)

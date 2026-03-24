@@ -96,8 +96,10 @@ When launching tests, you can provide some optional environment variables
   * `LOG_LEVEL`, with values equal to the names provided by Python logging
 utilities. E.g. `LOG_LEVEL=DEBUG python -m unittest test.test_qroutine_rref`.
   * `SLOW_TEST_ON=1` to enable also time consuming tests
+  * `REVERSIBLE_ON=1` to enable the reversible simulator for circuits made only
+    of reversible gates
   * `QLM_ON=1` to use the QLM instead of myQLM
-  * [x] `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
+  * `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
     simulator is actually available. For QLM, there are a variety of available
     simulators depending on the version.
 
@@ -121,20 +123,19 @@ details of myQLM by following the documentation freely available at
 [https://myqlm.github.io/](https://myqlm.github.io/). You can also ask for help
 on the official [slack channel](https://myqlmworkspace.slack.com/).
 
+## Contributors ##
+- 
+
 # Authors and citations #
 Part of the code presented here was used in the results of many of my articles.
 Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
 
-
-
-# To modify list #
-  * [ ] Use slack suggestion for gate definition
-
-# To implement list #
+# List of utilities implemented/ to be implemented #
   * Reversible simulator
     * [X] Implementation
-    * [ ] Integration with QLM
-
+  * Extensions to QAT
+    * [x] ProgramWrapper and QRoutineWrapper objects to extend the built-in Program and QRoutine objects
+    * [x] Helper functions for Gate, Observable, Result and Sample objects (under `qatext.qatmgmt`)
   * Reversible combinatorial circuits
     * [x] Sorting network
     * [x] Benes network
@@ -180,6 +181,11 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [x] My arithmetic
       * [x] 2bit adder
       * [x] 2bit comparator
+  * Modular arithmetic in finite fields
+    * [ ] F_{2^n}
+      * [ ] Inversion
+    * [ ] F_p
+      * [ ] Inversion
   * Qreg layout
     * [x] Qreg reversal
     * [x] Qreg rotation (left/right)
@@ -192,6 +198,3 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [x] Check Hamming Weight of a subset of qubits
     * [x] Binary Index eXtractor (BIX, convert a Dicke state into an ordered set of integers) [link](https://doi.org/10.1145/3649329.3657337)
     * [x] Vertex Binary Encodng (VBE, similar to BIX) [TODO link](TODO add link)
-  * Extensions to QAT
-    * [x] ProgramWrapper and QRoutineWrapper objects to extend the built-in Program and QRoutine objects
-    * [x] Helper functions for Gate, Observable, Result and Sample objects (under `qatext.qatmgmt`)

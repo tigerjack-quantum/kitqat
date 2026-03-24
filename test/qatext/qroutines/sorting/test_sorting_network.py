@@ -53,6 +53,7 @@ class SortingNetworkTestCase(CircuitTestCase):
         if self.REVERSIBLE_ON:
             cr = self.pr.to_circ(include_matrices=False, submatrices_only=True)
             rpr = RProgram.circuit_to_rprogram(cr)
+            rpr.apply_gates_from_circuit(cr, cr)
             qridxs = [qbit.index for qbit in self.qr]
             obtained = "".join(
                 [str(bit) for i, bit in enumerate(rpr.rbits) if i in qridxs]

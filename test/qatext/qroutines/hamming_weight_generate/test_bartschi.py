@@ -5,7 +5,7 @@ from math import factorial
 from test.common_circuit import CircuitTestCase
 
 from qatext.qroutines.hamming_weight_generate import bartschiE19
-from qat.lang.AQASM import Program
+from qat.lang.AQASM.program import Program
 
 
 class BartschiTestCase(CircuitTestCase):
