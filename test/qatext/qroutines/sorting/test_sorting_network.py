@@ -105,6 +105,29 @@ class SortingNetworkTestCase(CircuitTestCase):
 
     @parameterized.expand(
         [
+            "000",
+            "11111",
+            "01101",
+            "101001",
+            "1001000",
+            "110001101",
+        ]
+    )
+    def test_bitonic_sorter_nopowerof2(self, string):
+        is_bitonic = self._check_bitonic(string)
+        n = len(string)
+        # print(is_bitonic)
+        pattern = sn.get_pattern_bitonic_sorter(n)
+        self._prepare_circuit(string, pattern)
+
+        qrout = sn.build_gate_bitonic_sorter(pattern)
+        self.pr.apply(qrout, self.qr, self.comps)
+
+        sorted_string_exp = "".join(list(sorted(string)))
+        self._simulate_and_check_result(string, sorted_string_exp, is_bitonic)
+
+    @parameterized.expand(
+        [
             "01",
             "10",
             "0000",
