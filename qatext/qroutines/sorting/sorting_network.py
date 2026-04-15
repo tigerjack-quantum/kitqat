@@ -50,10 +50,6 @@ def _build_gate_common(net_data: Dict[str, Any], to_compare=True, to_reverse=Fal
     a_wires = routine.new_wires(a_len)
     comp_wires = routine.new_wires(comp_len)
 
-    if to_compare and not to_reverse:
-        for qb in a_wires:
-            routine.apply(X, qb)
-
     for comp_idx, i, j in net_data["swaps_pattern"]:
         a_qb = a_wires[i]
         b_qb = a_wires[j]
@@ -61,13 +57,11 @@ def _build_gate_common(net_data: Dict[str, Any], to_compare=True, to_reverse=Fal
 
         # Optimized comparator
         if to_compare:
-            routine.apply(CNOT, b_qb, ctrl_qb)
+            if to_reverse:
+                routine.apply(CNOT, b_qb, ctrl_qb)
+            else:
+                routine.apply(CNOT, a_qb, ctrl_qb)
         routine.apply(SWAP.ctrl(), ctrl_qb, a_qb, b_qb)
-
-    if to_compare and not to_reverse:
-        for qb in a_wires:
-            routine.apply(X, qb)
-
     return routine
 
 

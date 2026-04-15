@@ -41,11 +41,7 @@ class SortingNetworkTestCase(CircuitTestCase):
 
     def _simulate_and_check_result(self, string: str, expected: str, check_sorted=True):
         obtained = self._simulate_and_get_result()
-        if not obtained:
-            raise Exception(f"Unknown flow")
-        is_sorted = all(obtained[i] <= obtained[i + 1] for i in range(len(string) - 1))
         if check_sorted:
-            self.assertTrue(is_sorted)
             self.assertEqual(obtained, expected)
 
     def _simulate_and_get_result(self):
@@ -68,15 +64,17 @@ class SortingNetworkTestCase(CircuitTestCase):
             self.assertEqual(i, 0)
         return obtained
 
-    def _test_sorter_common(self, string):
+    def _test_sorter_common(self, string, to_reverse=False):
         n = len(string)
         pattern = sn.get_pattern_sorter(n)
 
         self._prepare_circuit(string, pattern)
 
-        qrout = sn.build_gate_sorter(pattern)
+        qrout = sn.build_gate_sorter(pattern, to_reverse=to_reverse)
         self.pr.apply(qrout, self.qr, self.comps)
         sorted_string_exp = "".join(list(sorted(string)))
+        if to_reverse:
+            sorted_string_exp = sorted_string_exp[::-1]
 
         self._simulate_and_check_result(string, sorted_string_exp)
 
@@ -167,6 +165,22 @@ class SortingNetworkTestCase(CircuitTestCase):
 
     @parameterized.expand(
         [
+            "01",
+            "10",
+            "0000",
+            "1111",
+            "0001",
+            "0010",
+            "0111",
+            "1011",
+            "1001",
+        ]
+    )
+    def test_sorter_reverse(self, string):
+        self._test_sorter_common(string, True)
+
+    @parameterized.expand(
+        [
             "10110111",
         ]
     )
@@ -187,3 +201,12 @@ class SortingNetworkTestCase(CircuitTestCase):
     @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON, f"Only with reversible")
     def test_sorter_long(self, string):
         self._test_sorter_common(string)
+
+    @parameterized.expand(
+        [
+            "10110111111100110101000110100011",
+        ]
+    )
+    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON, f"Only with reversible")
+    def test_sorter_long_reversed(self, string):
+        self._test_sorter_common(string, True)
