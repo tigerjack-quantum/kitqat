@@ -40,7 +40,9 @@ def _filter_and_reindex_swaps(
 # Circuit builder
 # ============================================================
 
-def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
+def _build_gate_common(net_data: Dict[str, Any], to_compare=True, to_reverse=False) -> QRoutine:
+    """to_permute can be set to false in case one wants only to compare the
+    qubits as per a sorting network, but then instead doesn't want to swap."""
     a_len: int = net_data["n_lines"]
     comp_len: int = net_data["n_comps"]
 
@@ -48,17 +50,23 @@ def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
     a_wires = routine.new_wires(a_len)
     comp_wires = routine.new_wires(comp_len)
 
+    if to_compare and not to_reverse:
+        for qb in a_wires:
+            routine.apply(X, qb)
+
     for comp_idx, i, j in net_data["swaps_pattern"]:
         a_qb = a_wires[i]
         b_qb = a_wires[j]
         ctrl_qb = comp_wires[comp_idx]
 
         # Optimized comparator
-        routine.apply(X, b_qb)
-        routine.apply(CNOT, b_qb, ctrl_qb)
-        routine.apply(X, b_qb)
-
+        if to_compare:
+            routine.apply(CNOT, b_qb, ctrl_qb)
         routine.apply(SWAP.ctrl(), ctrl_qb, a_qb, b_qb)
+
+    if to_compare and not to_reverse:
+        for qb in a_wires:
+            routine.apply(X, qb)
 
     return routine
 
@@ -67,7 +75,7 @@ def _build_gate_common(net_data: Dict[str, Any]) -> QRoutine:
 # Bitonic sorter
 # ============================================================
 
-@build_gate("BITONIC_SORTER", [dict])
+# @build_gate("BITONIC_SORTER", [dict])
 def build_gate_bitonic_sorter(net_data: Dict[str, Any]) -> QRoutine:
     return _build_gate_common(net_data)
 
@@ -194,10 +202,9 @@ def _get_pattern_merger_support(n, net_data, comp_q_idx, start_shift=0):
 # Full sorter
 # ============================================================
 
-@build_gate("SORTER", [dict])
-def build_gate_sorter(net_data):
-    return _build_gate_common(net_data)
-
+# @build_gate("SORTER", [dict])
+def build_gate_sorter(net_data, to_compare=True, to_reverse=False):
+    return _build_gate_common(net_data, to_compare=to_compare, to_reverse=to_reverse)
 
 def get_pattern_sorter(n: int) -> Dict[str, Any]:
     net_data: Dict[str, Any] = {}
