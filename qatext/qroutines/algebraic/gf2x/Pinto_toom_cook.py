@@ -350,6 +350,7 @@ def toom3_interp(n: int) -> QRoutine:
     qrout.set_ancillae(i3)
     for i in range(2*j+5):
         qrout.apply(CNOT, i3_temp[i], i3[i+1])
+    qrout.apply(CNOT, i3_temp[0], i3[0])    #fix
     res_b_temp = qrout.new_wires(2*j+6)
     qrout.set_ancillae(res_b_temp)
     for i in range(2*j+6):
@@ -357,6 +358,7 @@ def toom3_interp(n: int) -> QRoutine:
     qrout.apply(toom_sub_n(2*j+6), i1, res_b_temp)
     for i in range(2*j+5):
         qrout.apply(CNOT, res_b_temp[i], res_b[i+1])
+    qrout.apply(CNOT, res_b_temp[0], res_b[0])    #fix    
     ext_2t = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_2t)
     for i in range(2*j):
@@ -379,6 +381,9 @@ def toom3_interp(n: int) -> QRoutine:
     qrout.apply(toom_sub_n(2*j+6).dag(), i1, res_b_temp)
     for i in range(2*j+6):
         qrout.apply(CNOT, i2[i], res_b_temp[i])
+    qrout.apply(CNOT, i3_temp[0], i3[0])
+    for i in range(2*j+5):
+        qrout.apply(CNOT, i3_temp[i], i3[i+1])    
     qrout.apply(toom_sub_n(2*j+6).dag(), ext_r, i3_temp)
     for i in range(2*j+6):
         qrout.apply(CNOT, ext_q2[i], i3_temp[i])
