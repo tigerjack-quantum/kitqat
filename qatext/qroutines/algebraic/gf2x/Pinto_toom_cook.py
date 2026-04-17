@@ -170,6 +170,13 @@ def karatsuba_modular(n, m_bits):
 
 # --- Reversible Arithmetic Primitives ---
 
+def copy_qreg(qrout, src, dest, offset_src=0, offset_dest=0, length=None):
+    """Copia i qubit da src a dest usando CNOT. Funge anche da uncompute se ri-applicata."""
+    if length is None:
+        length = len(src) - offset_src
+    for i in range(length):
+        qrout.apply(CNOT, src[offset_src + i], dest[offset_dest + i])
+
 def toom_add_n(n: int) -> QRoutine:
     """In-place ripple-carry adder: |a>|b>|cin> -> |a>|a+b>|cin>."""
     qrout = QRoutine()
@@ -179,17 +186,14 @@ def toom_add_n(n: int) -> QRoutine:
     qrout.apply(cuccaro_adder(n, n, False, False), a, b, cin)
     return qrout
 
-
 def toom_sub_n(n: int) -> QRoutine:
     """In-place ripple-carry subtractor: |a>|b>|cin> -> |a>|b-a>|cin>."""
     qrout = QRoutine()
     a, b = qrout.new_wires(n), qrout.new_wires(n)
     cin = qrout.new_wires(1)
     qrout.set_ancillae(cin)
-    # Adjoint of adder correctly implements b = b - a
     qrout.apply(cuccaro_adder(n, n, False, False).dag(), a, b, cin)
     return qrout
-
 
 @build_gate("TOOM_MULT_PRIM", [int, int, bool, bool])
 def toom_mult_prim(size_a, size_b, signed_a=False, signed_b=False):
@@ -201,8 +205,7 @@ def toom_mult_prim(size_a, size_b, signed_a=False, signed_b=False):
         target_size = size_b + i + 1
         ext_b = qrout.new_wires(target_size)
         qrout.set_ancillae(ext_b)
-        for j in range(size_b):
-            qrout.apply(CNOT, b[j], ext_b[j + i + 1])
+        copy_qreg(qrout, b, ext_b, offset_dest=(i + 1))
         if signed_b:
             for k in range(i + 1):
                 qrout.apply(CNOT, b[0], ext_b[k])
@@ -212,8 +215,7 @@ def toom_mult_prim(size_a, size_b, signed_a=False, signed_b=False):
         if signed_b:
             for k in range(i + 1):
                 qrout.apply(CNOT, b[0], ext_b[k])
-        for j in range(size_b):
-            qrout.apply(CNOT, b[j], ext_b[j + i + 1])
+        copy_qreg(qrout, b, ext_b, offset_dest=(i + 1)) # uncompute
     return qrout
 
 # --- Main Toom-Cook 3 Logic ---
@@ -228,66 +230,59 @@ def toom3_eval(n: int) -> QRoutine:
         qrout.new_wires(k) for k in [j, j, j + 2, j + 2, j + 3]
     ]
     x2, x1, x0 = x[0:j], x[j:2*j], x[2*j:n]
-    for i in range(j):
-        qrout.apply(CNOT, x0[i], res_0[i])
-        qrout.apply(CNOT, x2[i], res_inf[i])
+
+    copy_qreg(qrout, x0, res_0)
+    copy_qreg(qrout, x2, res_inf)
+
+    # temp_a = x0 + x2
     temp_a = qrout.new_wires(j + 1)
     qrout.set_ancillae(temp_a)
-    for i in range(j):
-        qrout.apply(CNOT, x0[i], temp_a[i+1])
+    copy_qreg(qrout, x0, temp_a, offset_dest=1)
     ext_x2 = qrout.new_wires(j + 1)
     qrout.set_ancillae(ext_x2)
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2[i+1])
+    copy_qreg(qrout, x2, ext_x2, offset_dest=1)
     qrout.apply(toom_add_n(j+1), ext_x2, temp_a)
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2[i+1])
-    for i in range(j + 1):
-        qrout.apply(CNOT, temp_a[i], res_1[i+1])
-        qrout.apply(CNOT, temp_a[i], res_m1[i+1])
+    copy_qreg(qrout, x2, ext_x2, offset_dest=1)
+
+    # res_1 e res_m1
+    copy_qreg(qrout, temp_a, res_1, offset_dest=1)
+    copy_qreg(qrout, temp_a, res_m1, offset_dest=1)
     ext_x1 = qrout.new_wires(j+2)
     qrout.set_ancillae(ext_x1)
-    for i in range(j):
-        qrout.apply(CNOT, x1[i], ext_x1[i+2])
+    copy_qreg(qrout, x1, ext_x1, offset_dest=2)
     qrout.apply(toom_add_n(j+2), ext_x1, res_1)
     qrout.apply(toom_sub_n(j+2), ext_x1, res_m1)
-    for i in range(j):
-        qrout.apply(CNOT, x1[i], ext_x1[i+2])
+    copy_qreg(qrout, x1, ext_x1, offset_dest=2)
+
+    # temp_b
     temp_b = qrout.new_wires(j + 2)
     qrout.set_ancillae(temp_b)
-    for i in range(j + 2):
-        qrout.apply(CNOT, res_m1[i], temp_b[i])
+    copy_qreg(qrout, res_m1, temp_b)
     ext_x2_b = qrout.new_wires(j+2)
     qrout.set_ancillae(ext_x2_b)
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2_b[i+2])
+    copy_qreg(qrout, x2, ext_x2_b, offset_dest=2)
     qrout.apply(toom_add_n(j+2), ext_x2_b, temp_b)
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2_b[i+2])
-    for i in range(j + 2):
-        qrout.apply(CNOT, temp_b[i], res_m2[i])
+    copy_qreg(qrout, x2, ext_x2_b, offset_dest=2)
+
+    # res_m2
+    copy_qreg(qrout, temp_b, res_m2)
     ext_x0 = qrout.new_wires(j+3)
     qrout.set_ancillae(ext_x0)
-    for i in range(j):
-        qrout.apply(CNOT, x0[i], ext_x0[i+3])
+    copy_qreg(qrout, x0, ext_x0, offset_dest=3)
     qrout.apply(toom_sub_n(j+3), ext_x0, res_m2)
-    for i in range(j):
-        qrout.apply(CNOT, x0[i], ext_x0[i+3])
+    copy_qreg(qrout, x0, ext_x0, offset_dest=3)
+
     # UNCOMPUTE
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2_b[i+2])
+    copy_qreg(qrout, x2, ext_x2_b, offset_dest=2)
     qrout.apply(toom_add_n(j+2).dag(), ext_x2_b, temp_b)
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2_b[i+2])
-    for i in range(j+2):
-        qrout.apply(CNOT, res_m1[i], temp_b[i])
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2[i+1])
+    copy_qreg(qrout, x2, ext_x2_b, offset_dest=2)
+    copy_qreg(qrout, res_m1, temp_b)
+
+    copy_qreg(qrout, x2, ext_x2, offset_dest=1)
     qrout.apply(toom_add_n(j+1).dag(), ext_x2, temp_a)
-    for i in range(j):
-        qrout.apply(CNOT, x2[i], ext_x2[i+1])
-    for i in range(j):
-        qrout.apply(CNOT, x0[i], temp_a[i+1])
+    copy_qreg(qrout, x2, ext_x2, offset_dest=1)
+    copy_qreg(qrout, x0, temp_a, offset_dest=1)
+
     return qrout
 
 
@@ -298,122 +293,111 @@ def toom3_interp(n: int) -> QRoutine:
     j = n // 3
     p, q, r, s, t = [qrout.new_wires(k) for k in [2*j, 2*j+4, 2*j+4, 2*j+6, 2*j]]
     res_a, res_b, res_c, res_d, res_e = [qrout.new_wires(2*j+6) for _ in range(5)]
-    for i in range(2*j):
-        qrout.apply(CNOT, p[i], res_e[i+6])
-        qrout.apply(CNOT, t[i], res_a[i+6])
+
+    copy_qreg(qrout, p, res_e, offset_dest=6)
+    copy_qreg(qrout, t, res_a, offset_dest=6)
+
     i1_temp = qrout.new_wires(2*j+6)
     qrout.set_ancillae(i1_temp)
     i1 = qrout.new_wires(2*j+6)
     qrout.set_ancillae(i1)
-    for i in range(2*j+6):
-        qrout.apply(CNOT, s[i], i1_temp[i])
+    copy_qreg(qrout, s, i1_temp)
     ext_q = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_q)
-    for i in range(2*j+4):
-        qrout.apply(CNOT, q[i], ext_q[i+2])
+    copy_qreg(qrout, q, ext_q, offset_dest=2)
     qrout.apply(toom_sub_n(2*j+6), ext_q, i1_temp)
+
+    # Ottimizzazione Divisione per 3: UNA SOLA ancilla per tutti gli shift
     inv3 = pow(3, -1, 2**(2*j+6))
+    shifted_acc = qrout.new_wires(2*j+6)
+    qrout.set_ancillae(shifted_acc)
     for i in range(2*j+6):
         if (inv3 >> i) & 1:
-            shifted = qrout.new_wires(2*j+6)
-            qrout.set_ancillae(shifted)
-            for k in range(2*j+6-i):
-                qrout.apply(CNOT, i1_temp[k+i], shifted[k])
-            qrout.apply(toom_add_n(2*j+6), shifted, i1)
-            for k in range(2*j+6-i):
-                qrout.apply(CNOT, i1_temp[k+i], shifted[k])
+            copy_qreg(qrout, i1_temp, shifted_acc, offset_src=i, length=(2*j+6-i))
+            qrout.apply(toom_add_n(2*j+6), shifted_acc, i1)
+            copy_qreg(qrout, i1_temp, shifted_acc, offset_src=i, length=(2*j+6-i))
+
     i2 = qrout.new_wires(2*j+6)
     qrout.set_ancillae(i2)
     ext_r = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_r)
-    for i in range(2*j+4):
-        qrout.apply(CNOT, r[i], ext_r[i+2])
-    qrout.apply(CNOT, r[0], ext_r[1])
-    qrout.apply(CNOT, r[0], ext_r[0])
-    for i in range(2*j+6):
-        qrout.apply(CNOT, ext_r[i], i2[i])
+    copy_qreg(qrout, r, ext_r, offset_dest=2)
+    qrout.apply(CNOT, r[0], ext_r[1]) # Sign extension
+    qrout.apply(CNOT, r[0], ext_r[0]) # Sign extension
+    copy_qreg(qrout, ext_r, i2)
     ext_p = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_p)
-    for i in range(2*j):
-        qrout.apply(CNOT, p[i], ext_p[i+6])
+    copy_qreg(qrout, p, ext_p, offset_dest=6)
     qrout.apply(toom_sub_n(2*j+6), ext_p, i2)
+
     i3_temp = qrout.new_wires(2*j+6)
     qrout.set_ancillae(i3_temp)
     ext_q2 = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_q2)
-    for i in range(2*j+4):
-        qrout.apply(CNOT, q[i], ext_q2[i+2])
-    for i in range(2*j+6):
-        qrout.apply(CNOT, ext_q2[i], i3_temp[i])
+    copy_qreg(qrout, q, ext_q2, offset_dest=2)
+    copy_qreg(qrout, ext_q2, i3_temp)
     qrout.apply(toom_sub_n(2*j+6), ext_r, i3_temp)
+
     i3 = qrout.new_wires(2*j+6)
     qrout.set_ancillae(i3)
-    for i in range(2*j+5):
-        qrout.apply(CNOT, i3_temp[i], i3[i+1])
-    qrout.apply(CNOT, i3_temp[0], i3[0])    #fix
+    copy_qreg(qrout, i3_temp, i3, offset_dest=1, length=2*j+5)
+    qrout.apply(CNOT, i3_temp[0], i3[0]) # Fix Estensione del Segno
+
     res_b_temp = qrout.new_wires(2*j+6)
     qrout.set_ancillae(res_b_temp)
-    for i in range(2*j+6):
-        qrout.apply(CNOT, i2[i], res_b_temp[i])
+    copy_qreg(qrout, i2, res_b_temp)
     qrout.apply(toom_sub_n(2*j+6), i1, res_b_temp)
-    for i in range(2*j+5):
-        qrout.apply(CNOT, res_b_temp[i], res_b[i+1])
-    qrout.apply(CNOT, res_b_temp[0], res_b[0])    #fix    
+    
+    copy_qreg(qrout, res_b_temp, res_b, offset_dest=1, length=2*j+5)
+    qrout.apply(CNOT, res_b_temp[0], res_b[0]) # Fix Estensione del Segno
+    
     ext_2t = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_2t)
-    for i in range(2*j):
-        qrout.apply(CNOT, t[i], ext_2t[i+5])
+    copy_qreg(qrout, t, ext_2t, offset_dest=5)
     qrout.apply(toom_add_n(2*j+6), ext_2t, res_b)
-    for i in range(2*j+6):
-        qrout.apply(CNOT, i3[i], res_c[i])
+
+    copy_qreg(qrout, i3, res_c)
     qrout.apply(toom_add_n(2*j+6), i2, res_c)
     ext_t_c = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_t_c)
-    for i in range(2*j):
-        qrout.apply(CNOT, t[i], ext_t_c[i+6])
+    copy_qreg(qrout, t, ext_t_c, offset_dest=6)
     qrout.apply(toom_sub_n(2*j+6), ext_t_c, res_c)
-    for i in range(2*j+6):
-        qrout.apply(CNOT, i3[i], res_d[i])
+
+    copy_qreg(qrout, i3, res_d)
     qrout.apply(toom_sub_n(2*j+6), res_b, res_d)
-    # UNCOMPUTE
-    for i in range(2*j):
-        qrout.apply(CNOT, t[i], ext_t_c[i+6])
+
+    # --- UNCOMPUTE ---
+    copy_qreg(qrout, t, ext_t_c, offset_dest=6)
+    
     qrout.apply(toom_sub_n(2*j+6).dag(), i1, res_b_temp)
-    for i in range(2*j+6):
-        qrout.apply(CNOT, i2[i], res_b_temp[i])
+    copy_qreg(qrout, i2, res_b_temp)
+    
     qrout.apply(CNOT, i3_temp[0], i3[0])
-    for i in range(2*j+5):
-        qrout.apply(CNOT, i3_temp[i], i3[i+1])    
+    copy_qreg(qrout, i3_temp, i3, offset_dest=1, length=2*j+5)
+
     qrout.apply(toom_sub_n(2*j+6).dag(), ext_r, i3_temp)
-    for i in range(2*j+6):
-        qrout.apply(CNOT, ext_q2[i], i3_temp[i])
-    for i in range(2*j+4):
-        qrout.apply(CNOT, q[i], ext_q2[i+2])
+    copy_qreg(qrout, ext_q2, i3_temp)
+    copy_qreg(qrout, q, ext_q2, offset_dest=2)
+
     qrout.apply(toom_sub_n(2*j+6).dag(), ext_p, i2)
-    for i in range(2*j):
-        qrout.apply(CNOT, p[i], ext_p[i+6])
-    for i in range(2*j+6):
-        qrout.apply(CNOT, ext_r[i], i2[i])
-    for i in range(2*j+4):
-        qrout.apply(CNOT, r[i], ext_r[i+2])
-    qrout.apply(CNOT, r[0], ext_r[1])
+    copy_qreg(qrout, p, ext_p, offset_dest=6)
+    copy_qreg(qrout, ext_r, i2)
     qrout.apply(CNOT, r[0], ext_r[0])
-    for i in range(2*j + 6 - 1, -1, -1):
+    qrout.apply(CNOT, r[0], ext_r[1])
+    copy_qreg(qrout, r, ext_r, offset_dest=2)
+
+    for i in range(2*j+6-1, -1, -1):
         if (inv3 >> i) & 1:
-            shifted_u = qrout.new_wires(2*j+6)
-            qrout.set_ancillae(shifted_u)
-            for k in range(2*j + 6 - i):
-                qrout.apply(CNOT, i1_temp[k + i], shifted_u[k])
-            qrout.apply(toom_add_n(2*j + 6).dag(), shifted_u, i1)
-            for k in range(2*j + 6 - i):
-                qrout.apply(CNOT, i1_temp[k + i], shifted_u[k])
-    qrout.apply(toom_sub_n(2*j + 6).dag(), ext_q, i1_temp)
-    for i in range(2*j + 4):
-        qrout.apply(CNOT, q[i], ext_q[i+2])
-    for i in range(2*j + 6):
-        qrout.apply(CNOT, s[i], i1_temp[i])
-    for i in range(2*j):
-        qrout.apply(CNOT, t[i], ext_2t[i+5])
+            copy_qreg(qrout, i1_temp, shifted_acc, offset_src=i, length=(2*j+6-i))
+            qrout.apply(toom_add_n(2*j+6).dag(), shifted_acc, i1)
+            copy_qreg(qrout, i1_temp, shifted_acc, offset_src=i, length=(2*j+6-i))
+
+    qrout.apply(toom_sub_n(2*j+6).dag(), ext_q, i1_temp)
+    copy_qreg(qrout, q, ext_q, offset_dest=2)
+    copy_qreg(qrout, s, i1_temp)
+
+    copy_qreg(qrout, t, ext_2t, offset_dest=5)
+
     return qrout
 
 
