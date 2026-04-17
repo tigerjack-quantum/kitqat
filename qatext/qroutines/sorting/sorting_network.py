@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Tuple
 import logging
 import numpy as np
 
-from qat.lang.AQASM.gates import SWAP, CNOT, X
+from qat.lang.AQASM.gates import SWAP, CNOT
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
@@ -20,20 +20,24 @@ _LOGGER = logging.getLogger(__name__)
 # Utilities
 # ============================================================
 
-def _filter_and_reindex_swaps(
-    swaps: List[Tuple[int, int, int]], n_valid: int
-) -> List[Tuple[int, int, int]]:
+def filter_and_reindex_swaps(
+        pattern: Dict[str, Any], n_valid: int
+) -> Dict[str, Any]:
     """
     Remove swaps touching invalid wires and reindex comparator ids.
     """
-    filtered = [(c, i, j) for (c, i, j) in swaps if i < n_valid and j < n_valid]
+    swaps_pattern: List[Tuple[int, int, int]] = pattern['swaps_pattern']
+    filtered = [(c, i, j) for (c, i, j) in swaps_pattern if i < n_valid and j < n_valid]
 
     # Reindex comparator ids
     new_swaps = []
     for new_idx, (_, i, j) in enumerate(filtered):
         new_swaps.append((new_idx, i, j))
+    pattern['swaps_pattern'] = new_swaps
+    pattern['n_lines'] = n_valid
+    pattern["n_comps"] = len(new_swaps)
 
-    return new_swaps
+    return pattern
 
 
 # ============================================================
@@ -75,6 +79,22 @@ def build_gate_bitonic_sorter(net_data: Dict[str, Any]) -> QRoutine:
 
 
 def get_pattern_bitonic_sorter(n: int) -> Dict[str, Any]:
+    """Given how it's built, n should be a power of 2 and, if not, it returns
+    the combination rounding up to the top power of 2. If the original n is not
+    a power of 2, you may want to adapt the circuit avoiding the use of the
+    last bits.
+
+    Returns a dictionary containing the:
+    1. n_lines, the number of lines required; it is the rounding up of n to the
+    closest power of 2
+    2. n_comps, the number of fair coin flips required to obtain the full
+    permutation
+
+    3. the swaps_pattern, i.e. a list of tuples containing:
+    - an integer signalling which comparator output bit to use
+    - the first line involved in the swap
+    - the second line involved in the swap
+    """
     net_data: Dict[str, Any] = {}
 
     steps = int(np.ceil(np.log2(n)))
@@ -91,12 +111,7 @@ def get_pattern_bitonic_sorter(n: int) -> Dict[str, Any]:
         net_data,
     )
 
-    # Filter + reindex
-    swaps = _filter_and_reindex_swaps(net_data["swaps_pattern"], n)
-
-    net_data["swaps_pattern"] = swaps
-    net_data["n_comps"] = len(swaps)
-    net_data["n_lines"] = n  # final visible size
+    net_data["n_comps"] = len(net_data["swaps_pattern"])
 
     return net_data
 
@@ -144,12 +159,7 @@ def get_pattern_merger(n: int) -> Dict[str, Any]:
 
     _get_pattern_merger_support(n, net_data, 0)
 
-    # Filter + reindex
-    swaps = _filter_and_reindex_swaps(net_data["swaps_pattern"], n)
-
-    net_data["swaps_pattern"] = swaps
-    net_data["n_comps"] = len(swaps)
-    net_data["n_lines"] = n
+    net_data["n_comps"] = len(net_data["swaps_pattern"])
 
     return net_data
 
@@ -204,7 +214,9 @@ def get_pattern_sorter(n: int) -> Dict[str, Any]:
     net_data: Dict[str, Any] = {}
     intervals: List[Tuple[int, int]] = []
 
-    _get_pattern_sorter_support(0, n, intervals)
+    _n = int(2**np.ceil(np.log2(n)))
+
+    _get_pattern_sorter_support(0, _n, intervals)
 
     comp_q_idx = 0
 
@@ -213,13 +225,7 @@ def get_pattern_sorter(n: int) -> Dict[str, Any]:
         comp_q_idx = _get_pattern_merger_support(
             size, net_data, comp_q_idx, start
         )
-
-    # Final filtering
-    swaps = _filter_and_reindex_swaps(net_data["swaps_pattern"], n)
-
-    net_data["swaps_pattern"] = swaps
-    net_data["n_comps"] = len(swaps)
-    net_data["n_lines"] = n
+    net_data["n_comps"] = len(net_data["swaps_pattern"])
 
     return net_data
 

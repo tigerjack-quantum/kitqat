@@ -65,8 +65,12 @@ class SortingNetworkTestCase(CircuitTestCase):
         return obtained
 
     def _test_sorter_common(self, string, to_reverse=False):
+        # to_filter is used for non power of 2 inputs
         n = len(string)
         pattern = sn.get_pattern_sorter(n)
+        if n & (n - 1) != 0:
+            pattern = sn.filter_and_reindex_swaps(pattern, n)
+
 
         self._prepare_circuit(string, pattern)
 
