@@ -41,11 +41,7 @@ class SortingNetworkTestCase(CircuitTestCase):
 
     def _simulate_and_check_result(self, string: str, expected: str, check_sorted=True):
         obtained = self._simulate_and_get_result()
-        if not obtained:
-            raise Exception(f"Unknown flow")
-        is_sorted = all(obtained[i] <= obtained[i + 1] for i in range(len(string) - 1))
         if check_sorted:
-            self.assertTrue(is_sorted)
             self.assertEqual(obtained, expected)
 
     def _simulate_and_get_result(self):
@@ -68,15 +64,21 @@ class SortingNetworkTestCase(CircuitTestCase):
             self.assertEqual(i, 0)
         return obtained
 
-    def _test_sorter_common(self, string):
+    def _test_sorter_common(self, string, to_reverse=False):
+        # to_filter is used for non power of 2 inputs
         n = len(string)
         pattern = sn.get_pattern_sorter(n)
+        if n & (n - 1) != 0:
+            pattern = sn.filter_and_reindex_swaps(pattern, n)
+
 
         self._prepare_circuit(string, pattern)
 
-        qrout = sn.build_gate_sorter(pattern)
+        qrout = sn.build_gate_sorter(pattern, to_reverse=to_reverse)
         self.pr.apply(qrout, self.qr, self.comps)
         sorted_string_exp = "".join(list(sorted(string)))
+        if to_reverse:
+            sorted_string_exp = sorted_string_exp[::-1]
 
         self._simulate_and_check_result(string, sorted_string_exp)
 
@@ -105,7 +107,12 @@ class SortingNetworkTestCase(CircuitTestCase):
 
     @parameterized.expand(
         [
-            "000",
+            "100",
+            "010",
+            "001",
+            "110",
+            "011",
+            "101",
             "11111",
             "01101",
             "101001",
@@ -113,18 +120,8 @@ class SortingNetworkTestCase(CircuitTestCase):
             "110001101",
         ]
     )
-    def test_bitonic_sorter_nopowerof2(self, string):
-        is_bitonic = self._check_bitonic(string)
-        n = len(string)
-        # print(is_bitonic)
-        pattern = sn.get_pattern_bitonic_sorter(n)
-        self._prepare_circuit(string, pattern)
-
-        qrout = sn.build_gate_bitonic_sorter(pattern)
-        self.pr.apply(qrout, self.qr, self.comps)
-
-        sorted_string_exp = "".join(list(sorted(string)))
-        self._simulate_and_check_result(string, sorted_string_exp, is_bitonic)
+    def test_sorter_nopowerof2(self, string):
+        self._test_sorter_common(string, True)
 
     @parameterized.expand(
         [
@@ -167,6 +164,22 @@ class SortingNetworkTestCase(CircuitTestCase):
 
     @parameterized.expand(
         [
+            "01",
+            "10",
+            "0000",
+            "1111",
+            "0001",
+            "0010",
+            "0111",
+            "1011",
+            "1001",
+        ]
+    )
+    def test_sorter_reverse(self, string):
+        self._test_sorter_common(string, True)
+
+    @parameterized.expand(
+        [
             "10110111",
         ]
     )
@@ -187,3 +200,12 @@ class SortingNetworkTestCase(CircuitTestCase):
     @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON, f"Only with reversible")
     def test_sorter_long(self, string):
         self._test_sorter_common(string)
+
+    @parameterized.expand(
+        [
+            "10110111111100110101000110100011",
+        ]
+    )
+    @unittest.skipUnless(CircuitTestCase.REVERSIBLE_ON, f"Only with reversible")
+    def test_sorter_long_reversed(self, string):
+        self._test_sorter_common(string, True)
