@@ -1,231 +1,178 @@
-from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
-                                CircuitTestHelpers)
-
-import numpy as np
+import galois
 import pytest
-import qat.lang.AQASM.classarith
-# from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines.qregs_mgmt import qregs_init as qi
-from qatext.qroutines.datastructure.sliding_sort_array import (delete, insert,
-                                                               insert_lw)
-from qatext.utils.bits.conversion import (get_int_from_bitarray,
-                                          get_ints_from_bitarray)
+
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import adder2bit, sub2bit, mul2bit, adder_n_bit, mul_n_bit
+from qatext.qpus.reversible import get_states_from_program_wrapper
+from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import (
+    adder_n_bit,
+    adder2bit,
+    mul_n_bit,
+    mul2bit,
+    sub2bit,
+)
+from qatext.qroutines.qregs_mgmt import qregs_init as qi
+from qatext.utils.bits.conversion import get_int_from_bitarray
 
 
 class TestPintoBasicArith:
-
-
     @pytest.mark.parametrize(
         "val_a, val_b",
         [
-            (0, 0),  # 0 XOR 0 = 0
-            (0, 1),  # 0 XOR 1 = 1
-            (1, 0),  # 1 XOR 0 = 1
-            (1, 1),  # 1 XOR 1 = 0
-        ]
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+        ],
     )
     def test_adder2bit(self, val_a, val_b):
-        
-        prw = ProgramWrapper(Program())
-
-
-        qr_a = prw.qarray_alloc(1, 1, "a", int)
-        qr_b = prw.qarray_alloc(1, 1, "b", int)
-
-    
-        init_a = qi.initialize_qureg_given_int(val_a, 1, False)
-        init_b = qi.initialize_qureg_given_int(val_b, 1, False)
-        
-        prw.apply(init_a, qr_a[0])
-        prw.apply(init_b, qr_b[0])
-
-        
-        gate_add = adder2bit()
-        prw.apply(gate_add, qr_a[0], qr_b[0])
-
-  
-        res = get_states_from_program_wrapper(prw, [])
-
-     
-        out_a = get_int_from_bitarray(res['a'], False)
-        out_b = get_int_from_bitarray(res['b'], False)
-
-       
-        expected_b = val_a ^ val_b
-        
-        assert out_a == val_a
-        assert out_b == expected_b, f"Errore calcolo: {val_a} + {val_b} in GF(2) fa {expected_b}, non {out_b}"
-
-    def test_sub2bit_alias(self):
-        """Un piccolo test rapido per verificare che l'alias sub2bit funzioni esattamente come adder2bit"""
         prw = ProgramWrapper(Program())
         qr_a = prw.qarray_alloc(1, 1, "a", int)
         qr_b = prw.qarray_alloc(1, 1, "b", int)
 
-       
-        prw.apply(qi.initialize_qureg_given_int(1, 1, False), qr_a[0])
-        prw.apply(qi.initialize_qureg_given_int(1, 1, False), qr_b[0])
-
-      
-        gate_sub = sub2bit()
-        prw.apply(gate_sub, qr_a[0], qr_b[0])
-
-        res = get_states_from_program_wrapper(prw, [])
-        out_b = get_int_from_bitarray(res['b'], False)
-
-       
-        assert out_b == 0, f"Il sottrattore ha fallito, 1-1 dovrebbe dare 0, non {out_b}"
-
-
-    @pytest.mark.parametrize(
-        "val_a, val_b",
-        [
-            (0, 0),  # 0 * 0 = 0
-            (0, 1),  # 0 * 1 = 0
-            (1, 0),  # 1 * 0 = 0
-            (1, 1),  # 1 * 1 = 1
-        ]
-    )
-    
-    def test_mul2bit(self, val_a, val_b):
-    
-        prw = ProgramWrapper(Program())
-
-        
-        qr_a = prw.qarray_alloc(1, 1, "a", int)
-        qr_b = prw.qarray_alloc(1, 1, "b", int)
-        qr_out = prw.qarray_alloc(1, 1, "out", int) 
-       
         prw.apply(qi.initialize_qureg_given_int(val_a, 1, False), qr_a[0])
         prw.apply(qi.initialize_qureg_given_int(val_b, 1, False), qr_b[0])
 
-        
-        gate_mul = mul2bit()
-        prw.apply(gate_mul, qr_a[0], qr_b[0], qr_out[0])
+        prw.apply(adder2bit(), qr_a[0], qr_b[0])
 
-        
         res = get_states_from_program_wrapper(prw, [])
 
-        
-        out_a = get_int_from_bitarray(res['a'], False)
-        out_b = get_int_from_bitarray(res['b'], False)
-        final_out = get_int_from_bitarray(res['out'], False)
+        out_a = get_int_from_bitarray(res["a"], False)
+        out_b = get_int_from_bitarray(res["b"], False)
 
-        
-        expected_out = val_a & val_b
-        
-        
+        GF2 = galois.GF(2)
+        expected_b = int(GF2(val_a) + GF2(val_b))
+
+        assert out_a == val_a
+        assert out_b == expected_b, f"Calculation error: {val_a} + {val_b} in GF(2) is {expected_b}, not {out_b}"
+
+    def test_sub2bit_alias(self):
+        """A quick test to verify that the sub2bit alias works exactly like adder2bit."""
+        prw = ProgramWrapper(Program())
+        qr_a = prw.qarray_alloc(1, 1, "a", int)
+        qr_b = prw.qarray_alloc(1, 1, "b", int)
+
+        prw.apply(qi.initialize_qureg_given_int(1, 1, False), qr_a[0])
+        prw.apply(qi.initialize_qureg_given_int(1, 1, False), qr_b[0])
+
+        prw.apply(sub2bit(), qr_a[0], qr_b[0])
+
+        res = get_states_from_program_wrapper(prw, [])
+        out_b = get_int_from_bitarray(res["b"], False)
+
+        GF2 = galois.GF(2)
+        assert out_b == int(GF2(1) - GF2(1)), f"Subtractor failed, 1-1 should be 0, not {out_b}"
+
+    @pytest.mark.parametrize(
+        "val_a, val_b",
+        [
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+        ],
+    )
+    def test_mul2bit(self, val_a, val_b):
+        prw = ProgramWrapper(Program())
+        qr_a = prw.qarray_alloc(1, 1, "a", int)
+        qr_b = prw.qarray_alloc(1, 1, "b", int)
+        qr_out = prw.qarray_alloc(1, 1, "out", int)
+
+        prw.apply(qi.initialize_qureg_given_int(val_a, 1, False), qr_a[0])
+        prw.apply(qi.initialize_qureg_given_int(val_b, 1, False), qr_b[0])
+
+        prw.apply(mul2bit(), qr_a[0], qr_b[0], qr_out[0])
+
+        res = get_states_from_program_wrapper(prw, [])
+
+        out_a = get_int_from_bitarray(res["a"], False)
+        out_b = get_int_from_bitarray(res["b"], False)
+        final_out = get_int_from_bitarray(res["out"], False)
+
+        GF2 = galois.GF(2)
+        expected_out = int(GF2(val_a) * GF2(val_b))
+
         assert out_a == val_a
         assert out_b == val_b
-        assert final_out == expected_out, f"Errore: {val_a} * {val_b} fa {expected_out}, non {final_out}"
+        assert final_out == expected_out, f"Error: {val_a} * {val_b} is {expected_out}, not {final_out}"
 
     @pytest.mark.parametrize(
         "val_a, val_b, nbits",
         [
-            # --- Casi da 1 bit ---
-            (1, 1, 1),  # Auto-annullamento: 1 + 1 = 0
-            
-            # --- Casi da 2 bit ---
-            (0, 3, 2),  # Zero + Max (11) = 3
-            (2, 3, 2),  # Misto: 10 + 11 = 01 (1)
-            (3, 3, 2),  # Auto-annullamento Max: 11 + 11 = 0
-            
-            # --- Casi da 3 bit ---
-            (0, 7, 3),  # Zero + Max (111) = 7
-            (5, 3, 3),  # Misto: 101 (5) + 011 (3) = 110 (6)
-            (7, 7, 3),  # Auto-annullamento Max: 111 + 111 = 0
-            (2, 5, 3),  # Misto: 010 (2) + 101 (5) = 111 (7)
-        ]
+            (1, 1, 1),
+            (0, 3, 2),
+            (2, 3, 2),
+            (3, 3, 2),
+            (0, 7, 3),
+            (5, 3, 3),
+            (7, 7, 3),
+            (2, 5, 3),
+        ],
     )
     def test_adder_n_bit(self, val_a, val_b, nbits):
-        """Testa l'addizionatore N-bit per polinomi con casi limite fino a 3 bit."""
+        """Test the N-bit adder for polynomials with edge cases up to 3 bits."""
         prw = ProgramWrapper(Program())
 
-        # Allochiamo registri grandi "nbits"
         qr_a = prw.qarray_alloc(1, nbits, "a", int)
         qr_b = prw.qarray_alloc(1, nbits, "b", int)
 
-        # Inizializziamo i qubit con i valori scelti
         prw.apply(qi.initialize_qureg_given_int(val_a, nbits, False), qr_a[0])
         prw.apply(qi.initialize_qureg_given_int(val_b, nbits, False), qr_b[0])
 
-        # Applichiamo il nostro gate N-bit!
-        gate_add_n = adder_n_bit(nbits)
-        prw.apply(gate_add_n, qr_a[0], qr_b[0])
+        prw.apply(adder_n_bit(nbits), qr_a[0], qr_b[0])
 
-        # Simuliamo istantaneamente
         res = get_states_from_program_wrapper(prw, [])
 
-        # Estraiamo i risultati e li convertiamo in interi
-        out_a = get_int_from_bitarray(res['a'], False)
-        out_b = get_int_from_bitarray(res['b'], False)
+        out_a = get_int_from_bitarray(res["a"], False)
+        out_b = get_int_from_bitarray(res["b"], False)
 
-        # Calcoliamo il risultato matematico atteso (XOR classico)
-        expected_b = val_a ^ val_b
-        
-        # Verifichiamo
+        poly_a = galois.Poly.Int(val_a, field=galois.GF(2))
+        poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
+        expected_b = int(poly_a + poly_b)
+
         assert out_a == val_a
-        assert out_b == expected_b, f"Errore con {nbits} bit: {val_a} + {val_b} doveva dare {expected_b}, ma ha dato {out_b}"
-        
+        assert out_b == expected_b, f"Error with {nbits} bits: {val_a} + {val_b} should be {expected_b}, but got {out_b}"
+
     @pytest.mark.parametrize(
         "val_a, val_b, nbits",
         [
-            # --- 1-bit cases ---
-            (1, 1, 1),  # 1 * 1 = 1
-            
-            # --- 2-bit cases ---
-            (0, 3, 2),  # Null element: 0 * (x+1) = 0
-            (1, 3, 2),  # Identity element: 1 * (x+1) = x+1 (i.e., 3)
-            (2, 2, 2),  # x * x = x^2 (i.e., 4)
-            (3, 3, 2),  # (x+1) * (x+1) = x^2 + 1 (i.e., 5, since 2x = 0 in GF(2))
-            
-            # --- 3-bit cases ---
-            (7, 3, 3),  # (x^2+x+1) * (x+1) = x^3 + 1 (i.e., 9)
-            (5, 5, 3),  # (x^2+1) * (x^2+1) = x^4 + 1 (i.e., 17)
-            (6, 7, 3),  # (x^2+x) * (x^2+x+1) = x^4 + x (i.e., 18)
-        ]
+            (1, 1, 1),
+            (0, 3, 2),
+            (1, 3, 2),
+            (2, 2, 2),
+            (3, 3, 2),
+            (7, 3, 3),
+            (5, 5, 3),
+            (6, 7, 3),
+        ],
     )
     def test_mul_n_bit(self, val_a, val_b, nbits):
-        """Test the N-bit Classical (Schoolbook) Multiplication in GF(2^m)."""
+        """Test the N-bit multiplication in GF(2^m)."""
         prw = ProgramWrapper(Program())
 
-        # Allocate input registers of size 'nbits'
         qr_a = prw.qarray_alloc(1, nbits, "a", int)
         qr_b = prw.qarray_alloc(1, nbits, "b", int)
-        
-        # Allocate output register of size 2 * nbits, initialized to 0
         qr_out = prw.qarray_alloc(1, nbits * 2, "out", int)
 
-        # Initialize qubits with the chosen values (CHANGED TO True for Little-Endian)
         prw.apply(qi.initialize_qureg_given_int(val_a, nbits, True), qr_a[0])
         prw.apply(qi.initialize_qureg_given_int(val_b, nbits, True), qr_b[0])
 
-        # Apply the multiplication circuit
-        gate_mul_n = mul_n_bit(nbits)
-        prw.apply(gate_mul_n, qr_a[0], qr_b[0], qr_out[0])
+        prw.apply(mul_n_bit(nbits), qr_a[0], qr_b[0], qr_out[0])
 
-        # Simulate the circuit instantly
         res = get_states_from_program_wrapper(prw, [])
 
-        # Extract results and convert to integers 
-        out_a = get_int_from_bitarray(res['a'], True)
-        out_b = get_int_from_bitarray(res['b'], True)
-        final_out = get_int_from_bitarray(res['out'], True)
-        # -----------------------------------------------------------------
-        # CLASSICAL ORACLE: The actual GF(2^m) multiplication
-        expected_out = 0
-        for i in range(nbits):
-            if (val_a >> i) & 1:
-                expected_out ^= (val_b << i)
-        # -----------------------------------------------------------------
-        
-    
-            # Verify the multiplication result
+        out_a = get_int_from_bitarray(res["a"], True)
+        out_b = get_int_from_bitarray(res["b"], True)
+        final_out = get_int_from_bitarray(res["out"], True)
+
+        poly_a = galois.Poly.Int(val_a, field=galois.GF(2))
+        poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
+        expected_out = int(poly_a * poly_b)
+
+        assert out_a == val_a
+        assert out_b == val_b
         assert final_out == expected_out, f"Multiplication error: {val_a} * {val_b} should be {expected_out}, but got {final_out}"
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     pytest.main([__file__])

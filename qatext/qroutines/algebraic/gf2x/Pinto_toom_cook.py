@@ -54,7 +54,7 @@ def get_mod_matrix(n, m_bits, c_bits):
 
 @build_gate("MODSHIFT", [int, int], arity=lambda n, m: n)
 def modshift_gate(n, m_bits):
-    """Algorithm 6: Reversible Modular Shift H <- x * H mod m(x)."""
+    """ Reversible Modular Shift H <- x * H mod m(x)."""
     qrout = QRoutine()
     reg = qrout.new_wires(n)
     for i in range(n - 1, 0, -1):
@@ -67,7 +67,7 @@ def modshift_gate(n, m_bits):
 
 @build_gate("CONSTMODMULT", [int, int, int], arity=lambda n, m, c: n)
 def constmodmult_gate(n, m_bits, c_bits):
-    """Algorithm 5: In-place modular multiplication by a constant polynomial C(x)."""
+    """In-place modular multiplication by a constant polynomial C(x)."""
     matrix = get_mod_matrix(n, m_bits, c_bits)
     L, U, P = gf2_lup(matrix)
     qrout = QRoutine()
@@ -93,7 +93,7 @@ def constmodmult_gate(n, m_bits, c_bits):
 
 @build_gate("KMULT1xK", [int, int], arity=lambda n, k: 2*n + (2*n + k - 1))
 def kmult1xk_gate(n, k):
-    """Algorithm 4: Reversible multiplier for (1 + x^k) * f(x) * g(x)."""
+    """Reversible multiplier for (1 + x^k) * f(x) * g(x)."""
     qrout = QRoutine()
     reg_f, reg_g = qrout.new_wires(n), qrout.new_wires(n)
     reg_h = qrout.new_wires(2*n + k - 1)
@@ -120,7 +120,7 @@ def kmult1xk_gate(n, k):
 
 @build_gate("KMULT", [int], arity=lambda n: 2*n + (2*n - 1))
 def kmult_gate(n):
-    """Algorithm 3: Reversible Non-Modular Karatsuba Multiplier."""
+    """Reversible Non-Modular Karatsuba Multiplier."""
     qrout = QRoutine()
     reg_f, reg_g = qrout.new_wires(n), qrout.new_wires(n)
     reg_h = qrout.new_wires(2*n - 1)
@@ -143,7 +143,7 @@ def kmult_gate(n):
 
 @build_gate("KARATSUBA", [int, int], arity=lambda n, m: 3*n)
 def karatsuba_modular(n, m_bits):
-    """Algorithm 1: Improved Modular Karatsuba Multiplier."""
+    """Improved Modular Karatsuba Multiplier."""
     qrout = QRoutine()
     reg_f, reg_g, reg_h = qrout.new_wires(n), qrout.new_wires(n), qrout.new_wires(n)
     k = (n + 1) // 2
@@ -171,14 +171,14 @@ def karatsuba_modular(n, m_bits):
 # --- Reversible Arithmetic Primitives ---
 
 def copy_qreg(qrout, src, dest, offset_src=0, offset_dest=0, length=None):
-    """Copia i qubit da src a dest usando CNOT. Funge anche da uncompute se ri-applicata."""
+    """copy helper"""
     if length is None:
         length = len(src) - offset_src
     for i in range(length):
         qrout.apply(CNOT, src[offset_src + i], dest[offset_dest + i])
 
 def toom_add_n(n: int) -> QRoutine:
-    """In-place ripple-carry adder: |a>|b>|cin> -> |a>|a+b>|cin>."""
+    """ripple-carry adder: |a>|b>|cin> -> |a>|a+b>|cin>."""
     qrout = QRoutine()
     a, b = qrout.new_wires(n), qrout.new_wires(n)
     cin = qrout.new_wires(1)
@@ -187,7 +187,7 @@ def toom_add_n(n: int) -> QRoutine:
     return qrout
 
 def toom_sub_n(n: int) -> QRoutine:
-    """In-place ripple-carry subtractor: |a>|b>|cin> -> |a>|b-a>|cin>."""
+    """ripple-carry subtractor: |a>|b>|cin> -> |a>|b-a>|cin>."""
     qrout = QRoutine()
     a, b = qrout.new_wires(n), qrout.new_wires(n)
     cin = qrout.new_wires(1)
@@ -197,7 +197,7 @@ def toom_sub_n(n: int) -> QRoutine:
 
 @build_gate("TOOM_MULT_PRIM", [int, int, bool, bool])
 def toom_mult_prim(size_a, size_b, signed_a=False, signed_b=False):
-    """Reversible schoolbook multiplier with sign extension support."""
+    """multiplier with sign extension support."""
     qrout = QRoutine()
     a, b = qrout.new_wires(size_a), qrout.new_wires(size_b)
     res = qrout.new_wires(size_a + size_b)
@@ -307,7 +307,7 @@ def toom3_interp(n: int) -> QRoutine:
     copy_qreg(qrout, q, ext_q, offset_dest=2)
     qrout.apply(toom_sub_n(2*j+6), ext_q, i1_temp)
 
-    # Ottimizzazione Divisione per 3: UNA SOLA ancilla per tutti gli shift
+    # DIV
     inv3 = pow(3, -1, 2**(2*j+6))
     shifted_acc = qrout.new_wires(2*j+6)
     qrout.set_ancillae(shifted_acc)
@@ -341,7 +341,7 @@ def toom3_interp(n: int) -> QRoutine:
     i3 = qrout.new_wires(2*j+6)
     qrout.set_ancillae(i3)
     copy_qreg(qrout, i3_temp, i3, offset_dest=1, length=2*j+5)
-    qrout.apply(CNOT, i3_temp[0], i3[0]) # Fix Estensione del Segno
+    qrout.apply(CNOT, i3_temp[0], i3[0]) 
 
     res_b_temp = qrout.new_wires(2*j+6)
     qrout.set_ancillae(res_b_temp)
@@ -349,7 +349,7 @@ def toom3_interp(n: int) -> QRoutine:
     qrout.apply(toom_sub_n(2*j+6), i1, res_b_temp)
     
     copy_qreg(qrout, res_b_temp, res_b, offset_dest=1, length=2*j+5)
-    qrout.apply(CNOT, res_b_temp[0], res_b[0]) # Fix Estensione del Segno
+    qrout.apply(CNOT, res_b_temp[0], res_b[0]) 
     
     ext_2t = qrout.new_wires(2*j+6)
     qrout.set_ancillae(ext_2t)
@@ -436,7 +436,7 @@ def toom3_mult(n: int) -> QRoutine:
         actual = min(k, ext_size)
         for i in range(actual):
             qrout.apply(CNOT, src[k - actual + i], ext_src[ext_size - actual + i])
-        # IMPORTANT: Zero-extension instead of sign-extension for coefficients
+        
         qrout.apply(toom_add_n(ext_size), ext_src, dest[0:ext_size])
         for i in range(actual):
             qrout.apply(CNOT, src[k - actual + i], ext_src[ext_size - actual + i])
