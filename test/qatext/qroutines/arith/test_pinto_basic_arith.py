@@ -10,6 +10,8 @@ from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import (
     mul_n_bit,
     mul2bit,
     sub2bit,
+    schoolbook_reduction,
+    schoolbook_reduction_int,
 )
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
@@ -173,6 +175,61 @@ class TestPintoBasicArith:
         assert out_b == val_b
         assert final_out == expected_out, f"Multiplication error: {val_a} * {val_b} should be {expected_out}, but got {final_out}"
 
+    @pytest.mark.parametrize(
+        "val, mod, nbits",
+        [
+            (0b1011, 0b101, 2), # 11 mod 5 -> n=2, modulus has degree 2
+            (0b1000, 0b111, 2), # x^3 mod (x^2+x+1) -> 8 mod 7
+            (0b11010, 0b1011, 3), # x^4+x^3+x mod x^3+x+1 -> 26 mod 11 = 7, quot 3
+            (0b110111, 0b1001, 3), # 55 mod 9 (x^3+1)
+        ],
+    )
+    def test_schoolbook_reduction(self, val, mod, nbits):
+        prw = ProgramWrapper(Program())
+        qr = prw.qarray_alloc(1, 2 * nbits, "reg", int)
 
+        prw.apply(qi.initialize_qureg_given_int(val, 2 * nbits, True), qr[0])
+        prw.apply(schoolbook_reduction(nbits, mod), qr[0])
+
+        res = get_states_from_program_wrapper(prw, [])
+
+        out_val = get_int_from_bitarray(res["reg"], True)
+
+        poly_val = galois.Poly.Int(val, field=galois.GF(2))
+        poly_mod = galois.Poly.Int(mod, field=galois.GF(2))
+
+        expected_rem = int(poly_val % poly_mod)
+        expected_quot = int(poly_val // poly_mod)
+
+        # remainder is in lower n bits, quotient in upper n bits
+        expected_out = (expected_quot << nbits) | expected_rem
+
+        assert out_val == expected_out, f"Reduction error: {val} % {mod} should be {expected_rem} with quotient {expected_quot}, got {out_val}"
+
+    @pytest.mark.parametrize(
+        "val, N, n",
+        [
+            (10, 3, 2), # 10 mod 3 = 1
+            (25, 7, 3), # 25 mod 7 = 4
+            (50, 11, 4), # 50 mod 11 = 6
+            (100, 13, 4), # 100 mod 13 = 9
+        ],
+    )
+    def test_schoolbook_reduction_int(self, val, N, n):
+        prw = ProgramWrapper(Program())
+        qr = prw.qarray_alloc(1, 2 * n, "reg", int)
+        r_qr = prw.qarray_alloc(1, n + 1, "quotient", int)
+        
+        prw.apply(qi.initialize_qureg_given_int(val, 2 * n, False), qr[0])
+        
+        prw.apply(schoolbook_reduction_int(n, N), qr[0], r_qr[0])
+        
+        res = get_states_from_program_wrapper(prw, [])
+        
+       
+        out_val = get_int_from_bitarray(res["reg"], False)
+        
+        expected_rem = val % N
+        assert out_val == expected_rem, f"Integer reduction error: {val} % {N} should be {expected_rem}, but got {out_val}"
 if __name__ == "__main__":
     pytest.main([__file__])
