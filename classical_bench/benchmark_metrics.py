@@ -36,14 +36,14 @@ def compute_all_metrics(circ):
             gate_name, _, qbits = op
             
             is_toffoli = False
-            if gate_name == 'CCNOT':
+            if gate_name == 'CCNOT' or gate_name == 'C-CCNOT':
                 toffoli_count += 1
                 is_toffoli = True
-            elif gate_name == 'CNOT':
+            elif gate_name == 'CNOT' or gate_name == 'C-CNOT':
                 cnot_count += 1
-            elif gate_name == 'H':
+            elif gate_name == 'H' or gate_name == 'C-H':
                 h_count += 1
-            elif gate_name == 'X':
+            elif gate_name == 'X' or gate_name == 'C-X':
                 x_count += 1
             else:
                 other_count += 1
@@ -210,11 +210,11 @@ def main():
                 cat_results.append(m)
                 algo_results.append(m)
             
-            print(f"\n### {algo_name}")
-            print("| n | Width | Depth | D x W | Toffoli | CNOT | H | X |")
-            print("|---|-------|-------|-------|---------|------|---|---|")
+            print(f"\\n### {algo_name}")
+            print("| n | Width | Total Gates | Depth | D x W | Toffoli | CNOT | H | X |")
+            print("|---|-------|-------------|-------|-------|---------|------|---|---|")
             for r in algo_results:
-                print(f"| {r['n']} | {r['width']} | {r['total_depth']} | {r['depth_width']} | {r['toffoli_count']} | {r['cnot_count']} | {r['h_count']} | {r['x_count']} |")
+                print(f"| {r['n']} | {r['width']} | {r['total_gates']} | {r['total_depth']} | {r['depth_width']} | {r['toffoli_count']} | {r['cnot_count']} | {r['h_count']} | {r['x_count']} |")
 
         df_cat = pd.DataFrame(cat_results).dropna(subset=['width'])
         if not df_cat.empty:

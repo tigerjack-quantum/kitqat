@@ -36,6 +36,7 @@ test = [
     "pytest",
     "sympy",
      "parameterized",
+     "galois"
 ]
 
 jupyter = [

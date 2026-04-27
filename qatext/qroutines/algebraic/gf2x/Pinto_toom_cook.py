@@ -401,7 +401,7 @@ def toom3_interp(n: int) -> QRoutine:
     return qrout
 
 
-@build_gate("TOOM3_MULT", [int])
+@build_gate("TOOM3_MULT", [int], arity=lambda n: 4*n)
 def toom3_mult(n: int) -> QRoutine:
     """Main Toom-Cook 3 Multiplier routine."""
     qrout = QRoutine()

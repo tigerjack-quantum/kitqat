@@ -99,8 +99,7 @@ def schoolbook_reduction_int(n: int, N_val: int) -> QRoutine:
     t_reg = qrout.new_wires(2 * n)
     res_couts = qrout.new_wires(n + 1)
 
-    # Usiamo l'addizionatore originale usato dal tuo codice
-    from qatext.qroutines.algebraic.gf2x.Pinto_adders import cuccaro_adder_int
+    
 
     # Preveniamo il riciclo di ancille sporche allocando i qubit all'esterno
     borrows = qrout.new_wires(n + 1)

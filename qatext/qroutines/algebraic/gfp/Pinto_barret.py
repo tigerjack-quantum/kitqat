@@ -60,7 +60,7 @@ def q_c_mult_add(prog, qreg_in, qreg_acc, c_val, dag=False):
             add_gate = add_gate.dag()
         prog.apply(add_gate.ctrl(), qubit, qreg_acc)
 
-@build_gate("BARRETT_REDUCTION", [int, int])
+@build_gate("BARRETT_REDUCTION", [int, int], arity=lambda n, N: 3 * n)
 def barrett_reduction(n, N):
     """
     Optimized Folding Barrett Reduction 
