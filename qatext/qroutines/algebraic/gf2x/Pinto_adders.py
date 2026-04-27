@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Generalized Ripple Carry Adders for Integers in GF2X context."""
 
 import math
 from qat.lang.AQASM.gates import CNOT, CCNOT, X, H, SWAP, PH
