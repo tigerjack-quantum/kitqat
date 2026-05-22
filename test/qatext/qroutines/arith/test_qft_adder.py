@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 import pytest
 from qat.lang.AQASM import Program, X
 from qat.qpus import PyLinalg

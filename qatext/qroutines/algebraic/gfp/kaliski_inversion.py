@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 from qat.lang.AQASM.gates import CNOT, X, SWAP, CCNOT
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine

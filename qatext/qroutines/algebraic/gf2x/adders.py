@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 
 import math
 from qat.lang.AQASM.gates import CNOT, CCNOT, X, H, SWAP, PH

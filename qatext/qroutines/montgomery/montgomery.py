@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 import numpy as np
 from qat.lang.AQASM.gates import CNOT, CCNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate

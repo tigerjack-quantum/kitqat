@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 import math
 from qat.lang.AQASM.gates import X, CNOT
 from qat.lang.AQASM.misc import build_gate

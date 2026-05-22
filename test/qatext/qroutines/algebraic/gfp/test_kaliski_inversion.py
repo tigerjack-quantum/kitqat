@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper

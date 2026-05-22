@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 import pytest
 import galois
 from qat.lang.AQASM import Program, X

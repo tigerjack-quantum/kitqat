@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 import itertools
 
 import galois

@@ -1,3 +1,4 @@
+# Author: Federico Pinto
 # -*- coding: utf-8 -*-
 import pytest
 import random
