@@ -1,3 +1,4 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import random
 
@@ -7,7 +8,7 @@ from qat.lang.AQASM.program import Program
 
 from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines.algebraic.gf2x.Pinto_toom_cook import (
+from qatext.qroutines.algebraic.gf2x.toom_cook import (
     karatsuba_modular,
     toom3_mult,
 )

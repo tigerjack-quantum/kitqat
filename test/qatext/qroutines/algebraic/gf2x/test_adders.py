@@ -1,3 +1,4 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 # -*- coding: utf-8 -*-
 import pytest
@@ -7,7 +8,7 @@ from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
-from qatext.qroutines.algebraic.gf2x.Pinto_adders import cuccaro_adder_int, tkk_adder_int
+from qatext.qroutines.algebraic.gf2x.adders import cuccaro_adder_int, tkk_adder_int
 
 random.seed(42)
 

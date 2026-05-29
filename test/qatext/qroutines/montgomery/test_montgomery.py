@@ -1,3 +1,4 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import itertools
 
@@ -7,7 +8,7 @@ from qat.lang.AQASM.program import Program
 
 from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines.montgomery.Pinto_montgomery import (
+from qatext.qroutines.montgomery.montgomery import (
     montgomery_form,
     montgomery_mult,
     montgomery_res,

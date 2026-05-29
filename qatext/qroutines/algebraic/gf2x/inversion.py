@@ -1,3 +1,4 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 from qat.lang.AQASM.gates import CNOT, CCNOT,SWAP
 from qat.lang.AQASM.misc import build_gate

@@ -1,3 +1,4 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import galois
 import pytest
@@ -5,7 +6,7 @@ from qat.lang.AQASM.program import Program
 
 from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qpus.reversible import get_states_from_program_wrapper
-from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import (
+from qatext.qroutines.algebraic.gf2x.arith import (
     adder_n_bit,
     adder2bit,
     mul_n_bit,

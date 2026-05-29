@@ -9,11 +9,11 @@ from qat.lang.AQASM import Program
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    from qatext.qroutines.algebraic.gf2x.Pinto_adders import cuccaro_adder_int, tkk_adder_int, qft_adder_int
-    from qatext.qroutines.algebraic.gf2x.Pinto_basic_arith import mul_n_bit, schoolbook_reduction_int, adder_n_bit
-    from qatext.qroutines.algebraic.gf2x.Pinto_toom_cook import karatsuba_modular, toom3_mult
-    from qatext.qroutines.algebraic.gfp.Pinto_barret import barrett_reduction
-    from qatext.qroutines.montgomery.Pinto_montgomery import montgomery_mult
+    from qatext.qroutines.algebraic.gf2x.adders import cuccaro_adder_int, tkk_adder_int, qft_adder_int
+    from qatext.qroutines.algebraic.gf2x.arith import mul_n_bit, schoolbook_reduction_int, adder_n_bit
+    from qatext.qroutines.algebraic.gf2x.toom_cook import karatsuba_modular, toom3_mult
+    from qatext.qroutines.algebraic.gfp.barret import barrett_reduction
+    from qatext.qroutines.montgomery.montgomery import montgomery_mult
     from qatext.utils.statistics.depth import compute_circuit_depth
 except ImportError as e:
     print(f"Error importing routines: {e}")

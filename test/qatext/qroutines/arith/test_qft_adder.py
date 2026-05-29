@@ -1,9 +1,10 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import pytest
 from qat.lang.AQASM import Program, X
 from qat.qpus import PyLinalg
 
-from qatext.qroutines.algebraic.gf2x.Pinto_adders import qft_adder_int
+from qatext.qroutines.algebraic.gf2x.adders import qft_adder_int
 
 
 def simulate_addition(a_val, b_val, a_len, b_len, overflow=False):

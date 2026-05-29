@@ -1,9 +1,10 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 from qat.lang.AQASM.gates import CNOT, CCNOT, X, SWAP
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines.arith.cuccaro_arith import adder as cuccaro_adder
-from qatext.qroutines.algebraic.gf2x.Pinto_adders import cuccaro_adder_int
+from qatext.qroutines.algebraic.gf2x.adders import cuccaro_adder_int
 from qatext.qroutines.arith.cuccaro_arith import adder as cuccaro_adder
 
 

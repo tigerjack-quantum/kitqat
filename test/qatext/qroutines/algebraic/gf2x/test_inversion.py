@@ -1,3 +1,4 @@
+__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import galois
 import pytest
@@ -7,7 +8,7 @@ from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 
-from qatext.qroutines.algebraic.gf2x.Pinto_inversion import square_mod, modmult, flt_div
+from qatext.qroutines.algebraic.gf2x.inversion import square_mod, modmult, flt_div
 
 class TestPintoInversion:
     @pytest.mark.parametrize(
