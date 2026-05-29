@@ -123,8 +123,11 @@ details of myQLM by following the documentation freely available at
 [https://myqlm.github.io/](https://myqlm.github.io/). You can also ask for help
 on the official [slack channel](https://myqlmworkspace.slack.com/).
 
-## Contributors ##
-- 
+## Contributors
+- **Alessandro Finazzi** — quantum walk update operators
+  ([alessandro2.finazzi@mail.polimi.it](mailto:alessandro2.finazzi@mail.polimi.it))
+- **Federico Pinto** — quantum arithmetic routines over GF(2^x) and GF(p), and
+  classical benchmarks ([federico.pinto@mail.polimi.it](mailto:federico.pinto@mail.polimi.it))
 
 # Authors and citations #
 Part of the code presented here was used in the results of many of my articles.
