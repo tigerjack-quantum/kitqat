@@ -8,11 +8,9 @@ from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qatmgmt.sample import extract_qarray_values_by_named_qarrays
 from qatext.qpus.reversible import inspect_state_reversible_program
 from qatext.qroutines.arith import cuccaro_arith
-from qatext.qroutines.datastructure.sliding_sort_array import \
-    insert as insert_ld  # ld stands for low-depth
-from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_bitarray, initialize_qureg_given_bitstring, initialize_qureg_given_int
-from qatext.qroutines.walk.update0 import \
-    update_reversible  # lw stands for low-width
+from qatext.qroutines.qregs_mgmt.qregs_init import (
+    initialize_qureg_given_bitstring, initialize_qureg_given_int)
+from qatext.qroutines.walk.update_reversible0 import update_reversible
 
 QPU = CLinalg()
 
@@ -23,7 +21,6 @@ def simulate_quantum(prw):
     cr = prw.to_circ(link=[classarith, cuccaro_arith])
     print(cr.statistics())
     job = cr.to_job()
-
     print("Simulating...")
     res = QPU.submit(job)
     for sample in res:
