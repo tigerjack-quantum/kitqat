@@ -28,7 +28,7 @@ def simulate_quantum(prw):
             prw._name_to_qarray, sample)
         print(sample.amplitude, result)
 
-def simulate_reversiveble(prw):
+def simulate_reversible(prw):
     # state_str = inspect_state_reversible_program(prw, [])
     state_str = inspect_state_reversible_program(
         prw, [classarith, cuccaro_arith])
@@ -40,7 +40,7 @@ def simulate_program(
     rev,
 ):
     if rev:
-        simulate_reversiveble(prw)
+        simulate_reversible(prw)
     else:
         simulate_quantum(prw)
     # job = cr.to_job(qubits=qubits)
