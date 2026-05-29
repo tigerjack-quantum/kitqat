@@ -1,4 +1,4 @@
-from classical_bench.toom_cook import clmul
+from test.classical_ref.toom_cook import clmul
 
 def egcd(a: int, b: int) -> tuple[int, int, int]:
     

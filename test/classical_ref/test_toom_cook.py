@@ -1,7 +1,7 @@
 import time
 import random
 import pytest
-import  classical_bench.toom_cook as toom
+import test.classical_ref.toom_cook as toom
 
 
 random.seed(42)

@@ -1,7 +1,7 @@
 import time
 import random
 import pytest
-from classical_bench.montgomery import montgomery_reduce_int, montgomery_reduce_poly
+from test.classical_ref.montgomery import montgomery_reduce_int, montgomery_reduce_poly
 
 #
 random.seed(42)

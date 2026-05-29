@@ -215,3 +215,7 @@ flycheck_*.el
 
 # network security
 /network-security.data
+
+# Classical benchmark generated outputs
+classical_bench/result_bench.txt
+classical_bench/visual_linear/
