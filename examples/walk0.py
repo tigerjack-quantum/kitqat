@@ -92,6 +92,7 @@ def main(n,
         # TODO temp, delete after
         alpha_ones = prw.qarray_alloc(1, m, "a_1", int)
         alpha_zeros = prw.qarray_alloc(1, m, "a_0", int)
+        qbit_out =  prw.qarray_alloc(1, 1, "out", bool)
         #
 
         prw.apply(initialize_qureg_given_bitstring(wstate_ones_str, False), wstate_ones)
@@ -111,7 +112,7 @@ def main(n,
 
         qrout = update_reversible(n, k, m, wstate_ones, wstate_zeros)
         # prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros)
-        prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros, wstate_ones, wstate_zeros, alpha_ones, alpha_zeros)
+        prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros, wstate_ones, wstate_zeros, alpha_ones, alpha_zeros, qbit_out)
 
         if to_simulate:
             simulate_program(prw, True)
