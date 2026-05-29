@@ -124,7 +124,7 @@ details of myQLM by following the documentation freely available at
 on the official [slack channel](https://myqlmworkspace.slack.com/).
 
 ## Contributors
-- **Alessandro Finazzi** — quantum walk update operators
+- **Alessandro Finazzi** — quantum walk update operators (version 1)
   ([alessandro2.finazzi@mail.polimi.it](mailto:alessandro2.finazzi@mail.polimi.it))
 - **Federico Pinto** — quantum arithmetic routines over GF(2^x) and GF(p), and
   classical benchmarks ([federico.pinto@mail.polimi.it](mailto:federico.pinto@mail.polimi.it))
@@ -133,71 +133,91 @@ on the official [slack channel](https://myqlmworkspace.slack.com/).
 Part of the code presented here was used in the results of many of my articles.
 Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
 
-# List of utilities implemented/ to be implemented #
-  * Reversible simulator
-    * [X] Implementation
-  * Extensions to QAT
-    * [x] ProgramWrapper and QRoutineWrapper objects to extend the built-in Program and QRoutine objects
-    * [x] Helper functions for Gate, Observable, Result and Sample objects (under `qatext.qatmgmt`)
-  * Reversible combinatorial circuits
-    * [x] Sorting network
-    * [x] Benes network
+# List of utilities implemented / to be implemented #
+
+  * Core infrastructure
+    * [x] Reversible simulator
+    * [x] ProgramWrapper and QRoutineWrapper objects (`qatext.qatmgmt`)
+    * [x] Helper functions for Gate, Observable, Result and Sample objects (`qatext.qatmgmt`)
+
   * State preparation
     * [x] Dicke state
     * [ ] Quantum circuits for general multi-qubit gates: [link](https://arxiv.org/pdf/quant-ph/0404089.pdf)
-    * [ ] Quantum-state preparation with universal gate decompositions:
-      [link](https://arxiv.org/pdf/1003.5760.pdf)
-    * [ ] Quantum Networks for generating arbitrary quantum states:
-      [link](https://arxiv.org/pdf/quant-ph/0407102.pdf)
+    * [ ] Quantum-state preparation with universal gate decompositions: [link](https://arxiv.org/pdf/1003.5760.pdf)
+    * [ ] Quantum Networks for generating arbitrary quantum states: [link](https://arxiv.org/pdf/quant-ph/0407102.pdf)
+
+  * Quantum walk (`qatext.qroutines.walk`)
+    * [x] Update operator, version 0 [link](https://doi.org/10.1109/TC.2025.3625044) [link](https://doi.org/10.1145/3801487.3801826)
+    * [x] Update operator, version 1 [TODO link]()
+
   * Encoding classical data
     * [x] Classical bitstring encoding
-    * [ ] Basis encoding - [link](https://arxiv.org/pdf/quant-ph/9807053.pdf)
-    * [ ] Amplitude encoding - [link](https://arxiv.org/pdf/1703.10793.pdf)
-    * [ ] Angle encoding - [link](https://arxiv.org/pdf/1711.11240.pdf)
-    * [ ] Higher order embedding - [link](https://arxiv.org/pdf/1804.11326.pdf)
-    * [ ] Variational/trained embedding - [link](https://arxiv.org/pdf/2001.03622.pdf)
-  * Linear algebra
-    * [x] Gauss-Jordan Elimination (useful to compute the inverse of a matrix) [link](https://doi.org/10.1145/3607256)
-    * [x] Moving columns to the start/end of the matrix [link](https://doi.org/10.1109/QCE52317.2021.00056)
-  * Crypto
-    * [x] DES (Kwan) Sbox [link](https://doi.org/10.1109/QCE60285.2024.00011)
-  * DataStructure
-    * [x] Sorted array insertion/deletion [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
-    * [x] Low-Width insertion/deletion into sorted array [TODO link]()
-    * [x] Sorted array check existence
-  * Arithmetic
+    * [x] Binary Index eXtractor (BIX) [link](https://doi.org/10.1145/3649329.3657337)
+    * [x] Vertex Binary Encoding (VBE) [TODO link]()
+    * [ ] Basis encoding [link](https://arxiv.org/pdf/quant-ph/9807053.pdf)
+    * [ ] Amplitude encoding [link](https://arxiv.org/pdf/1703.10793.pdf)
+    * [ ] Angle encoding [link](https://arxiv.org/pdf/1711.11240.pdf)
+    * [ ] Higher order embedding [link](https://arxiv.org/pdf/1804.11326.pdf)
+    * [ ] Variational/trained embedding [link](https://arxiv.org/pdf/2001.03622.pdf)
+
+  * Integer arithmetic (`qatext.qroutines.arith`)
     * [x] Cuccaro arithmetic
       * [x] Adder/subtractor
-      * [x] different length registers
+      * [x] Different length registers
       * [x] Comparator
-      * [x] no overflow
-      * [x] little/big endian
-      * [ ] no carry in
+      * [x] No overflow
+      * [x] Little/big endian
+      * [ ] No carry in
     * [x] TKK arithmetic
       * [x] Adder
       * [ ] Subtractor
       * [ ] Comparator
-      * [ ] no carry in
-      * [ ] different length registers
-      * [ ] no overflow
-      * [ ] little/big endian
-    * [x] My arithmetic
-      * [x] 2bit adder
-      * [x] 2bit comparator
-  * Modular arithmetic in finite fields
-    * [ ] F_{2^n}
-      * [ ] Inversion
-    * [ ] F_p
-      * [ ] Inversion
-  * Qreg layout
-    * [x] Qreg reversal
-    * [x] Qreg rotation (left/right)
-  * Qreg init
-    * [x] Data init (from compile time bitstring, bitarray, int)
-    * [x] Matrix init (...)
-        * [x] Row/Column swap
-  * Various
-    * [x] Computing Hamming Weight of a subset of qubits
-    * [x] Check Hamming Weight of a subset of qubits
-    * [x] Binary Index eXtractor (BIX, convert a Dicke state into an ordered set of integers) [link](https://doi.org/10.1145/3649329.3657337)
-    * [x] Vertex Binary Encodng (VBE, similar to BIX) [TODO link](TODO add link)
+      * [ ] No carry in
+      * [ ] Different length registers
+      * [ ] No overflow
+      * [ ] Little/big endian
+    * [x] Perriello arithmetic
+      * [x] 2-bit adder
+      * [x] 2-bit comparator
+
+  * Arithmetic over finite fields (`qatext.qroutines.algebraic`)
+    * [x] GF(2ⁿ)
+      * [x] Basic arithmetic (multiplication, schoolbook reduction)
+      * [x] Adders (Cuccaro-style, TKK-style, QFT-based)
+      * [x] Toom-Cook / Karatsuba multiplication
+      * [x] Field inversion (Fermat's little theorem)
+    * [x] GF(p)
+      * [x] Barrett reduction
+      * [x] Kaliski inversion
+    * [x] Montgomery multiplication (`qatext.qroutines.montgomery`)
+
+  * Linear algebra (`qatext.qroutines.linalg`)
+    * [x] Gauss-Jordan elimination [link](https://doi.org/10.1145/3607256)
+    * [x] Column permutations [link](https://doi.org/10.1109/QCE52317.2021.00056)
+
+  * Cryptography (`qatext.qroutines.crypto`)
+    * [x] DES Sbox (Kwan) [link](https://doi.org/10.1109/QCE60285.2024.00011)
+
+  * Data structures (`qatext.qroutines.datastructure`)
+    * [x] Sorted array insertion/deletion [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
+    * [x] Sorted array low-width insertion/deletion [TODO link]()
+    * [x] Array existence check [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
+
+  * Combinatorial circuits (`qatext.qroutines`)
+    * [x] Sorting network (`sorting`)
+    * [x] Benes network (`hamming_weight_generate`)
+
+  * Hamming weight (`qatext.qroutines`)
+    * [x] Compute Hamming weight of a qubit subset (`hamming_weight_compute`)
+    * [x] Generate Dicke states / check Hamming weight (`hamming_weight_generate`)
+
+  * Quantum register management (`qatext.qroutines.qregs_mgmt`)
+    * [x] Register reversal
+    * [x] Register rotation (left/right)
+    * [x] Data initialisation (bitstring, bitarray, int)
+    * [x] Matrix initialisation with row/column swap
+
+  * Classical benchmarks (`bin/`, `test/classical_ref/`)
+    * [x] Reference implementations for GF(2ⁿ) and GF(p) arithmetic
+    * [x] Benchmark metrics (gate count, Toffoli count, depth)
+    * [x] Benchmark inversions
