@@ -124,10 +124,11 @@ details of myQLM by following the documentation freely available at
 on the official [slack channel](https://myqlmworkspace.slack.com/).
 
 ## Contributors
-- **Alessandro Finazzi** — quantum walk update operators (version 1)
-  ([alessandro2.finazzi@mail.polimi.it](mailto:alessandro2.finazzi@mail.polimi.it))
-- **Federico Pinto** — quantum arithmetic routines over GF(2^x) and GF(p), and
-  classical benchmarks ([federico.pinto@mail.polimi.it](mailto:federico.pinto@mail.polimi.it))
+- **Simone Perriello** — Main author and maintainer. All code not otherwise attributed.
+- **Federico Pinto** ([federico.pinto@mail.polimi.it](mailto:federico.pinto@mail.polimi.it)) — 
+  quantum arithmetic routines over GF(2ⁿ) and GF(p), classical benchmarks
+- **Alessandro Finazzi** ([alessandro2.finazzi@mail.polimi.it](mailto:alessandro2.finazzi@mail.polimi.it)) — 
+  quantum walk update operators *(code pending publication of associated paper)*
 
 # Authors and citations #
 Part of the code presented here was used in the results of many of my articles.
