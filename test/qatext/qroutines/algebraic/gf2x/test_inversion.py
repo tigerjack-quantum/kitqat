@@ -1,12 +1,13 @@
-__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-__author__ = "Simone Perriello <federico.pinto@mail.polimi.it>"
-
-from qatext.qpus.reversible import RSimulator
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
 
 import galois
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
+from qatext.qpus.reversible import RSimulator
 from qatext.qroutines.algebraic.gf2x.inversion import (flt_div, modmult,
                                                        square_mod)
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
@@ -27,7 +28,7 @@ class TestInversion:
         qr_out = prw.qarray_alloc(1, nbits, "reg_out", int)
 
         prw.apply(qi.initialize_qureg_given_int(val, nbits, True), qr_in[0])
-        
+
         prw.apply(square_mod(nbits, mod), qr_in[0], qr_out[0])
 
         res = RSimulator.simulate(prw, [])
@@ -55,7 +56,7 @@ class TestInversion:
         prw.apply(qi.initialize_qureg_given_int(val_a, nbits, True), qr_a[0])
         prw.apply(qi.initialize_qureg_given_int(val_b, nbits, True), qr_b[0])
         prw.apply(qi.initialize_qureg_given_int(val_c, nbits, True), qr_c[0])
-        
+
         prw.apply(modmult(nbits, mod), qr_a[0], qr_b[0], qr_c[0])
 
         res = RSimulator.simulate(prw, [])
@@ -65,7 +66,7 @@ class TestInversion:
         poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
         poly_c = galois.Poly.Int(val_c, field=galois.GF(2))
         poly_mod = galois.Poly.Int(mod, field=galois.GF(2))
-        
+
         expected_out = int((poly_c + poly_a * poly_b) % poly_mod)
 
         assert out_val == expected_out, f"Error: {val_c} + {val_a}*{val_b} mod {mod} should be {expected_out}, got {out_val}"
@@ -80,7 +81,6 @@ class TestInversion:
     )
     def test_flt_div(self, val_f, val_b, mod, nbits):
         prw = ProgramWrapper(Program())
-        
         qr_f0 = prw.qarray_alloc(1, nbits, "reg_f0", int)
         qr_b = prw.qarray_alloc(1, nbits, "reg_b", int)
         qr_c = prw.qarray_alloc(1, nbits, "reg_c", int)

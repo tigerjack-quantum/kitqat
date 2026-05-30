@@ -1,6 +1,5 @@
-from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
+from qatext.qpus.reversible import RSimulator
 import galois
 import pytest
 from qat.lang.AQASM.program import Program
@@ -19,7 +18,7 @@ from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 
 
-class TestPintoBasicArith:
+class TestBasicArith:
     @pytest.mark.parametrize(
         "val_a, val_b",
         [
@@ -41,8 +40,8 @@ class TestPintoBasicArith:
 
         res = RSimulator.simulate(prw, [])
 
-        out_a = get_int_from_bitarray(res["a"], False)
-        out_b = get_int_from_bitarray(res["b"], False)
+        out_a = get_int_from_bitarray(res["a"].tolist(), False)
+        out_b = get_int_from_bitarray(res["b"].tolist(), False)
 
         GF2 = galois.GF(2)
         expected_b = int(GF2(val_a) + GF2(val_b))
@@ -62,7 +61,7 @@ class TestPintoBasicArith:
         prw.apply(sub2bit(), qr_a[0], qr_b[0])
 
         res = RSimulator.simulate(prw, [])
-        out_b = get_int_from_bitarray(res["b"], False)
+        out_b = get_int_from_bitarray(res["b"].tolist(), False)
 
         GF2 = galois.GF(2)
         assert out_b == int(GF2(1) - GF2(1)), f"Subtractor failed, 1-1 should be 0, not {out_b}"
@@ -89,9 +88,9 @@ class TestPintoBasicArith:
 
         res = RSimulator.simulate(prw, [])
 
-        out_a = get_int_from_bitarray(res["a"], False)
-        out_b = get_int_from_bitarray(res["b"], False)
-        final_out = get_int_from_bitarray(res["out"], False)
+        out_a = get_int_from_bitarray(res["a"].tolist(), False)
+        out_b = get_int_from_bitarray(res["b"].tolist(), False)
+        final_out = get_int_from_bitarray(res["out"].tolist(), False)
 
         GF2 = galois.GF(2)
         expected_out = int(GF2(val_a) * GF2(val_b))
@@ -127,8 +126,8 @@ class TestPintoBasicArith:
 
         res = RSimulator.simulate(prw, [])
 
-        out_a = get_int_from_bitarray(res["a"], False)
-        out_b = get_int_from_bitarray(res["b"], False)
+        out_a = get_int_from_bitarray(res["a"].tolist(), False)
+        out_b = get_int_from_bitarray(res["b"].tolist(), False)
 
         poly_a = galois.Poly.Int(val_a, field=galois.GF(2))
         poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
@@ -165,9 +164,9 @@ class TestPintoBasicArith:
 
         res = RSimulator.simulate(prw, [])
 
-        out_a = get_int_from_bitarray(res["a"], True)
-        out_b = get_int_from_bitarray(res["b"], True)
-        final_out = get_int_from_bitarray(res["out"], True)
+        out_a = get_int_from_bitarray(res["a"].tolist(), True)
+        out_b = get_int_from_bitarray(res["b"].tolist(), True)
+        final_out = get_int_from_bitarray(res["out"].tolist(), True)
 
         poly_a = galois.Poly.Int(val_a, field=galois.GF(2))
         poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
@@ -195,7 +194,7 @@ class TestPintoBasicArith:
 
         res = RSimulator.simulate(prw, [])
 
-        out_val = get_int_from_bitarray(res["reg"], True)
+        out_val = get_int_from_bitarray(res["reg"].tolist(), True)
 
         poly_val = galois.Poly.Int(val, field=galois.GF(2))
         poly_mod = galois.Poly.Int(mod, field=galois.GF(2))
@@ -221,17 +220,17 @@ class TestPintoBasicArith:
         prw = ProgramWrapper(Program())
         qr = prw.qarray_alloc(1, 2 * n, "reg", int)
         r_qr = prw.qarray_alloc(1, n + 1, "quotient", int)
-        
+
         prw.apply(qi.initialize_qureg_given_int(val, 2 * n, False), qr[0])
-        
+
         prw.apply(schoolbook_reduction_int(n, N), qr[0], r_qr[0])
-        
+
         res = RSimulator.simulate(prw, [])
-        
-       
-        out_val = get_int_from_bitarray(res["reg"], False)
-        
+
+        out_val = get_int_from_bitarray(res["reg"].tolist(), False)
+
         expected_rem = val % N
         assert out_val == expected_rem, f"Integer reduction error: {val} % {N} should be {expected_rem}, but got {out_val}"
+
 if __name__ == "__main__":
     pytest.main([__file__])

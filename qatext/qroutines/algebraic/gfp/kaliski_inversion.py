@@ -1,9 +1,13 @@
-__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
-from qat.lang.AQASM.gates import CNOT, X, SWAP, CCNOT
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
+
+from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qroutines.arith.cuccaro_arith import adder as cuccaro_adder
+
 
 def copy_qreg(qrout, src, dest, offset_src=0, offset_dest=0, length=None):
     if length is None:
@@ -14,7 +18,6 @@ def copy_qreg(qrout, src, dest, offset_src=0, offset_dest=0, length=None):
 @build_gate("KALISKI_ROUND", [int], arity=lambda n: 5 * n + 4)
 def mk_round(nbits: int) -> QRoutine:
     qf = QRoutine()
-    
     # Inputs
     u = qf.new_wires(nbits)
     v = qf.new_wires(nbits)
@@ -22,7 +25,7 @@ def mk_round(nbits: int) -> QRoutine:
     s = qf.new_wires(nbits + 1)
     k = qf.new_wires(nbits)
     f = qf.new_wires(1)
-    m_i = qf.new_wires(1) 
+    m_i = qf.new_wires(1)
 
     # Ancillae for branch evaluation
     a = qf.new_wires(1)
@@ -31,7 +34,7 @@ def mk_round(nbits: int) -> QRoutine:
     both_odd = qf.new_wires(1)
     u_gt_v = qf.new_wires(1)
     temp_v_copy = qf.new_wires(nbits + 1)
-    
+
     qf.set_ancillae(a, u_even, v_even, both_odd, u_gt_v, temp_v_copy)
 
     # 1. Evaluate primitive conditions (Uncontrolled)
@@ -39,7 +42,7 @@ def mk_round(nbits: int) -> QRoutine:
     qf.apply(X, u[nbits-1])
     qf.apply(CNOT, u[nbits-1], u_even[0])
     qf.apply(X, u[nbits-1])
-    
+
     qf.apply(X, v[nbits-1])
     qf.apply(CNOT, v[nbits-1], v_even[0])
     qf.apply(X, v[nbits-1])
@@ -140,7 +143,7 @@ def mk_round(nbits: int) -> QRoutine:
 
     qf.apply(adder_uv.dag().ctrl(), f_b11[0], v, u_ext)
     qf.apply(adder_rs.ctrl(), f_b11[0], s, r_ext)
-    
+
     qf.apply(adder_uv.dag().ctrl(), f_b00[0], u, v_ext)
     qf.apply(adder_rs.ctrl(), f_b00[0], r, s_ext)
 
@@ -155,7 +158,7 @@ def mk_round(nbits: int) -> QRoutine:
     for i in range(nbits - 1, 0, -1):
         qf.apply(SWAP.ctrl(), shift_u[0], u[i], u[i-1])
         qf.apply(SWAP.ctrl(), shift_v[0], v[i], v[i-1])
-        
+
     for i in range(0, nbits):
         qf.apply(SWAP.ctrl(), shift_u[0], s[i], s[i+1])
         qf.apply(SWAP.ctrl(), shift_v[0], r[i], r[i+1])
@@ -181,7 +184,7 @@ def mk_round(nbits: int) -> QRoutine:
     qf.apply(X, m_i[0])
     qf.apply(CCNOT, a[0], m_i[0], branch_11[0])
 
-    # 5. Uncompute 'a' 
+    # 5. Uncompute 'a'
     qf.apply(CCNOT, f[0], r[nbits], a[0])
 
     # 6. Termination check: f -> 0 if v is 0 AND k is 0
@@ -189,28 +192,28 @@ def mk_round(nbits: int) -> QRoutine:
     v_is_zero = qf.new_wires(1)
     k_is_zero = qf.new_wires(1)
     qf.set_ancillae(v_is_zero, k_is_zero)
-    
+
     for i in range(nbits):
         qf.apply(X, v[i])
         qf.apply(X, k[i])
-        
+
     qf.apply(X.ctrl(nbits), v, v_is_zero[0])
     qf.apply(X.ctrl(nbits), k, k_is_zero[0])
-    
+
     for i in range(nbits):
         qf.apply(X, v[i])
         qf.apply(X, k[i])
 
     qf.apply(CCNOT, v_is_zero[0], k_is_zero[0], f[0])
-    
+
     # Uncompute
     for i in range(nbits):
         qf.apply(X, v[i])
         qf.apply(X, k[i])
-        
+
     qf.apply(X.ctrl(nbits), v, v_is_zero[0])
     qf.apply(X.ctrl(nbits), k, k_is_zero[0])
-    
+
     for i in range(nbits):
         qf.apply(X, v[i])
         qf.apply(X, k[i])
@@ -224,14 +227,12 @@ def mk_round(nbits: int) -> QRoutine:
 
     carries = qf.new_wires(nbits)
     qf.set_ancillae(carries)
-    
+
     qf.apply(CNOT, not_f[0], carries[nbits-1])
     for i in range(nbits-1, 0, -1):
         qf.apply(CCNOT, carries[i], k[i], carries[i-1])
-        
     for i in range(0, nbits):
         qf.apply(CNOT, carries[i], k[i])
-        
     for i in range(1, nbits):
         qf.apply(CCNOT, carries[i], k[i], carries[i-1])
     qf.apply(CNOT, not_f[0], carries[nbits-1])
@@ -245,7 +246,6 @@ def mk_round(nbits: int) -> QRoutine:
 @build_gate("KALISKI_BLOCK", [int], arity=lambda n: 5 * n + 4 + 2 * n - 1)
 def kaliski_block(nbits: int) -> QRoutine:
     qf = QRoutine()
-    
     u = qf.new_wires(nbits)
     v = qf.new_wires(nbits)
     r = qf.new_wires(nbits + 1)
@@ -255,8 +255,6 @@ def kaliski_block(nbits: int) -> QRoutine:
     m = qf.new_wires(2 * nbits) # The 2n history qubits
 
     round_gate = mk_round(nbits)
-    
     for i in range(2 * nbits):
         qf.apply(round_gate, u, v, r, s, k, f, m[i])
-        
     return qf

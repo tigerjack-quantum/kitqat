@@ -1,14 +1,18 @@
-from qatext.qpus.reversible import RSimulator
-__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
-# -*- coding: utf-8 -*-
-import pytest
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
+
 import random
+
+import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
+from qatext.qpus.reversible import RSimulator
+from qatext.qroutines.algebraic.gf2x.adders import (cuccaro_adder_int,
+                                                    tkk_adder_int)
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
-from qatext.qroutines.algebraic.gf2x.adders import cuccaro_adder_int, tkk_adder_int
 
 random.seed(42)
 
@@ -21,55 +25,50 @@ for _ in range(20):
     b = random.randint(0, (1 << bl) - 1)
     random_cases.append((a, b, al, bl))
 
-class TestPintoAdders:
-    
+class TestAdders:
     def _setup_and_run(self, val_a, val_b, a_len, b_len, gate, overflow, little_endian=False):
         """Helper to reduce code duplication for circuit setup and execution."""
         prw = ProgramWrapper(Program())
-        
         qr_a = prw.qarray_alloc(1, a_len, "a", int)
         qr_b = prw.qarray_alloc(1, b_len, "b", int)
-        
+        qr_cout = None
         if overflow:
             qr_cout = prw.qarray_alloc(1, 1, "cout", int)
-        
+
         prw.apply(qi.initialize_qureg_given_int(val_a, a_len, little_endian), qr_a[0])
         prw.apply(qi.initialize_qureg_given_int(val_b, b_len, little_endian), qr_b[0])
-        
         if overflow:
+            assert qr_cout is not None
             prw.apply(gate, qr_a[0], qr_b[0], qr_cout[0])
         else:
             prw.apply(gate, qr_a[0], qr_b[0])
-        
+
         res = RSimulator.simulate(prw, [])
-        
-        out_a = get_int_from_bitarray(res['a'], little_endian)
-        out_b = get_int_from_bitarray(res['b'], little_endian)
-        
+        out_a = get_int_from_bitarray(res['a'].tolist(), little_endian)
+        out_b = get_int_from_bitarray(res['b'].tolist(), little_endian)
         if overflow:
-            out_cout = get_int_from_bitarray(res['cout'], little_endian)
-            return out_a, out_b, out_cout
-            
-        return out_a, out_b
+            out_cout = get_int_from_bitarray(res['cout'].tolist(), little_endian)
+        else:
+            out_cout = None
+        return out_a, out_b, out_cout
 
     def run_and_verify(self, adder_fn, val_a, val_b, a_len, b_len, overflow=False):
         gate = adder_fn(a_len, b_len, overflow)
         # Integers in this project typically use Big-Endian (little_endian=False)
         little_endian = False
-        
         if overflow:
             out_a, out_b, out_cout = self._setup_and_run(val_a, val_b, a_len, b_len, gate, True, little_endian)
             expected_sum = val_a + val_b
             expected_b = expected_sum % (1 << b_len)
             expected_cout = 1 if expected_sum >= (1 << b_len) else 0
-            
+
             assert out_b == expected_b, f"Sum error: {val_a} + {val_b} = {expected_sum}, expected b={expected_b}, got {out_b}"
             assert out_cout == expected_cout, f"Cout error: {val_a} + {val_b} = {expected_sum}, expected cout={expected_cout}, got {out_cout}"
         else:
-            out_a, out_b = self._setup_and_run(val_a, val_b, a_len, b_len, gate, False, little_endian)
+            out_a, out_b, _ = self._setup_and_run(val_a, val_b, a_len, b_len, gate, False, little_endian)
             expected_b = (val_a + val_b) % (1 << b_len)
             assert out_b == expected_b, f"Sum error: {val_a} + {val_b} (mod 2^{b_len}), expected {expected_b}, got {out_b}"
-            
+
         assert out_a == val_a, f"Input A destroyed: expected {val_a}, got {out_a}"
 
     @pytest.mark.parametrize("adder_fn", [cuccaro_adder_int, tkk_adder_int])
