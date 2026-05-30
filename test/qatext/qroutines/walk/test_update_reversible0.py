@@ -38,11 +38,6 @@ class TestUpdate(CircuitTestHelpers):
         wstate_ones = prw.qarray_alloc(k, 1, "w_1", str)
         wstate_zeros = prw.qarray_alloc(n - k, 1, "w_0", str)
 
-        # TODO temp, delete after
-        # alpha_ones = prw.qarray_alloc(1, m, "a_1", int)
-        # alpha_zeros = prw.qarray_alloc(1, m, "a_0", int)
-        # qbit_out =  prw.qarray_alloc(1, 1, "out", bool)
-
         prw.apply(initialize_qureg_given_bitstring(wstate_ones_str, False), wstate_ones)
         prw.apply(initialize_qureg_given_bitstring(wstate_zeros_str, False), wstate_zeros)
         # simulate_program(prw, True)
@@ -56,9 +51,7 @@ class TestUpdate(CircuitTestHelpers):
             prw.apply(qrout, qreg)
 
         qrout = update_reversible(n, k, m, wstate_ones, wstate_zeros)
-        # prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros)
         prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros, wstate_ones, wstate_zeros)
-
 
         name_to_values = RSimulator.simulate_and_decode(prw, link=[classarith, cuccaro_arith])
         assert name_to_values.as_int_list('s_1') == vertex
@@ -71,11 +64,8 @@ class TestUpdate(CircuitTestHelpers):
         assert all(v == '0' for v in name_to_values.as_bitstring_list('w_1'))
         assert all(v == '0' for v in name_to_values.as_bitstring_list('w_0'))
 
-        # TODO assert all ancillae to zero
-        # print(RSimulator.inspect(prw, link=[classarith, cuccaro_arith]))
-        # input()
-        # assert all(v == 0 for v in name_to_values['a_1']), "alpha_1 not zero %s" % name_to_values['a_1']
-        # assert all(v == 0 for v in name_to_values['a_0']), "alpha_0 not zero %s" % name_to_values['a_0']
+        anc = name_to_values.get_ancilla('auto_ancillae')
+        assert not anc.any()  # all ancillae reset to zero after computation
 
     def _test_update_reversible_common(self, n, k, subtests):
         # dic = defaultdict(set)
