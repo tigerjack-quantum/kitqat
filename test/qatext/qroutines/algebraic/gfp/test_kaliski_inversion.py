@@ -1,9 +1,9 @@
+from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 
@@ -60,7 +60,7 @@ class TestPintoKaliskiInversion:
 
         prw.apply(mk_round(nbits), qr_u[0], qr_v[0], qr_r[0], qr_s[0], qr_k[0], qr_f[0], qr_m[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
         out_u = get_int_from_bitarray(res["u"], False)
         out_v = get_int_from_bitarray(res["v"], False)
         out_r = get_int_from_bitarray(res["r"], False)
@@ -91,5 +91,4 @@ class TestPintoKaliskiInversion:
         assert out_r == expected_r, f"r: got {out_r}, expected {expected_r}"
         assert out_s == expected_s, f"s: got {out_s}, expected {expected_s}"
         assert out_m == expected_m, f"m_i: got {out_m}, expected {expected_m}"
-
    

@@ -24,13 +24,17 @@ class QArray(NamedTuple):
 
 
 class ProgramWrapper:
+    _name_to_qarray: dict[str, QArray]  # Protocol match needs this visible
 
     def __init__(self, program_instance):
         self._program = program_instance
-        self._name_to_qarray: dict[str, QArray] = {}
+        self._name_to_qarray = {}
 
     def __getattr__(self, name):
         return getattr(self._program, name)
+
+    def to_circ(self, *, link=None, inline=False):
+        return self._program.to_circ(link=link, inline=inline)
 
     def get_name_to_qarray(self):
         return self._name_to_qarray

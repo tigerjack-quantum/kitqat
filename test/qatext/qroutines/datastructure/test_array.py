@@ -1,10 +1,10 @@
+from qatext.qpus.reversible import RSimulator
 from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
                                 CircuitTestHelpers)
 
 import pytest
 import qat.lang.AQASM.classarith
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.datastructure.array import contains
 from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_int
 from qatext.utils.bits.conversion import (get_int_from_bitarray,
@@ -47,7 +47,7 @@ class TestArray(CircuitTestHelpers):
         prw.apply(qroutw, qreg_elem, *qarray, qbit_out)
         # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
 
-        states = get_states_from_program_wrapper(prw,
+        states = RSimulator.simulate(prw,
                                                  [qat.lang.AQASM.classarith])
         array_vals = get_ints_from_bitarray(states["array"], n, m, False)
         assert list(array_vals) == array
@@ -88,7 +88,7 @@ class TestArray(CircuitTestHelpers):
         prw.apply(qroutw, qreg_elem, *qarray, qbit_out)
         # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
 
-        states = get_states_from_program_wrapper(prw,
+        states = RSimulator.simulate(prw,
                                                  [qat.lang.AQASM.classarith])
         array_vals = get_ints_from_bitarray(states["array"], n, m, False)
         assert list(array_vals) == array

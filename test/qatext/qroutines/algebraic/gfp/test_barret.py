@@ -1,10 +1,10 @@
+from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import pytest
 import galois
 from qat.lang.AQASM import Program, X
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.utils.bits.conversion import get_int_from_bitarray
 from qatext.qroutines.algebraic.gfp.barret import q_c_mult_add, barrett_reduction, _get_const_add_gate
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
@@ -17,7 +17,7 @@ def test_q_c_mult_add():
     prw.apply(X, qr_in[0][0])
     prw.apply(X, qr_in[0][1])
     q_c_mult_add(prw, qr_in[0], qr_acc[0], 2)
-    res = get_states_from_program_wrapper(prw, [])
+    res = RSimulator.simulate(prw, [])
     assert get_int_from_bitarray(res['acc'], False) == 6
 
 
@@ -46,7 +46,7 @@ def test_barrett_reduction_parametrized(n, N, t_val):
     prw.apply(qi.initialize_qureg_given_int(t_val, 2 * n, False), qr_t[0])
     prw.apply(barrett_reduction(n, N), qr_t[0], qr_out[0])
     
-    res = get_states_from_program_wrapper(prw, [])
+    res = RSimulator.simulate(prw, [])
     out_val = get_int_from_bitarray(res['out'], False)
     
     assert out_val == expected_val, f"Error, epected {expected_val}, got {out_val}"

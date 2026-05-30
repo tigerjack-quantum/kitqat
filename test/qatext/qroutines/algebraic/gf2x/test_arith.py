@@ -1,3 +1,4 @@
+from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import galois
@@ -5,7 +6,6 @@ import pytest
 from qat.lang.AQASM.program import Program
 
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.algebraic.gf2x.arith import (
     adder_n_bit,
     adder2bit,
@@ -39,7 +39,7 @@ class TestPintoBasicArith:
 
         prw.apply(adder2bit(), qr_a[0], qr_b[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
 
         out_a = get_int_from_bitarray(res["a"], False)
         out_b = get_int_from_bitarray(res["b"], False)
@@ -61,7 +61,7 @@ class TestPintoBasicArith:
 
         prw.apply(sub2bit(), qr_a[0], qr_b[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
         out_b = get_int_from_bitarray(res["b"], False)
 
         GF2 = galois.GF(2)
@@ -87,7 +87,7 @@ class TestPintoBasicArith:
 
         prw.apply(mul2bit(), qr_a[0], qr_b[0], qr_out[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
 
         out_a = get_int_from_bitarray(res["a"], False)
         out_b = get_int_from_bitarray(res["b"], False)
@@ -125,7 +125,7 @@ class TestPintoBasicArith:
 
         prw.apply(adder_n_bit(nbits), qr_a[0], qr_b[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
 
         out_a = get_int_from_bitarray(res["a"], False)
         out_b = get_int_from_bitarray(res["b"], False)
@@ -163,7 +163,7 @@ class TestPintoBasicArith:
 
         prw.apply(mul_n_bit(nbits), qr_a[0], qr_b[0], qr_out[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
 
         out_a = get_int_from_bitarray(res["a"], True)
         out_b = get_int_from_bitarray(res["b"], True)
@@ -193,7 +193,7 @@ class TestPintoBasicArith:
         prw.apply(qi.initialize_qureg_given_int(val, 2 * nbits, True), qr[0])
         prw.apply(schoolbook_reduction(nbits, mod), qr[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
 
         out_val = get_int_from_bitarray(res["reg"], True)
 
@@ -226,7 +226,7 @@ class TestPintoBasicArith:
         
         prw.apply(schoolbook_reduction_int(n, N), qr[0], r_qr[0])
         
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
         
        
         out_val = get_int_from_bitarray(res["reg"], False)

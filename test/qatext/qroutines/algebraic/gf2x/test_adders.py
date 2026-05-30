@@ -1,3 +1,4 @@
+from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 # -*- coding: utf-8 -*-
@@ -5,7 +6,6 @@ import pytest
 import random
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 from qatext.qroutines.algebraic.gf2x.adders import cuccaro_adder_int, tkk_adder_int
@@ -41,7 +41,7 @@ class TestPintoAdders:
         else:
             prw.apply(gate, qr_a[0], qr_b[0])
         
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
         
         out_a = get_int_from_bitarray(res['a'], little_endian)
         out_b = get_int_from_bitarray(res['b'], little_endian)

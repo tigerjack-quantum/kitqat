@@ -1,6 +1,6 @@
 import unittest
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from test.common_circuit import CircuitTestCase
 
 import numpy as np
@@ -49,8 +49,8 @@ class RrefTestCase(CircuitTestCase):
             tomeasure.extend([qb.index for qb in self.add_qregs])
 
         if self.REVERSIBLE_ON:
-            rpr = RProgram.circuit_to_rprogram(cr)
-            rpr.apply_gates_from_circuit(cr, cr)
+            rpr = RSimulator.from_circuit(cr)
+            # rpr.apply_gates_from_circuit(cr, cr)
             bitstring = "".join([str(rpr.rbits[idx]) for idx in tomeasure])
         else:
             res = self.qpu.submit(cr.to_job(qubits=tomeasure))

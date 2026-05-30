@@ -1,3 +1,4 @@
+from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import random
@@ -7,7 +8,6 @@ import pytest
 from qat.lang.AQASM.program import Program
 
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.algebraic.gf2x.toom_cook import (
     karatsuba_modular,
     toom3_mult,
@@ -35,7 +35,7 @@ def galois_oracle_mul(a_val, b_val):
     return a_val * b_val
 
 
-class TestPintoToomCook:
+class TestToomCook:
     def _setup_and_run(self, val_a, val_b, n, gate, out_size, out_name, little_endian):
         """Helper to reduce code duplication for circuit setup and execution."""
         prw = ProgramWrapper(Program())
@@ -49,11 +49,11 @@ class TestPintoToomCook:
 
         prw.apply(gate, qr_a[0], qr_b[0], qr_out[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
         return (
-            get_int_from_bitarray(res["a"], little_endian),
-            get_int_from_bitarray(res["b"], little_endian),
-            get_int_from_bitarray(res[out_name], little_endian),
+            get_int_from_bitarray(res["a"].tolist(), little_endian),
+            get_int_from_bitarray(res["b"].tolist(), little_endian),
+            get_int_from_bitarray(res[out_name].tolist(), little_endian),
         )
 
     def run_and_verify_karatsuba(self, val_a, val_b, n, m_bits):

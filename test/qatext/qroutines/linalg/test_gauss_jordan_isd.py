@@ -6,7 +6,7 @@ from parameterized import parameterized
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qatmgmt.sample import build_matrix_from_bitstring
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.linalg import gauss_jordan_isd4 as gji
 # from qatext.qroutines.linalg import matrix as qmatrix
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
@@ -79,8 +79,8 @@ class GjiTestCase(CircuitTestCase):
 
                 cr = pr.to_circ()
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     if test_u:
                         # we measure all the qubits
                         bitstring = rpr.rbits.to01()

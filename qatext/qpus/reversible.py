@@ -1,32 +1,60 @@
-# TODO subclass RProgram from ProgramWrapper and override methods
-"""For now it is only a test bench, creating a fake Program object.
+"""Reversible circuit simulation.
 
-Virtually, it should be integrated into qat, taking a circuit as input
-and running the simulation.
+Public surface
+--------------
+RGate        – gate enum (NOT, SWAP, RESET, I)
+RProgram     – stateful bit-register machine
+RSimulator   – stateless helpers: build from any source, simulate, inspect
+CircuitLike  – Protocol for ProgramWrapper / QRoutineWrapper duck-typing
 """
+
 from __future__ import annotations
 
 import logging
 import operator
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import (TYPE_CHECKING, Optional, Protocol, Sequence, Union,
+                    runtime_checkable)
 
-from qatext.utils.bits.conversion import get_bitstring_array, get_ints_from_bitarray
-from qatext.qatmgmt.program import ProgramWrapper, QArray
-from qatext.qatmgmt.routines import QRoutineWrapper
+from bitarray import bitarray
+from qatext.qatmgmt.program import QArray
+from qatext.utils.bits.conversion import (get_bitstring_array,
+                                          get_ints_from_bitarray)
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
     from qat.lang.AQASM.routines import QRoutine
-    from qat.lang.AQASM.program import Program
 
 from bitarray import bitarray, util
+
+DecodedValue = Union[bitarray, list[bitarray], list[str], list[int], tuple[int]]
+DecodedStates = dict[str, DecodedValue]
 
 LOGGER = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Protocol
+# ---------------------------------------------------------------------------
+
+@runtime_checkable
+class CircuitLike(Protocol):
+    """Anything that can produce a Circuit and owns a name→QArray map.
+
+    Both ProgramWrapper and QRoutineWrapper satisfy this contract.
+    """
+
+    _name_to_qarray: dict[str, QArray]
+
+    def to_circ(self, *, link: Optional[list], inline: bool) -> "Circuit": ...
+
+
+# ---------------------------------------------------------------------------
+# Gate enum
+# ---------------------------------------------------------------------------
+
 class RGate(Enum):
-    """Reversible Gate: NOT, SWAP or RESET."""
+    """Reversible gate: NOT, SWAP, RESET, or identity I."""
 
     NOT = auto()
     SWAP = auto()
@@ -34,74 +62,80 @@ class RGate(Enum):
     I = auto()
 
 
-class RProgram:
-    """A Reversible equivalent of the qat Program object.
+# ---------------------------------------------------------------------------
+# RProgram – the stateful bit machine
+# ---------------------------------------------------------------------------
 
-    Differently from it, when you call the apply function, the
-    reversible gate is immediately applied onto the reversible bit.
+class RProgram:
+    """A reversible equivalent of the qat Program object.
+
+    Gates are applied *immediately* onto the internal bitarray when
+    :meth:`apply` is called.  Use :class:`RSimulator` to build and run
+    an ``RProgram`` from a higher-level source (Circuit, ProgramWrapper…).
     """
 
-    rev_gate_names = ("X", "NOT", "SWAP", "I")
+    _REV_GATE_SUFFIXES = ("X", "NOT", "SWAP", "I")
 
-    def __init__(self):
-        self.ops = [
-        ]  # should contain the list of operations for logging purposes
+    # ------------------------------------------------------------------ #
+    # Construction / allocation                                            #
+    # ------------------------------------------------------------------ #
+
+    def __init__(self) -> None:
+        self.ops: list = []
         self.rbits: bitarray = bitarray()
         self.rregs: dict[str, QArray] = {}
 
-    def ralloc(self, n=1, name: Optional[str] = None):
-        """Allocate a register of `n` reversible bits.
+    def ralloc(self, n: int = 1, name: Optional[str] = None) -> None:
+        """Allocate a register of *n* reversible bits.
 
-        `n` defaults to 1. You can additionally decide to name this
-        register passing the `name` parameter.
+        Parameters
+        ----------
+        n:    number of bits (default 1).
+        name: optional register name; must be unique.
         """
-        slic = slice(len(self.rbits),
-                     len(self.rbits) + n)  # upper not included
+        slic = slice(len(self.rbits), len(self.rbits) + n)
         if name is None:
             name = str(slic)[6:].replace(", ", "_").replace(")", "")
         elif name in self.rregs:
-            raise ValueError("Already another register with the same name")
-        # TODO once changed to ProgramWrapper subclass, replace None w/ proper
-        # register
-        qarray = QArray(slic, 1, n, None, str)
-        self.rregs[name] = qarray
+            raise ValueError(f"Register name '{name}' already exists.")
+        self.rregs[name] = QArray(slic, 1, n, None, str)
         self.rbits.extend(util.zeros(n))
 
-    def apply(self, gate: RGate, *rbits: int):
-        """Apply a Reversible gate on the reversible bits.
+    # ------------------------------------------------------------------ #
+    # Gate application                                                     #
+    # ------------------------------------------------------------------ #
 
-        Last bits are the targets, first the controls (if any).
+    def apply(self, gate: RGate, *rbits: int) -> None:
+        """Apply *gate* on *rbits*.
+
+        Convention: first indices are controls, last index/indices are targets.
         """
-        if self.rbits is None:
-            raise AttributeError("You should initialize your qubits")
-        if gate == RGate.NOT:
-            ntrgts = 1
-        elif gate == RGate.SWAP:
-            ntrgts = 2
-        elif gate == RGate.RESET:
-            ntrgts = 1
-        elif gate == RGate.I:
-            ntrgts = 1
-        trgts = rbits[-1:-1 * ntrgts - 1:-1]
-        ctrls = rbits[:len(rbits) - ntrgts]
-        # arity = len(rbits) - ntrgts
+        if not self.rbits:
+            raise AttributeError("No bits allocated – call ralloc() first.")
+
+        ntrgts = 2 if gate == RGate.SWAP else 1
+        trgts = rbits[-ntrgts:]
+        ctrls = rbits[: len(rbits) - ntrgts]
+
         if len(trgts) + len(ctrls) != len(rbits):
-            raise ValueError(f"Wrong number of rbits {len(rbits)}")
-        if ctrls is not None and not set(ctrls).isdisjoint(set(trgts)):
-            raise ValueError("The target and control set should be disjoint")
-        ctrl = ((ctrls is None or len(ctrls) == 0)
-                or (len(ctrls) == 1
-                    and operator.itemgetter(*ctrls)(self.rbits) == 1)
-                or (len(ctrls) > 1
-                    and all(operator.itemgetter(*ctrls)(self.rbits))))
+            raise ValueError(f"Wrong number of rbits: got {len(rbits)}.")
+        if not set(ctrls).isdisjoint(set(trgts)):
+            raise ValueError("Control and target sets must be disjoint.")
+
         self.ops.append((gate, *ctrls, *trgts))
-        if not ctrl:
-            # Nothing to do here
+
+        # Evaluate control condition
+        active = (
+            not ctrls
+            or (len(ctrls) == 1 and operator.itemgetter(*ctrls)(self.rbits) == 1)
+            or (len(ctrls) > 1 and all(operator.itemgetter(*ctrls)(self.rbits)))
+        )
+        if not active:
             return
 
         if gate == RGate.NOT:
-            for trgt in trgts:
-                self.rbits.invert(trgt)
+            for t in trgts:
+                self.rbits.invert(t)
         elif gate == RGate.SWAP:
             self.rbits[trgts[1]], self.rbits[trgts[0]] = (
                 self.rbits[trgts[0]],
@@ -109,305 +143,293 @@ class RProgram:
             )
         elif gate == RGate.RESET:
             self.rbits[trgts[0]] = 0
-        elif gate == RGate.I:
-            pass
+        # RGate.I → identity, nothing to do
 
-    def _apply_gate_from_name(self, gatename: str, rbits: Sequence[int]):
-        """Apply a gate given the gatename.
+    def _apply_gate_from_name(self, gatename: str, rbits: Sequence[int]) -> None:
+        """Dispatch a gate by its string name.
 
-        Allowed SWAP, X, NOT, CNOT, C-NOT, CX, C-X, CCNOT, C-C-NOT,
-        C-C-X, CCX
+        Accepted: SWAP, I, X, NOT, CNOT, C-NOT, CX, C-X,
+                  CCNOT, C-C-NOT, C-CNOT, C-C-X, CCX.
         """
-
         if gatename == "SWAP":
-            ctrls = set(rbits[:-2])
-            trgts = set(rbits[-2:])
-            rgate = RGate.SWAP
+            rgate, trgts, ctrls = RGate.SWAP, list(rbits[-2:]), list(rbits[:-2])
         elif gatename == "I":
-            rgate = RGate.I
-            trgts = {rbits[-1]}
-            ctrls = set(rbits[:-1])
-        elif gatename in (
-                "X",
-                "NOT",
-                "CNOT",
-                "C-NOT",
-                "C-X",
-                "CX",
-                "C-C-NOT",
-                "CCNOT",
-                "C-CNOT",
-                "C-C-X",
-                "CCX",
-        ):
-            rgate = RGate.NOT
-            trgts = {rbits[-1]}
-            ctrls = set(rbits[:-1])
+            rgate, trgts, ctrls = RGate.I, [rbits[-1]], list(rbits[:-1])
+        elif gatename in {
+            "X", "NOT", "CNOT", "C-NOT", "C-X", "CX",
+            "C-C-NOT", "CCNOT", "C-CNOT", "C-C-X", "CCX",
+        }:
+            rgate, trgts, ctrls = RGate.NOT, [rbits[-1]], list(rbits[:-1])
         else:
-            raise AttributeError(
-                f"Got an unknown gate that passed the first check {gatename}")
+            raise AttributeError(f"Unknown reversible gate: '{gatename}'.")
 
         self.apply(rgate, *ctrls, *trgts)
 
-    def get_result(self) -> str:
-        return self.rbits.to01()
-
-    def get_result_by_name(self):
-        res = {}
-        for name, qarray in self.rregs.items():
-            res[name] = self.rbits[qarray.slic]
-        return res
-
-    def filter_result_by_name(self, *name: str):
-        res = {}
-        for _name, qarray in self.rregs.items():
-            if _name in name:
-                res[_name] = self.rbits[qarray.slic]
-        return res
-
-    @classmethod
-    def circuit_to_rprogram(
-        cls,
-        qcirc: Circuit,
-        name_to_qarray: dict[str, QArray] = dict()
-    ) -> RProgram:
-        """Convert a qat Circuit object to a reversible program
-        :class:`~qatext.qpus.reversible.RProgram`, applying all the
-        operations contained."""
-        rprogram = RProgram()
-        # qreg_names_inv = dict((v, k) for k, v in reg_names.items())
-        qreg_slices_to_names: dict[slice, str] = {}
-        for name, qarray in name_to_qarray.items():
-            qreg_slices_to_names[qarray.slic] = name
-        for qr in qcirc.qregs:
-            slic = slice(qr.start, qr.start + qr.length)
-            name = qreg_slices_to_names.get(slic, None)
-            rprogram.ralloc(qr.length, name)
-        qdiff = qcirc.nbqbits - len(rprogram.rbits)
-        if qdiff > 0:
-            # there are ancillae automatically generated from subroutines
-            rprogram.ralloc(qdiff, "auto_ancillae")
-
-        # rprogram.apply_gates_from_circuit(qcirc, qcirc)
-        return rprogram
+    # ------------------------------------------------------------------ #
+    # Gate application from high-level sources                            #
+    # ------------------------------------------------------------------ #
 
     def apply_gates_from_circuit(
         self,
         top_circ: "Circuit",
         operation_circ: "Circuit",
-    ):
-        """Apply all the gates from the circuit `operation_circ` given. While
-        `operation_circ` is the circuit containing the gates to be applied,
-        `top_circ` is the top level circuit in which the `operation_circ` is
-        embedded. `operation_circ` can indeed be a circuit implementation of a
-        gate embedded in the `top_circ`.
-
-        If you want to apply all the gates from the top_circ, you can
-        set the two to the same value.
-        """
-        # It's iterating on the inlined version
+    ) -> None:
+        """Apply all gates from *operation_circ* (embedded in *top_circ*)."""
         for op in operation_circ:
             gatename = op.gate
             if gatename is None:
-                if op.type == 1:
-                    # measure operation, NOP
-                    continue
-                elif op.type == 2:
-                    # reset
+                if op.type == 2:  # reset
                     self.apply(RGate.RESET, op.qbits)
+                # type == 1 → measure, NOP
+                continue
+
             subcirc = top_circ.gateDic[gatename].circuit_implementation
             if subcirc is not None:
-                # subcirc can be applied to a different subset of qubits
                 self.apply_gates_from_circuit(top_circ, subcirc)
             else:
-                if not gatename.endswith(self.rev_gate_names):
+                if not gatename.endswith(self._REV_GATE_SUFFIXES):
                     if gatename.startswith("_"):
-                        # Should be a custom gate with defined subgate
                         gatename = top_circ.gateDic[gatename].subgate
                     else:
                         raise AttributeError(
-                            "Reversible gates accepted: X, SWAP and their controlled"
-                            f" versions, got {gatename}")
+                            "Only X, SWAP and their controlled versions are "
+                            f"accepted; got '{gatename}'."
+                        )
                 self._apply_gate_from_name(gatename, op.qbits)
 
     def apply_gates_from_qroutine(
         self,
         qroutine: "QRoutine",
-        qbits: Sequence[int] = [],
-    ):
-        """Warn: this work with QRoutine, not with QRoutine lifted to
-        AbstractGate through the @build_gate annotation. If you have such a
-        gate and you to access the underlying QRoutine, use the tilde operator.
-        Indeed, the QRoutine is easier since all the gates are inlined.
+        qbits: Sequence[int] = (),
+    ) -> None:
+        """Apply all gates from a QRoutine.
 
+        Note: pass the bare ``QRoutine``, not the AbstractGate wrapper
+        (use the tilde operator ``~gate`` to unwrap if needed).
         """
-        if len(qbits) == 0:
+        if not qbits:
             qbits = range(qroutine.arity)
         elif len(qbits) < qroutine.arity:
-            raise Exception(f"Too few qbits {len(qbits)}")
-        qrout_to_orig: dict[int, int] = {
-            a: b
-            for (a, b) in zip(range(qroutine.arity), qbits)
-        }
+            raise ValueError(f"Too few qbits supplied: {len(qbits)}.")
+
+        mapping: dict[int, int] = dict(zip(range(qroutine.arity), qbits))
         for op in qroutine.op_list:
-            op_qbits = [qrout_to_orig[i] for i in op.args]
-            gatename = op.gate.name
-            if gatename is not None:
-                self._apply_gate_from_name(gatename, op_qbits)
-                continue
-            if op.gate.subgate is not None:
-                gatename = op.gate.subgate.name
-                if gatename is not None:
-                    self._apply_gate_from_name(gatename, op_qbits)
-                    continue
+            op_qbits = [mapping[i] for i in op.args]
+            name = op.gate.name or (
+                op.gate.subgate.name if op.gate.subgate is not None else None
+            )
+            if name is not None:
+                self._apply_gate_from_name(name, op_qbits)
+            else:
+                self.apply_gates_from_qroutine(op.gate, op_qbits)
 
-            self.apply_gates_from_qroutine(op.gate, op_qbits)
+    # ------------------------------------------------------------------ #
+    # Result accessors                                                     #
+    # ------------------------------------------------------------------ #
 
+    def get_result(self) -> str:
+        """Return the full bit-state as a '0'/'1' string."""
+        return self.rbits.to01()
 
-@staticmethod
-def get_state_from_program(
-    pr,
-    link: Optional[list],
-) -> str:
-    circ = pr.to_circ(link=link, inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.apply_gates_from_circuit(circ, circ)
-    res = rpr.get_result()
-    return res
+    def get_result_by_name(self) -> dict[str, bitarray]:
+        """Return a ``{register_name: bitarray}`` dict for all registers."""
+        return {name: self.rbits[qa.slic] for name, qa in self.rregs.items()}
 
-
-@staticmethod
-def get_states_from_program(
-    pr,
-    reg_names_to_properties: dict[str, QArray],
-    # reg_names_to_sizes,
-    link: Optional[list],
-) -> dict[str, list[int]]:
-    circ = pr.to_circ(link=link, inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.apply_gates_from_circuit(circ, circ)
-    rpr.rregs = reg_names_to_properties
-    res = rpr.get_result_by_name()
-    return res
+    def filter_result_by_name(self, *names: str) -> dict[str, bitarray]:
+        """Like :meth:`get_result_by_name` but restricted to *names*."""
+        return {
+            name: self.rbits[qa.slic]
+            for name, qa in self.rregs.items()
+            if name in names
+        }
 
 
-@staticmethod
-def get_states_from_circuit(
-    circ,
-    reg_names_to_properties: dict[str, QArray],
-) -> dict[str, list[int]]:
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.rregs = reg_names_to_properties
-    rpr.apply_gates_from_circuit(circ, circ)
-    res = rpr.get_result_by_name()
-    return res
+# ---------------------------------------------------------------------------
+# RSimulator – stateless factory + inspection helpers
+# ---------------------------------------------------------------------------
 
+class RSimulator:
+    """Stateless helpers for building and running :class:`RProgram` instances.
 
-@staticmethod
-def get_states_from_program_wrapper(
-    prw: ProgramWrapper,
-    link: Optional[list],
-) -> dict[str, list]:
-    circ = prw.to_circ(link=link, inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.apply_gates_from_circuit(circ, circ)
-    rpr.rregs = prw._name_to_qarray
-    res = rpr.get_result_by_name()
-    return res
+    All methods are static; the class is a namespace, not meant to be
+    instantiated.
+    """
 
+    # ------------------------------------------------------------------ #
+    # Building an RProgram from various sources                           #
+    # ------------------------------------------------------------------ #
 
-@staticmethod
-def get_states_from_qroutine_wrapper(
-    qroutw: QRoutineWrapper,
-    link: Optional[list],
-) -> dict[str, list]:
+    @staticmethod
+    def from_circuit(
+        circ: "Circuit",
+        name_to_qarray: dict[str, QArray] | None = None,
+    ) -> RProgram:
+        """Build *and* run an :class:`RProgram` from a qat ``Circuit``.
 
-    circ = qroutw.to_circ(link=link, inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.apply_gates_from_circuit(circ, circ)
-    rpr.rregs = qroutw._name_to_qarray
-    states = rpr.get_result_by_name()
-    return states
+        Parameters
+        ----------
+        circ:
+            The (already inlined) circuit to simulate.
+        name_to_qarray:
+            Optional mapping from register names to :class:`QArray` objects.
+            When provided the resulting ``RProgram.rregs`` will reflect those
+            names so that :meth:`~RProgram.get_result_by_name` returns
+            meaningful keys.
+        """
+        name_to_qarray = name_to_qarray or {}
+        rpr = RProgram()
 
+        slic_to_name: dict[slice, str] = {
+            qa.slic: name for name, qa in name_to_qarray.items()
+        }
+        for qr in circ.qregs:
+            slic = slice(qr.start, qr.start + qr.length)
+            rpr.ralloc(qr.length, slic_to_name.get(slic))
 
-@staticmethod
-def get_rprogram_regs(pr: "Program", reg_name_to_slice, link: list):
-    res = get_states_from_program(pr, reg_name_to_slice, link=link)
-    return res
+        # Ancillae automatically generated from subroutines
+        qdiff = circ.nbqbits - len(rpr.rbits)
+        if qdiff > 0:
+            rpr.ralloc(qdiff, "auto_ancillae")
 
+        rpr.apply_gates_from_circuit(circ, circ)
+        return rpr
 
-@staticmethod
-def get_rprogram_regs_values_from_states(
-    states,
-    name_to_qarray: dict[str, QArray],
-):
-    dic = {}
-    for k, v in states.items():
-        LOGGER.debug(f"%s: %s", k, v)
-        qarray = name_to_qarray[k]
-        LOGGER.debug("qarray %s", qarray)
-        if qarray.unknown_size:
-            val = v
-        elif qarray.qtype == str:
-            # val = v
-            assert qarray.n is not None
-            assert qarray.m is not None
-            val = get_bitstring_array(v, qarray.n,
-                                         qarray.m)
-        elif qarray.qtype == bool:
-            val = v
-        elif qarray.qtype == int:
-            assert qarray.n is not None
-            assert qarray.m is not None
-            val = get_ints_from_bitarray(v, qarray.n,
-                                         qarray.m, False)
-        else:
-            raise Exception("Unknown qtype %s" % qarray.qtype)
-        dic[k] = val
-    return dic
+    @staticmethod
+    def from_circuit_like(
+        source: CircuitLike,
+        link: Optional[list] = None,
+    ) -> RProgram:
+        """Build *and* run an :class:`RProgram` from any :class:`CircuitLike`.
 
+        Works transparently with :class:`~qatext.qatmgmt.program.ProgramWrapper`
+        and :class:`~qatext.qatmgmt.routines.QRoutineWrapper`.
+        """
+        circ = source.to_circ(link=link, inline=True)
+        rpr = RSimulator.from_circuit(circ, source._name_to_qarray)
+        rpr.rregs = source._name_to_qarray
+        return rpr
 
-@staticmethod
-def inspect_state_reversible_program(prw: ProgramWrapper, link):
-    # this is the get_states_from_program function, but I need circ
-    circ = prw.to_circ(link=link, inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.apply_gates_from_circuit(circ, circ)
-    rpr_bits = rpr.rbits
-    rpr.rregs = prw._name_to_qarray
-    state = rpr.get_result_by_name()
-    st = "\n"
-    st += f"n qbits {circ.nbqbits}\n"
-    st += f"n rbits {len(rpr.rbits)}\n"
-    # st += f"state obtained {rpr_bits}"
-    st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
+    # ------------------------------------------------------------------ #
+    # Simulation entry points                                             #
+    # ------------------------------------------------------------------ #
 
-    for key, value in get_rprogram_regs_values_from_states(
-            state, prw._name_to_qarray).items():
-        slic = prw._name_to_qarray[key].slic
-        st += f"{key:<20} [{slic}] ->\t{value}\n"
+    @staticmethod
+    def simulate_circuit(
+        circ: "Circuit",
+        name_to_qarray: dict[str, QArray] | None = None,
+    ) -> dict[str, bitarray]:
+        """Simulate *circ* and return ``{register_name: bitarray}``."""
+        rpr = RSimulator.from_circuit(circ, name_to_qarray)
+        return rpr.get_result_by_name()
 
-    return st
+    @staticmethod
+    def simulate(
+        source: CircuitLike,
+        link: Optional[list] = None,
+    ) -> dict[str, bitarray]:
+        """Simulate any :class:`CircuitLike` source and return register states."""
+        rpr = RSimulator.from_circuit_like(source, link=link)
+        return rpr.get_result_by_name()
 
+    # ------------------------------------------------------------------ #
+    # Value decoding                                                     #
+    # ------------------------------------------------------------------ #
 
-@staticmethod
-def inspect_state_reversible_qroutine(qroutw: QRoutineWrapper, link):
-    # this is the get_states_from_program function, but I need circ
-    circ = qroutw.to_circ(link=link, inline=True)
-    rpr = RProgram.circuit_to_rprogram(circ)
-    rpr.apply_gates_from_circuit(circ, circ)
-    rpr_bits = rpr.rbits
-    rpr.rregs = qroutw._name_to_qarray
-    state = rpr.get_result_by_name()
-    st = "\n"
-    st += f"n qbits {circ.nbqbits}\n"
-    st += f"n rbits {len(rpr.rbits)}\n"
-    # st += f"state obtained {rpr_bits}"
-    st += f"state obtained {' ' * 25}->\t{rpr_bits}\n"
+    @staticmethod
+    def decode_states(
+        states: dict[str, bitarray],
+        name_to_qarray: dict[str, QArray],
+    ) -> DecodedStates:
+        """Convert raw ``{name: bitarray}`` states to typed Python values.
 
-    for key, value in get_rprogram_regs_values_from_states(
-            state, qroutw._name_to_qarray).items():
-        slic = qroutw._name_to_qarray[key].slic
-        st += f"{key:<20} [{slic}] ->\t{value}\n"
+        The conversion is driven by :attr:`QArray.qtype`:
 
-    return st
+        * ``str``  → list of bitstrings via :func:`get_bitstring_array`
+        * ``int``  → list of integers via :func:`get_ints_from_bitarray`
+        * ``bool`` → raw bitarray
+        * unknown size → raw bitarray (pass-through)
+        """
+        result: DecodedStates = {}
+        for name, bits in states.items():
+            LOGGER.debug("%s: %s", name, bits)
+            qa = name_to_qarray[name]
+            LOGGER.debug("qarray %s", qa)
+
+            if qa.unknown_size:
+                result[name] = bits
+            elif qa.qtype == str:
+                assert qa.n is not None and qa.m is not None
+                result[name] = get_bitstring_array(bits.to01(), qa.n, qa.m)
+            elif qa.qtype == bool:
+                result[name] = bits
+            elif qa.qtype == int:
+                assert qa.n is not None and qa.m is not None
+                result[name] = get_ints_from_bitarray(bits.tolist(), qa.n, qa.m, False)
+            else:
+                raise TypeError(f"Unknown qtype: {qa.qtype!r}")
+
+        return result
+
+    # ------------------------------------------------------------------ #
+    # Simulate and Value decoding                                        #
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def simulate_and_decode(
+        source: CircuitLike,
+        link: Optional[list] = None,
+    ) -> DecodedStates:
+        """Simulate and decode register states in one call."""
+        nmap = source._name_to_qarray
+        return RSimulator.decode_states(RSimulator.simulate(source, link=link), nmap)
+
+    # ------------------------------------------------------------------ #
+    # Inspection / pretty-printing                                        #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _format_inspection(
+        circ: "Circuit",
+        rpr: RProgram,
+        name_to_qarray: dict[str, QArray],
+    ) -> str:
+        """Shared formatting logic for all inspect_* helpers."""
+        state = rpr.get_result_by_name()
+        decoded = RSimulator.decode_states(state, name_to_qarray)
+
+        lines = [
+            "",
+            f"n qbits  {circ.nbqbits}",
+            f"n rbits  {len(rpr.rbits)}",
+            f"state    {' ' * 25}->  {rpr.rbits}",
+        ]
+        for name, value in decoded.items():
+            slic = name_to_qarray[name].slic
+            lines.append(f"  {name:<20} [{slic}] ->  {value}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def inspect_circuit(
+        circ: "Circuit",
+        name_to_qarray: dict[str, QArray] | None = None,
+    ) -> str:
+        """Simulate *circ* and return a human-readable state summary."""
+        name_to_qarray = name_to_qarray or {}
+        rpr = RSimulator.from_circuit(circ, name_to_qarray)
+        rpr.rregs = name_to_qarray
+        return RSimulator._format_inspection(circ, rpr, name_to_qarray)
+
+    @staticmethod
+    def inspect(
+        source: CircuitLike,
+        link: Optional[list] = None,
+    ) -> str:
+        """Simulate any :class:`CircuitLike` and return a human-readable summary.
+
+        Works with :class:`~qatext.qatmgmt.program.ProgramWrapper` and
+        :class:`~qatext.qatmgmt.routines.QRoutineWrapper`.
+        """
+        circ = source.to_circ(link=link, inline=True)
+        rpr = RSimulator.from_circuit(circ, source._name_to_qarray)
+        rpr.rregs = source._name_to_qarray
+        return RSimulator._format_inspection(circ, rpr, source._name_to_qarray)

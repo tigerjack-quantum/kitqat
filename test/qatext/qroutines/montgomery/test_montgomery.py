@@ -1,3 +1,4 @@
+from qatext.qpus.reversible import RSimulator
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
 # Author: Federico Pinto
 import itertools
@@ -7,7 +8,6 @@ import pytest
 from qat.lang.AQASM.program import Program
 
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.montgomery.montgomery import (
     montgomery_form,
     montgomery_mult,
@@ -61,7 +61,7 @@ class TestMontgomery:
 
         prw.apply(gate, qr_a[0], qr_b[0], qr_out[0])
 
-        res = get_states_from_program_wrapper(prw, [])
+        res = RSimulator.simulate(prw, [])
         return (
             get_int_from_bitarray(res["a"], False),
             get_int_from_bitarray(res["b"], False),
@@ -102,7 +102,7 @@ class TestMontgomery:
         prw_form.apply(qi.initialize_qureg_given_int(val, n, False), qr_val[0])
         prw_form.apply(montgomery_form(n, p), qr_val[0], qr_form[0])
 
-        res_form = get_states_from_program_wrapper(prw_form, [])
+        res_form = RSimulator.simulate(prw_form, [])
         form_val = get_int_from_bitarray(res_form["form"], False)
 
         expected_form = int(GF(val % p) * (GF(2) ** n))
@@ -117,7 +117,7 @@ class TestMontgomery:
         prw_res.apply(qi.initialize_qureg_given_int(form_val, n, False), qr_fval[0])
         prw_res.apply(montgomery_res(n, p), qr_fval[0], qr_orig[0])
 
-        res_orig = get_states_from_program_wrapper(prw_res, [])
+        res_orig = RSimulator.simulate(prw_res, [])
         back_val = get_int_from_bitarray(res_orig["orig"], False)
 
         expected_back = int(GF(form_val % p) * (GF(2) ** (-n)))

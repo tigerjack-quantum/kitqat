@@ -2,7 +2,7 @@ import itertools
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.utils.bits import conversion, misc
@@ -99,8 +99,8 @@ class AdderTestCase(CircuitTestCase):
                 # expected_str = conversion.get_bitstring_from_int(
                 #     expected, len(to_measure_qbits))
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -171,8 +171,8 @@ class AdderTestCase(CircuitTestCase):
                 cr = self.qc.to_circ()
                 expected = 0
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     bits = rpr.rbits.to01()
                     self.assertEqual(int(bits, 2), expected)
                     return
@@ -248,8 +248,8 @@ class AdderTestCase(CircuitTestCase):
                 expected %= 2 ** len(to_measure_qbits)
 
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -333,8 +333,8 @@ class AdderTestCase(CircuitTestCase):
 
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -417,8 +417,8 @@ class AdderTestCase(CircuitTestCase):
 
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -518,8 +518,8 @@ class AdderTestCase(CircuitTestCase):
 
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     bitstring = "".join(
                         [str(rpr.rbits[index]) for index in to_measure_qbits]
                     )
@@ -583,8 +583,8 @@ class AdderTestCase(CircuitTestCase):
 
                 cr = self.qc.to_circ()
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(cr)
-                    rpr.apply_gates_from_circuit(cr, cr)
+                    rpr = RSimulator.from_circuit(cr)
+                    # rpr.apply_gates_from_circuit(cr, cr)
                     # bitstring = "".join([str(rpr.rbits[index]) for index in to_measure_qbits])
                     bitstring = rpr.rbits.to01()[self.cout[0].index]
                     bits = int(bitstring, 2)

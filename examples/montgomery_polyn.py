@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 from bitarray import bitarray
 from qat.core.util import statistics
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines import qregs_init as qregs
 from qatext.qroutines.algebraic.gf2x import montgomery_arith as marith
 
@@ -43,7 +43,7 @@ def degree(a: bitarray) -> int:
 def _convert_and_print_res(pr: Program, rang: dict, dq: Optional[list]):
     circ = pr.to_circ(include_matrices=False, submatrices_only=True)
     # display(circ, max_depth=4)
-    rcr = RProgram.circuit_to_rprogram(circ, rang)
+    rcr = RSimulator.from_circuit(circ, rang)
     res_whole = rcr.rbits
     res_whole_named = rcr.get_result_by_name()
     print(res_whole_named)
@@ -93,7 +93,7 @@ def _fix_modulus(k, n, a, b, exp_res: dict):
     prog1 = deepcopy(progB)
     prog1.apply(marith.madd(k), ar, br)
     circ = prog1.to_circ(include_matrices=False, submatrices_only=True)
-    rcr = RProgram.circuit_to_rprogram(circ, rang)
+    rcr = RSimulator.from_circuit(circ, rang)
     res = rcr.filter_result_by_name("b")["b"]
     print(f"res     {poly_str(res)} {res}")
     try:

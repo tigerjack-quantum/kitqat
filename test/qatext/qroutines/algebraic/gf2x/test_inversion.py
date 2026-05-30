@@ -1,16 +1,19 @@
 __author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
+__author__ = "Simone Perriello <federico.pinto@mail.polimi.it>"
+
+from qatext.qpus.reversible import RSimulator
+
 import galois
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import get_states_from_program_wrapper
+from qatext.qroutines.algebraic.gf2x.inversion import (flt_div, modmult,
+                                                       square_mod)
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 
-from qatext.qroutines.algebraic.gf2x.inversion import square_mod, modmult, flt_div
 
-class TestPintoInversion:
+class TestInversion:
     @pytest.mark.parametrize(
         "val, mod, nbits",
         [
@@ -27,8 +30,8 @@ class TestPintoInversion:
         
         prw.apply(square_mod(nbits, mod), qr_in[0], qr_out[0])
 
-        res = get_states_from_program_wrapper(prw, [])
-        out_val = get_int_from_bitarray(res["reg_out"], True)
+        res = RSimulator.simulate(prw, [])
+        out_val = get_int_from_bitarray(res["reg_out"].tolist(), True)
 
         poly_val = galois.Poly.Int(val, field=galois.GF(2))
         poly_mod = galois.Poly.Int(mod, field=galois.GF(2))
@@ -55,8 +58,8 @@ class TestPintoInversion:
         
         prw.apply(modmult(nbits, mod), qr_a[0], qr_b[0], qr_c[0])
 
-        res = get_states_from_program_wrapper(prw, [])
-        out_val = get_int_from_bitarray(res["reg_c"], True)
+        res = RSimulator.simulate(prw, [])
+        out_val = get_int_from_bitarray(res["reg_c"].tolist(), True)
 
         poly_a = galois.Poly.Int(val_a, field=galois.GF(2))
         poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
@@ -84,22 +87,22 @@ class TestPintoInversion:
 
         prw.apply(qi.initialize_qureg_given_int(val_f, nbits, True), qr_f0[0])
         prw.apply(qi.initialize_qureg_given_int(val_b, nbits, True), qr_b[0])
-        
+
         prw.apply(flt_div(nbits, mod), qr_f0[0], qr_b[0], qr_c[0])
 
-        res = get_states_from_program_wrapper(prw, [])
-        out_c = get_int_from_bitarray(res["reg_c"], True)
+        res = RSimulator.simulate(prw, [])
+        out_c = get_int_from_bitarray(res["reg_c"].tolist(), True)
 
-        poly_f = galois.Poly.Int(val_f, field=galois.GF(2))
-        poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
+        # poly_f = galois.Poly.Int(val_f, field=galois.GF(2))
+        # poly_b = galois.Poly.Int(val_b, field=galois.GF(2))
         poly_mod = galois.Poly.Int(mod, field=galois.GF(2))
-        
+
         GF = galois.GF(2**nbits, irreducible_poly=poly_mod)
         gf_f = GF(val_f)
         gf_b = GF(val_b)
-        
+
         if val_f == 0:
-            expected_out = 0 
+            expected_out = 0
         else:
             expected_out = int(gf_b / gf_f)
 

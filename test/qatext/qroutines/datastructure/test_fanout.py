@@ -1,14 +1,14 @@
-from math import floor, log2
+from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
+                                CircuitTestHelpers)
+
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import RProgram, get_rprogram_regs_values_from_states, get_states_from_program_wrapper, inspect_state_reversible_program
+from qatext.qpus.reversible import RSimulator
 from qatext.qroutines.datastructure.fanout import fanout
-from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_bitstring, initialize_qureg_given_int
-from qatext.utils.bits import conversion
-from qatext.utils.bits.conversion import get_ints_from_bitarray
-from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
-                                CircuitTestHelpers)
+from qatext.qroutines.qregs_mgmt.qregs_init import \
+    initialize_qureg_given_bitstring
+
 
 class TestFanout(CircuitTestHelpers):
 
@@ -58,23 +58,16 @@ class TestFanout(CircuitTestHelpers):
 
         # Option 3
         # same as pr.to_circ()
-        circ = prw.to_circ()
-        # print(circ.depth(default=1))
-        # convert quantum circuit from qat to reversible program
-        rpr = RProgram.circuit_to_rprogram(circ)
-        # ... and execute it
-        rpr.apply_gates_from_circuit(circ, circ)
-        # give the same name to the reversible program registers as the one in
-        # program wrapper
-        rpr.rregs = prw.get_name_to_qarray()
-        # get the state (bistring) after applying the gate, divided by name of
-        # the registers
-        state = rpr.get_result_by_name()
-        # convert the state into appropriate types (such as int, bool or str)
-        name_to_values = get_rprogram_regs_values_from_states(state, prw.get_name_to_qarray())
+        # circ = prw.to_circ()
+        # rpr = RSimulator.from_circuit(circ)
+        # rpr.rregs = prw.get_name_to_qarray()
+        # state = rpr.get_result_by_name()
+        # name_to_values = RSimulator.decode_states(state, prw.get_name_to_qarray())
+
+        name_to_values = RSimulator.simulate_and_decode(prw)
         # print(name_to_values)
-        assert name_to_values['Original'][0].to01() == bitstring, "Original not correctly initialized %s" % name_to_values["Original"]
-        assert all(val.to01() == bitstring for val in name_to_values["Clones"]), "Clones are not equal %s" % name_to_values['Clones']
+        assert name_to_values['Original'][0] == bitstring, "Original not correctly initialized %s" % name_to_values["Original"]
+        assert all(val == bitstring for val in name_to_values["Clones"]), "Clones are not equal %s" % name_to_values['Clones']
 
 
 

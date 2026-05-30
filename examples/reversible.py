@@ -1,7 +1,7 @@
 from qat.lang.AQASM.gates import CCNOT, CNOT, SWAP, X
 from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
-from qatext.qpus.reversible import RProgram, inspect_state_reversible_program
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_int
 from qatext.qatmgmt.program import ProgramWrapper
 
@@ -26,7 +26,7 @@ def ex1():
     for sample in res:
         pass
     assert sample is not None
-    rpr = RProgram.circuit_to_rprogram(cr)
+    rpr = RSimulator.from_circuit(cr)
     print(rpr.rbits)
 
 
@@ -48,7 +48,7 @@ def ex2(n):
                                                    little_endian=False)
         pr.apply(qroutine_init, qarray_ints[i])
 
-    state_str = inspect_state_reversible_program(prw, [])
+    state_str = RSimulator.inspect(prw, [])
     print(state_str)
 
 

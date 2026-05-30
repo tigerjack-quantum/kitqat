@@ -2,7 +2,7 @@ from collections import deque
 from copy import deepcopy
 
 import numpy as np
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.utils.qatmgmt import statistics as estats
 from qatext.qroutines import adder as cuccadd
 from qatext.qroutines.algebraic.gfp import montgomery_arith as marith
@@ -39,7 +39,7 @@ def _debug_circ_status(prog, qbit_names):
     circ = prog.to_circ(
         include_matrices=False, submatrices_only=True, link=[classarith]
     )
-    rcr = RProgram.circuit_to_rprogram(circ, qbit_names)
+    rcr = RSimulator.from_circuit(circ, qbit_names)
     ress = rcr.get_result_by_name()
     print(ress)
     return circ, rcr, ress

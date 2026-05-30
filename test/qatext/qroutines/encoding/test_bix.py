@@ -1,32 +1,19 @@
 from itertools import chain
 from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
                                 CircuitTestHelpers)
-from typing import TYPE_CHECKING
 
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import (get_state_from_program,
-                                    inspect_state_reversible_program)
+from qatext.qpus.reversible import RSimulator
 from qatext.qroutines.arith import cuccaro_arith
-from qatext.qroutines.qregs_mgmt import qregs_init
 from qatext.qroutines.encoding import bix
+from qatext.qroutines.qregs_mgmt import qregs_init
 from qatext.utils.bits.conversion import get_bitstring_from_int
-
-if TYPE_CHECKING:
-    from qatext.qatmgmt.program import QArray
 
 
 # @pytest.mark.usefixtures("setup_simulator", "setup_logger")
 class TestBix(CircuitTestHelpers):
-
-    def _extract_and_check_named_regs(self, bitstring, expected_map,
-                                      named_qarrays: dict[str, 'QArray']):
-        """Post-processing checks"""
-        for name, expected in expected_map.items():
-            bits = bitstring[named_qarrays[name].slic]
-            assert bits == expected, "key %s, bits %s, expected %s" % (
-                name, bits, expected)
 
     def _run_test_bix(
             self,
@@ -122,22 +109,22 @@ class TestBix(CircuitTestHelpers):
             prw.apply(bix_func, wreg, *qregs1s, *qregs0s)
         self.logger.debug(
             "%s",
-            inspect_state_reversible_program(
+            RSimulator.inspect(
                 prw, [cuccaro_arith.adder, cuccaro_arith.subtractor]))
 
-        obtained = get_state_from_program(
-            prw, [cuccaro_arith.adder, cuccaro_arith.subtractor])
-
-        expected = {
+        obtained = RSimulator.simulate(prw, [cuccaro_arith.adder, cuccaro_arith.subtractor])
+        expected_map = {
             "wreg": bitstring,
             "qregs1s": exp_ones,
             "qregs0s": exp_zeros,
         }
         if has_support_registers:
-            expected["qregs1s_add"] = "0" * m
-            expected["qregs0s_add"] = "0" * m
-        self._extract_and_check_named_regs(obtained, expected,
-                                           prw._name_to_qarray)
+            expected_map["qregs1s_add"] = "0" * m
+            expected_map["qregs0s_add"] = "0" * m
+        for name, expected in expected_map.items():
+            bits = obtained[name].to01()
+            assert bits == expected, "key %s, bits %s, expected %s" % (
+                name, bits, expected)
 
     @pytest.mark.parametrize("bitstring", [
         "0101",

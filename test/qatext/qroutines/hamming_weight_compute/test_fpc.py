@@ -3,7 +3,7 @@ import unittest
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.qregs_mgmt import qregs_init as qregs
 from qatext.qroutines.hamming_weight_compute import fpc
 from qat.lang.AQASM.program import Program
@@ -40,8 +40,8 @@ class PopulationCountTestCase(CircuitTestCase):
         exp_w = bitstring.count("1")
 
         if self.REVERSIBLE_ON:
-            rpr = RProgram.circuit_to_rprogram(circ)
-            rpr.apply_gates_from_circuit(circ, circ)
+            rpr = RSimulator.from_circuit(circ)
+            # rpr.apply_gates_from_circuit(circ, circ)
             res = "".join([str(rpr.rbits[qbit.index]) for qbit in to_measure_qubits])
             # obtained = ''.join(
             #     [str(bit) for i, bit in enumerate(rpr.rbits) if i in qridxs])

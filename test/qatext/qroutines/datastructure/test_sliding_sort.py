@@ -1,3 +1,4 @@
+from qatext.qpus.reversible import RProgram, RSimulator
 from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
                                 CircuitTestHelpers)
 
@@ -6,7 +7,6 @@ import pytest
 import qat.lang.AQASM.classarith
 # from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import get_states_from_program_wrapper
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.qroutines.datastructure.sliding_sort_array import (delete, insert,
                                                                insert_lw)
@@ -84,7 +84,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         # cr = prw.to_circ()
         # print(cr.depth(default=1))
 
-        res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
+        res = RSimulator.simulate(prw, [qat.lang.AQASM.classarith])
         # self.print_rprogram_regs_from_rprogram_states(states, named_qarrays)
 
         x_val = get_int_from_bitarray(res['x'], False)
@@ -157,7 +157,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         prw.apply(qf, qr_x, *qrs_data)
         # print(inspect_state_reversible_program(prw, [qat.lang.AQASM.classarith]))
 
-        res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
+        res = RSimulator.simulate(prw, [qat.lang.AQASM.classarith])
         # self.print_rprogram_regs_from_rprogram_states(states, named_qarrays)
 
         x_val = get_int_from_bitarray(res['x'], False)
@@ -246,7 +246,7 @@ class TestQroutineSlidingSort(CircuitTestHelpers):
         # rpr = RProgram.circuit_to_rprogram(circ)
         # rpr.rregs = reg_names_to_slice
         # res = rpr.get_result_by_name()
-        res = get_states_from_program_wrapper(prw, [qat.lang.AQASM.classarith])
+        res = RSimulator.simulate(prw, [qat.lang.AQASM.classarith])
 
         x_val = get_int_from_bitarray(res['x'], False)
         a_vals = get_ints_from_bitarray(res['a'], n, m, False)

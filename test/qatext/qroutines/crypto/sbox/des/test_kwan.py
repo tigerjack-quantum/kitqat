@@ -1,6 +1,6 @@
 from test.common_circuit import CircuitTestCase
 
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.crypto.sbox.des import kwan as kws
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
@@ -73,8 +73,8 @@ class DESSboxTestCase(CircuitTestCase):
                 pr.apply(kws.sboxes[idx](), inps, outs)
                 circ = pr.to_circ()
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(circ)
-                    rpr.apply_gates_from_circuit(circ, circ)
+                    rpr = RSimulator.from_circuit(circ)
+                    # rpr.apply_gates_from_circuit(circ, circ)
                     obtained = rpr.rbits.to01()
                     obtained_int = int(obtained[6:10], 2)
                     self.assertEqual(expected, obtained_int)

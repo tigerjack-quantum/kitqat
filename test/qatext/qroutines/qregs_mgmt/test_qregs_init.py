@@ -1,4 +1,4 @@
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
@@ -42,8 +42,8 @@ class QregInitTestCase(CircuitTestCase):
 
         circ = prog.to_circ()
         if self.REVERSIBLE_ON:
-            rpr = RProgram.circuit_to_rprogram(circ)
-            rpr.apply_gates_from_circuit(circ, circ)
+            rpr = RSimulator.from_circuit(circ)
+            # rpr.apply_gates_from_circuit(circ, circ)
             res = rpr.rbits.to01()
             if little_endian:
                 res = res[::-1]

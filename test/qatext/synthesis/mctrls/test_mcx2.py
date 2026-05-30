@@ -3,7 +3,7 @@ from test.common_circuit import CircuitTestCase
 
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.synthesis.mctrls import mcx2
 
 
@@ -27,7 +27,7 @@ class MctrlsXTest(CircuitTestCase):
                 cr = pr.to_circ(link=[mcx2.x], include_matrices=False, inline=True, include_locks=True)
                 cr = pr.to_circ(link=[mcx2.mnot], include_matrices=False, inline=True, include_locks=True)
                 # cr.display()
-                rpr = RProgram.circuit_to_rprogram(cr)
+                rpr = RSimulator.from_circuit(cr)
                 rpr.apply_gates_from_circuit(cr, cr)
                 obtained = rpr.rbits.to01()
                 if bitstring == '1'*nctrls:

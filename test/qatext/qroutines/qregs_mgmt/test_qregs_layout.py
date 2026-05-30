@@ -2,7 +2,7 @@ from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.qroutines.qregs_mgmt import qregs_layout as ql
 
@@ -38,8 +38,8 @@ class TestQregsLayout(CircuitTestCase):
 
         obtained = None
         if self.REVERSIBLE_ON:
-            rpr = RProgram.circuit_to_rprogram(circ)
-            rpr.apply_gates_from_circuit(circ, circ)
+            rpr = RSimulator.from_circuit(circ)
+            # rpr.apply_gates_from_circuit(circ, circ)
             obtained = rpr.rbits.to01()
         else:
             res = self.qpu.submit(circ.to_job())
@@ -88,8 +88,8 @@ class TestQregsLayout(CircuitTestCase):
 
                 obtained = None
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(circ)
-                    rpr.apply_gates_from_circuit(circ, circ)
+                    rpr = RSimulator.from_circuit(circ)
+                    # rpr.apply_gates_from_circuit(circ, circ)
                     obtained = rpr.rbits.to01()
                 else:
                     res = self.qpu.submit(circ.to_job())
@@ -144,8 +144,8 @@ class TestQregsLayout(CircuitTestCase):
 
                 obtained = None
                 if self.REVERSIBLE_ON:
-                    rpr = RProgram.circuit_to_rprogram(circ)
-                    rpr.apply_gates_from_circuit(circ, circ)
+                    rpr = RSimulator.from_circuit(circ)
+                    # rpr.apply_gates_from_circuit(circ, circ)
                     obtained = rpr.rbits.to01()
                 else:
                     res = self.qpu.submit(circ.to_job())

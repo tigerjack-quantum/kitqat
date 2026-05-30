@@ -2,7 +2,7 @@ import unittest
 from test.common_circuit import CircuitTestCase
 
 from parameterized import parameterized
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.qregs_mgmt import qregs_init as qregs
 from qatext.qroutines.sorting import sorting_network as sn
 from qat.lang.AQASM.program import Program
@@ -48,8 +48,8 @@ class SortingNetworkTestCase(CircuitTestCase):
         obtained = None
         if self.REVERSIBLE_ON:
             cr = self.pr.to_circ(include_matrices=False, submatrices_only=True)
-            rpr = RProgram.circuit_to_rprogram(cr)
-            rpr.apply_gates_from_circuit(cr, cr)
+            rpr = RSimulator.from_circuit(cr)
+            # rpr.apply_gates_from_circuit(cr, cr)
             qridxs = [qbit.index for qbit in self.qr]
             obtained = "".join(
                 [str(bit) for i, bit in enumerate(rpr.rbits) if i in qridxs]

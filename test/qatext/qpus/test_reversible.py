@@ -1,7 +1,7 @@
 import functools
 from test.common_circuit import CircuitTestCase
 
-from qatext.qpus.reversible import RGate, RProgram
+from qatext.qpus.reversible import RGate, RProgram, RSimulator
 from qat.lang.AQASM.gates import CCNOT, SWAP, H, X
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.program import Program
@@ -87,8 +87,8 @@ class TestRProgram(CircuitTestCase):
         pr.apply(H, pr.qalloc(1))
 
         circ = pr.to_circ()
-        rpr = RProgram.circuit_to_rprogram(circ)
-        part = functools.partial(rpr.apply_gates_from_circuit, circ, circ)
+        # rpr = RSimulator.from_circuit(circ)
+        part = functools.partial(RSimulator.from_circuit, circ)
         self.assertRaises(AttributeError, part)
 
     def test_qcircuit_to_rprogram_with_controlled(self):
@@ -104,8 +104,8 @@ class TestRProgram(CircuitTestCase):
         for sample in res:
             pass
         assert sample is not None
-        rpr = RProgram.circuit_to_rprogram(circC)
-        rpr.apply_gates_from_circuit(circC, circC)
+        rpr = RSimulator.from_circuit(circC)
+        # rpr.apply_gates_from_circuit(circC, circC)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
 
@@ -130,8 +130,8 @@ class TestRProgram(CircuitTestCase):
         for sample in res:
             pass
         assert sample is not None
-        rpr = RProgram.circuit_to_rprogram(cr)
-        rpr.apply_gates_from_circuit(cr, cr)
+        rpr = RSimulator.from_circuit(cr)
+        # rpr.apply_gates_from_circuit(cr, cr)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
     def test_qcircuit_to_rprogram_with_qroutines(self):
@@ -148,8 +148,8 @@ class TestRProgram(CircuitTestCase):
         for sample in res:
             pass
         assert sample is not None
-        rpr = RProgram.circuit_to_rprogram(cr)
-        rpr.apply_gates_from_circuit(cr, cr)
+        rpr = RSimulator.from_circuit(cr)
+        # rpr.apply_gates_from_circuit(cr, cr)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
     def test_qcircuit_to_rprogram_with_build_gates(self):
@@ -166,8 +166,8 @@ class TestRProgram(CircuitTestCase):
         for sample in res:
             pass
         assert sample is not None
-        rpr = RProgram.circuit_to_rprogram(cr)
-        rpr.apply_gates_from_circuit(cr, cr)
+        rpr = RSimulator.from_circuit(cr)
+        # rpr.apply_gates_from_circuit(cr, cr)
         self.assertEqual(sample.state.bitstring, rpr.rbits.to01())
 
     def test_qroutine_to_rprogram_apply(self):

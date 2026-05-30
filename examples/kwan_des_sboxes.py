@@ -1,7 +1,7 @@
 import numpy as np
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import RProgram
+from qatext.qpus.reversible import RProgram, RSimulator
 from qatext.qroutines.crypto.sbox.des.kwan import sboxes
 
 # from qatext.utils.statistics.depth import compute_circuit_depth
@@ -23,7 +23,7 @@ def ex_s1():
     cr = pr.to_circ()
     print(cr.statistics())
     print(cr.nbqbits)
-    rpr = RProgram.circuit_to_rprogram(cr)
+    rpr = RSimulator.from_circuit(cr)
     res = rpr.rbits.to01()
     # print(len(res))
     # if little_endian:
