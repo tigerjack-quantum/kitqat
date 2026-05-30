@@ -3,8 +3,7 @@ from os import getenv
 from typing import TYPE_CHECKING, Optional
 
 from qat.core.console import display
-
-# from qatext.qpus.reversible import RProgram
+from qat.core.qpu.qpu import QPUHandler
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -25,12 +24,30 @@ SIMULATOR = getenv("SIMULATOR", "linalg" if QLM_ON else "pylinalg")
 
 LOGGER = logging.getLogger(__name__)
 
-
 class CircuitTestHelpers:
     links = []
     # set from conftest
-    qpu = None
-    logger: Optional[logging.Logger] = None
+    _logger: Optional[logging.Logger] = None
+    _qpu: Optional[QPUHandler] = None  # replace QPU with the actual type
+
+    @property
+    def qpu(self) -> QPUHandler:
+        assert self._qpu is not None, "QPU not set — did conftest run?"
+        return self._qpu
+
+    @classmethod
+    def set_qpu(cls, qpu: QPUHandler) -> None:
+        cls._qpu = qpu  # set the private attribute, not the property
+
+    @property
+    def logger(self) -> logging.Logger:
+        assert self._logger is not None, "Logger not set — did conftest run?"
+        return self._logger
+
+    @classmethod
+    def set_logger(cls, logger: logging.Logger) -> None:
+        cls._logger = logger
+
 
     @classmethod
     def simulate_program(cls, program, circ_args=None, links=None, job_args=None) -> "Result":
@@ -52,8 +69,8 @@ class CircuitTestHelpers:
 
     @classmethod
     def simulate_job(cls, job) -> "Result":
-        assert cls.qpu is not None, "QPU has not been initialized"
-        res = cls.qpu.submit(job)
+        assert cls._qpu is not None, "QPU has not been initialized"
+        res = cls._qpu.submit(job)
         return res
 
     @staticmethod

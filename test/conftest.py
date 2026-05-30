@@ -25,7 +25,8 @@ def global_logger():
         logger.addHandler(handler)
 
     logger.setLevel(logging_level)
-    CircuitTestHelpers.logger = logger
+    # CircuitTestHelpers.logger = logger
+    CircuitTestHelpers.set_logger(logger)
     yield
 
 
@@ -56,7 +57,7 @@ def global_qpu():
         qpu_instance = Bdd(48)
     else:
         raise Exception(f"Simulator choice {SIMULATOR} not correct")
-    CircuitTestHelpers.qpu = qpu_instance
+    CircuitTestHelpers.set_qpu(qpu_instance)
     yield qpu_instance
     # Optional teardown
     # qpu_instance.shutdown()
