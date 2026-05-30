@@ -1,7 +1,7 @@
 """File automatically read from pytest"""
 import logging
 from os import getenv
-from test.common_pytest import REVERSIBLE_ON, SIMULATOR, CircuitTestHelpers
+from test.common_pytest import SIMULATOR, CircuitTestHelpers
 
 import pytest
 
@@ -36,6 +36,9 @@ def global_qpu():
     if SIMULATOR.lower() == "pylinalg":
         from qat.pylinalg import PyLinalg  # type:ignore
         qpu_instance = PyLinalg()
+    elif SIMULATOR.lower() == "clinalg":
+        from qat.myqlm_clinalg.qpu import CLinalg  # type:ignore
+        qpu_instance = CLinalg()
     elif SIMULATOR.lower() == "linalg":
         # default to linalg
         from qat.qpus import LinAlg  # type:ignore

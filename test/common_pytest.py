@@ -20,7 +20,7 @@ QLM_ON_REASON = "not using QLM"
 REVERSIBLE_ON = getenv("REVERSIBLE_ON") is not None
 REVERSIBLE_ON_REASON = "not using reversible simulator"
 
-SIMULATOR = getenv("SIMULATOR", "linalg" if QLM_ON else "pylinalg")
+SIMULATOR = getenv("SIMULATOR", "linalg" if QLM_ON else "clinalg")
 
 LOGGER = logging.getLogger(__name__)
 
