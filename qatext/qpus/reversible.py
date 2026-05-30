@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import logging
 import operator
+from collections.abc import Mapping
 from enum import Enum, auto
-from typing import (TYPE_CHECKING, Optional, Protocol, Sequence, Union,
+from typing import (TYPE_CHECKING, Optional, Protocol, Sequence, Union, cast,
                     runtime_checkable)
 
 from bitarray import bitarray
@@ -24,14 +25,67 @@ from qatext.utils.bits.conversion import (get_bitstring_array,
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
     from qat.lang.AQASM.routines import QRoutine
+    from qat.lang.AQASM.program import Program
 
 from bitarray import bitarray, util
 
 DecodedValue = Union[bitarray, list[bitarray], list[str], list[int], tuple[int]]
-DecodedStates = dict[str, DecodedValue]
+class DecodedStates(Mapping[str, object]):
+    """Typed wrapper around decoded register states.
+
+    Validates the expected type against the QArray's qtype at access time,
+    giving a clear error instead of a cryptic AttributeError downstream.
+    """
+
+    def __init__(self, data: dict[str, object], name_to_qarray: dict[str, QArray]):
+        self._data = data
+        self._nmap = name_to_qarray
+
+    def __getitem__(self, name: str) -> object:
+        return self._data[name]
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __repr__(self) -> str:
+        return f"DecodedStates({self._data!r})"
+
+    def _get_typed(self, name: str, expected_qtype: type) -> object:
+        qa = self._nmap.get(name)
+        if qa is None:
+            raise KeyError(f"Register '{name}' not found in name_to_qarray.")
+        if not qa.unknown_size and qa.qtype != expected_qtype:
+            raise TypeError(
+                f"Register '{name}' has qtype={qa.qtype.__name__!r}, "
+                f"but accessed as {expected_qtype.__name__!r}."
+            )
+        return self._data[name]
+
+    def as_bitarray_list(self, name: str) -> list[bitarray]:
+        return cast(list[bitarray], self._get_typed(name, bool))
+
+    def as_int_list(self, name: str) -> list[int]:
+        return cast(list[int], self._get_typed(name, int))
+
+    def as_bitstring_list(self, name: str) -> list[str]:
+        return cast(list[str], self._get_typed(name, str))
+
+    def as_bitarray(self, name: str) -> bitarray:
+        """For unknown_size registers that are returned as a raw bitarray."""
+        qa = self._nmap.get(name)
+        if qa is None:
+            raise KeyError(f"Register '{name}' not found in name_to_qarray.")
+        if not qa.unknown_size:
+            raise TypeError(
+                f"Register '{name}' has known size and qtype={qa.qtype.__name__!r}; "
+                f"use the appropriate as_*_list accessor instead."
+            )
+        return cast(bitarray, self._data[name])
 
 LOGGER = logging.getLogger(__name__)
-
 
 # ---------------------------------------------------------------------------
 # Protocol
@@ -340,21 +394,9 @@ class RSimulator:
         states: dict[str, bitarray],
         name_to_qarray: dict[str, QArray],
     ) -> DecodedStates:
-        """Convert raw ``{name: bitarray}`` states to typed Python values.
-
-        The conversion is driven by :attr:`QArray.qtype`:
-
-        * ``str``  → list of bitstrings via :func:`get_bitstring_array`
-        * ``int``  → list of integers via :func:`get_ints_from_bitarray`
-        * ``bool`` → raw bitarray
-        * unknown size → raw bitarray (pass-through)
-        """
-        result: DecodedStates = {}
+        result: dict[str, object] = {}
         for name, bits in states.items():
-            LOGGER.debug("%s: %s", name, bits)
             qa = name_to_qarray[name]
-            LOGGER.debug("qarray %s", qa)
-
             if qa.unknown_size:
                 result[name] = bits
             elif qa.qtype == str:
@@ -367,18 +409,17 @@ class RSimulator:
                 result[name] = get_ints_from_bitarray(bits.tolist(), qa.n, qa.m, False)
             else:
                 raise TypeError(f"Unknown qtype: {qa.qtype!r}")
-
-        return result
+        return DecodedStates(result, name_to_qarray)
 
     # ------------------------------------------------------------------ #
     # Simulate and Value decoding                                        #
     # ------------------------------------------------------------------ #
+
     @staticmethod
     def simulate_and_decode(
         source: CircuitLike,
         link: Optional[list] = None,
     ) -> DecodedStates:
-        """Simulate and decode register states in one call."""
         nmap = source._name_to_qarray
         return RSimulator.decode_states(RSimulator.simulate(source, link=link), nmap)
 
@@ -415,6 +456,31 @@ class RSimulator:
     ) -> str:
         """Simulate *circ* and return a human-readable state summary."""
         name_to_qarray = name_to_qarray or {}
+        rpr = RSimulator.from_circuit(circ, name_to_qarray)
+        rpr.rregs = name_to_qarray
+        return RSimulator._format_inspection(circ, rpr, name_to_qarray)
+
+    @staticmethod
+    def inspect_program(
+        pr: "Program",
+        name_to_qarray: dict[str, QArray] | None = None,
+        **to_circ_kwargs,
+    ) -> str:
+        """Simulate a bare qat Program and return a human-readable state summary.
+
+        Parameters
+        ----------
+        pr:
+            The qat Program to inspect.
+        name_to_qarray:
+            Optional register name mapping. Without it registers are labelled
+            by their auto-generated slice names.
+        **to_circ_kwargs:
+            Forwarded verbatim to ``pr.to_circ()`` — use this for
+            ``include_matrices=False``, ``submatrices_only=True``, ``link=…``, etc.
+        """
+        name_to_qarray = name_to_qarray or {}
+        circ = pr.to_circ(**to_circ_kwargs)
         rpr = RSimulator.from_circuit(circ, name_to_qarray)
         rpr.rregs = name_to_qarray
         return RSimulator._format_inspection(circ, rpr, name_to_qarray)
