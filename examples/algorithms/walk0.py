@@ -86,12 +86,6 @@ def main(n,
         wstate_ones = prw.qarray_alloc(k, 1, "w_1", str)
         wstate_zeros = prw.qarray_alloc(n - k, 1, "w_0", str)
 
-        # TODO temp, delete after
-        # alpha_ones = prw.qarray_alloc(1, m, "a_1", int)
-        # alpha_zeros = prw.qarray_alloc(1, m, "a_0", int)
-        # qbit_out =  prw.qarray_alloc(1, 1, "out", bool)
-        #
-
         prw.apply(initialize_qureg_given_bitstring(wstate_ones_str, False), wstate_ones)
         prw.apply(initialize_qureg_given_bitstring(wstate_zeros_str, False), wstate_zeros)
         # simulate_program(prw, True)
@@ -108,19 +102,13 @@ def main(n,
         #     simulate_program(prw)
 
         qrout = update_reversible(n, k, m, wstate_ones, wstate_zeros)
-        # prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros)
         prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros, wstate_ones, wstate_zeros)
 
-        if to_simulate:
-            simulate_program(prw, True)
+        simulate_program(prw, True)
 
-    # else:
-    #     cr = prw.to_circ(link=[classarith, cuccaro_arith])
-    #     print(cr.statistics())
+        # Impossible to simulate the rest of the walk, given the high number of
+        # qubits used, but this should give at least an idea of the usage of the update operator
 
-
-    # len_w1 = k
-    # len_w0 = (n - k)
 
 if __name__ == '__main__':
     import sys
