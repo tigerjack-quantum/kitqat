@@ -1,13 +1,13 @@
 from itertools import combinations, product
-from math import comb
-from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON, SLOW_TEST_ON, SLOW_TEST_ON_REASON,
+from test.common_pytest import (REVERSIBLE_ON, REVERSIBLE_ON_REASON,
+                                SLOW_TEST_ON, SLOW_TEST_ON_REASON,
                                 CircuitTestHelpers)
 
 import pytest
 from qat.lang.AQASM import classarith
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qpus.reversible import (RProgram, RSimulator)
+from qatext.qpus.reversible import RSimulator
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.qroutines.qregs_mgmt.qregs_init import (
     initialize_qureg_given_bitstring, initialize_qureg_given_int)
