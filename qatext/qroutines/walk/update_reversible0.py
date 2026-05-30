@@ -1,13 +1,25 @@
+__authors__ = [
+    "Simone Perriello <sperriello@proton.me>",
+    "Alessandro Finazzi <alessandro2.finazzi@mail.polimi.it>",
+]
+
+"""Implementation of the update operator taken from papers
+    [1] https://doi.org/10.1109/TC.2025.3625044)
+    [2] https://doi.org/10.1145/3801487.3801826)
+
+Note that this is a reversible implementation, since adding w-states generation
+circuit, as per the original paper, prevents the use of the reversible
+simulator, and hence the simulation itself. For this reason, W states are
+passed as arguments.
+
+"""
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qatmgmt.routines import QRoutineWrapper
 from qatext.qroutines.datastructure.array import contains
 from qatext.qroutines.datastructure.sliding_sort_array import \
     delete, insert
-# as insert_ld, insert_lw  # ld stands for low-depth
-# from qatext.qroutines.datastructure.sliding_sort_array import insert_lw
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
-# from qatext.qroutines.qregs_mgmt import qregs_init_bix as bix
 
 def update_reversible(n, k, m, wstate_ones, wstate_zeros):
     # TODO temp
