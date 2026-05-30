@@ -1,4 +1,5 @@
 
+from qatext.qpus.reversible import RSimulator
 from itertools import combinations, product
 
 from qat.lang.AQASM import classarith
@@ -6,7 +7,6 @@ from qat.lang.AQASM.program import Program
 from qat.myqlm_clinalg.qpu import CLinalg
 from qatext.qatmgmt.program import ProgramWrapper
 from qatext.qatmgmt.sample import extract_qarray_values_by_named_qarrays
-from qatext.qpus.reversible import inspect_state_reversible_program
 from qatext.qroutines.arith import cuccaro_arith
 from qatext.qroutines.qregs_mgmt.qregs_init import (
     initialize_qureg_given_bitstring, initialize_qureg_given_int)
@@ -30,7 +30,7 @@ def simulate_quantum(prw):
 
 def simulate_reversible(prw):
     # state_str = inspect_state_reversible_program(prw, [])
-    state_str = inspect_state_reversible_program(
+    state_str = RSimulator.inspect(
         prw, [classarith, cuccaro_arith])
     print(state_str)
 
@@ -87,9 +87,9 @@ def main(n,
         wstate_zeros = prw.qarray_alloc(n - k, 1, "w_0", str)
 
         # TODO temp, delete after
-        alpha_ones = prw.qarray_alloc(1, m, "a_1", int)
-        alpha_zeros = prw.qarray_alloc(1, m, "a_0", int)
-        qbit_out =  prw.qarray_alloc(1, 1, "out", bool)
+        # alpha_ones = prw.qarray_alloc(1, m, "a_1", int)
+        # alpha_zeros = prw.qarray_alloc(1, m, "a_0", int)
+        # qbit_out =  prw.qarray_alloc(1, 1, "out", bool)
         #
 
         prw.apply(initialize_qureg_given_bitstring(wstate_ones_str, False), wstate_ones)
@@ -109,7 +109,7 @@ def main(n,
 
         qrout = update_reversible(n, k, m, wstate_ones, wstate_zeros)
         # prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros)
-        prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros, wstate_ones, wstate_zeros, alpha_ones, alpha_zeros, qbit_out)
+        prw.apply(qrout, node_s_ones, node_s_zeros, node_t_ones, node_t_zeros, wstate_ones, wstate_zeros)
 
         if to_simulate:
             simulate_program(prw, True)

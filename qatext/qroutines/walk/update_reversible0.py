@@ -26,11 +26,10 @@ def update_reversible(n, k, m, wstate_ones, wstate_zeros):
     alpha_ones = qrw.qarray_wires(1, m, "a_1", int)
     alpha_zeros = qrw.qarray_wires(1, m, "a_0", int)
     qbit_out = qrw.qarray_wires(1, 1, "out", bool)
-    # TODO temp, should be ancilla, now kept normal just for debugging
 
-    # qrw.set_ancillae(alpha_ones)
-    # qrw.set_ancillae(alpha_zeros)
-    # qrw.set_ancillae(qbit_out)
+    qrw.set_ancillae(alpha_ones)
+    qrw.set_ancillae(alpha_zeros)
+    qrw.set_ancillae(qbit_out)
 
     # copy s to t
     qrw.apply(qi.copy_array_of_registers(k, m), node_s_ones, node_t_ones)
