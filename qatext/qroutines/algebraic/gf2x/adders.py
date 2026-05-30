@@ -1,5 +1,7 @@
-__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
 
 import math
 from qat.lang.AQASM.gates import CNOT, CCNOT, X, H, SWAP, PH
@@ -42,11 +44,11 @@ def cuccaro_adder_int(a_len: int, b_len: int, overflow_qubit: bool = False):
     qrout = QRoutine()
     a_orig = qrout.new_wires(a_len)
     b_orig = qrout.new_wires(b_len)
-    
+
     n = max(a_len, b_len)
     a_rev = list(reversed(a_orig))
     b_rev = list(reversed(b_orig))
-    
+
     # Generalization: Pad with virtual zeros (ancillae) to match max length
     if a_len < n:
         a_pad = qrout.new_wires(n - a_len)
@@ -56,19 +58,19 @@ def cuccaro_adder_int(a_len: int, b_len: int, overflow_qubit: bool = False):
         b_pad = qrout.new_wires(n - b_len)
         qrout.set_ancillae(b_pad)
         b_rev += list(b_pad)
-        
+
     cin = qrout.new_wires(1)
     qrout.set_ancillae(cin)
-    
+
     if overflow_qubit:
         cout = qrout.new_wires(1)
         # Cuccaro logic for overflow
         qrout.apply(_maj(), cin[0], b_rev[0], a_rev[0])
         for i in range(1, n):
             qrout.apply(_maj(), a_rev[i-1], b_rev[i], a_rev[i])
-        
+
         qrout.apply(CNOT, a_rev[n-1], cout[0])
-        
+
         for i in range(n-1, 0, -1):
             qrout.apply(_uma(), a_rev[i-1], b_rev[i], a_rev[i])
         qrout.apply(_uma(), cin[0], b_rev[0], a_rev[0])
@@ -77,11 +79,11 @@ def cuccaro_adder_int(a_len: int, b_len: int, overflow_qubit: bool = False):
         qrout.apply(_maj(), cin[0], b_rev[0], a_rev[0])
         for i in range(1, n):
             qrout.apply(_maj(), a_rev[i-1], b_rev[i], a_rev[i])
-            
+
         for i in range(n-1, 0, -1):
             qrout.apply(_uma(), a_rev[i-1], b_rev[i], a_rev[i])
         qrout.apply(_uma(), cin[0], b_rev[0], a_rev[0])
-    
+
     return qrout
 
 
@@ -96,12 +98,9 @@ def tkk_adder_int(a_len: int, b_len: int, overflow_qubit: bool = False):
     qrout = QRoutine()
     a_orig = qrout.new_wires(a_len)
     b_orig = qrout.new_wires(b_len)
-    
     n = max(a_len, b_len)
-    
     a_rev = list(reversed(a_orig))
     b_rev = list(reversed(b_orig))
-    
     # Pad with virtual zeros (ancillae) to match max length
     if a_len < n:
         a_pad = qrout.new_wires(n - a_len)
@@ -111,38 +110,38 @@ def tkk_adder_int(a_len: int, b_len: int, overflow_qubit: bool = False):
         b_pad = qrout.new_wires(n - b_len)
         qrout.set_ancillae(b_pad)
         b_rev += list(b_pad)
-        
+
     c_reg = qrout.new_wires(1)
     if not overflow_qubit:
         qrout.set_ancillae(c_reg)
-    
-    
+
+
     # First layer of CNOTs
     for i in range(1, n):
         qrout.apply(CNOT, a_rev[i], b_rev[i])
-    
+
     # Final CNOT to carry register only if n > 1
     if n > 1:
         qrout.apply(CNOT, a_rev[n-1], c_reg[0])
-        
+
     # Second layer of CNOTs
     for i in range(n - 1, 1, -1):
         qrout.apply(CNOT, a_rev[i-1], a_rev[i])
-        
+
     # First layer of CCNOTs (Carry propagation)
     a_ext = a_rev + list(c_reg)
     for i in range(n):
         qrout.apply(CCNOT, a_rev[i], b_rev[i], a_ext[i+1])
-        
-    # Third layer of CNOTs and second layer of CCNOTs 
+
+    # Third layer of CNOTs and second layer of CCNOTs
     for i in range(n - 1, 0, -1):
         qrout.apply(CNOT, a_rev[i], b_rev[i])
         qrout.apply(CCNOT, a_rev[i-1], b_rev[i-1], a_rev[i])
-        
+
     # Fourth layer of CNOTs
     for i in range(1, n - 1):
         qrout.apply(CNOT, a_rev[i], a_rev[i+1])
-        
+
     # Final layer of CNOTs
     for i in range(n):
         qrout.apply(CNOT, a_rev[i], b_rev[i])

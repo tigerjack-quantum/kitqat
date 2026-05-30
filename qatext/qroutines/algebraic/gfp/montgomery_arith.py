@@ -1,3 +1,7 @@
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
 """Note that the add_const and add_mod requires a proper implementation of their gates
 
 Implementations were taken from.
@@ -8,11 +12,11 @@ Implementations were taken from.
 """
 from collections import deque
 
-from qatext.qroutines.arith import cuccaro_arith as cuccadd
-from qat.lang.AQASM.arithmetic import add_const, add_mod
+from qat.lang.AQASM.arithmetic import add_const
 from qat.lang.AQASM.gates import CNOT
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
+from qatext.qroutines.arith import cuccaro_arith as cuccadd
 
 
 @build_gate("M_MUL_CONSTMOD", [str], arity=lambda x: len(x) * 4 + 1)

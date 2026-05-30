@@ -1,15 +1,17 @@
-from qatext.qpus.reversible import RSimulator
-__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
 import pytest
 from qat.lang.AQASM.program import Program
 from qatext.qatmgmt.program import ProgramWrapper
+from qatext.qpus.reversible import RSimulator
+from qatext.qroutines.algebraic.gfp.kaliski_inversion import mk_round
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 
-from qatext.qroutines.algebraic.gfp.kaliski_inversion import mk_round, kaliski_block
 
-class TestPintoKaliskiInversion:
+class TestKaliskiInversion:
     @pytest.mark.parametrize(
         "val_u, val_v, val_r, val_s, nbits",
         [
@@ -18,7 +20,7 @@ class TestPintoKaliskiInversion:
             (11, 8, 0, 1, 4),  # Branch 2: u è dispari, v è pari -> v >>= 1, r <<= 1
             (11, 7, 0, 1, 4),  # Branch 3: u, v dispari, u > v -> u=(u-v)>>1, r=r+s, s<<=1
             (5, 7, 1, 2, 4),   # Branch 4a: u, v dispari, u < v -> v=(v-u)>>1, s=r+s, r<<=1
-            
+
             # --- 2. EDGE CASES (Casi limite e Uguaglianza, nbits = 4) ---
             (7, 7, 1, 1, 4),   # Branch 4b: u == v (dispari). Dovrebbe azzerare v.
             (0, 5, 1, 1, 4),   # u è zero (condizione estrema del pari)
@@ -32,7 +34,7 @@ class TestPintoKaliskiInversion:
             (3, 2, 1, 0, 2),   # u=3 (dispari), v=2 (pari)
             (2, 3, 0, 1, 2),   # u=2 (pari), v=3 (dispari)
             (3, 3, 1, 1, 2),   # u == v massimi per 2 bit
-            
+
             # --- 4. STRESS TEST SCALABILITÀ (nbits = 8) ---
             # Verifica che il routing dei qubit e i carry non vadano in overflow con byte interi
             (255, 127, 5, 10, 8), # u > v, valori alti
@@ -61,12 +63,12 @@ class TestPintoKaliskiInversion:
         prw.apply(mk_round(nbits), qr_u[0], qr_v[0], qr_r[0], qr_s[0], qr_k[0], qr_f[0], qr_m[0])
 
         res = RSimulator.simulate(prw, [])
-        out_u = get_int_from_bitarray(res["u"], False)
-        out_v = get_int_from_bitarray(res["v"], False)
-        out_r = get_int_from_bitarray(res["r"], False)
-        out_s = get_int_from_bitarray(res["s"], False)
-        out_m = get_int_from_bitarray(res["m_i"], False)
-        
+        out_u = get_int_from_bitarray(res["u"].tolist(), False)
+        out_v = get_int_from_bitarray(res["v"].tolist(), False)
+        out_r = get_int_from_bitarray(res["r"].tolist(), False)
+        out_s = get_int_from_bitarray(res["s"].tolist(), False)
+        out_m = get_int_from_bitarray(res["m_i"].tolist(), False)
+
         expected_u, expected_v, expected_r, expected_s = val_u, val_v, val_r, val_s
         expected_m = 0
         if val_u % 2 == 0:
@@ -91,4 +93,3 @@ class TestPintoKaliskiInversion:
         assert out_r == expected_r, f"r: got {out_r}, expected {expected_r}"
         assert out_s == expected_s, f"s: got {out_s}, expected {expected_s}"
         assert out_m == expected_m, f"m_i: got {out_m}, expected {expected_m}"
-   

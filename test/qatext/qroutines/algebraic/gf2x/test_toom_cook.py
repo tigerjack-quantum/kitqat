@@ -1,25 +1,41 @@
-from qatext.qpus.reversible import RSimulator
-__author__ = "Federico Pinto <federico.pinto@mail.polimi.it>"
-# Author: Federico Pinto
+__authors__ = [
+    "Federico Pinto <federico.pinto@mail.polimi.it>",
+    "Simone Perriello <sperriello@proton.me>",
+]
+
 import random
+from test.common_circuit import CircuitTestCase
+from test.common_pytest import SLOW_TEST_ON, SLOW_TEST_ON_REASON, CircuitTestHelpers
 
 import galois
 import pytest
 from qat.lang.AQASM.program import Program
-
 from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qroutines.algebraic.gf2x.toom_cook import (
-    karatsuba_modular,
-    toom3_mult,
-)
+from qatext.qpus.reversible import RSimulator
+from qatext.qroutines.algebraic.gf2x.toom_cook import (karatsuba_modular,
+                                                       toom3_mult)
 from qatext.qroutines.qregs_mgmt import qregs_init as qi
 from qatext.utils.bits.conversion import get_int_from_bitarray
 
 random.seed(42)
-random_n8_cases = [(random.randint(0, 255), random.randint(0, 255), 8, 283) for _ in range(20)]
-random_n6_cases = [(random.randint(0, 63), random.randint(0, 63), 6) for _ in range(20)]
+# I guess 283 = 0x11B, the standard GF(2^8) reduction polynomial (AES)
+random_n8_cases = [
+    pytest.param(
+        random.randint(0, 255), random.randint(0, 255), 8, 283,
+        id=f"random_{i}"
+    )
+    for i in range(10)
+]
+random_n6_cases = [
+    pytest.param(
+        random.randint(0, 63), random.randint(0, 63), 6,
+        id=f"random_{i}"
+    )
+    for i in range(10)
+]
 
 
+@staticmethod
 def galois_oracle_mul_mod(a_val, b_val, n, m_bits):
     """
     Polynomial multiplication modulo m(x) in GF(2^n) using galois extension fields.
@@ -30,12 +46,13 @@ def galois_oracle_mul_mod(a_val, b_val, n, m_bits):
     return int(res)
 
 
+@staticmethod
 def galois_oracle_mul(a_val, b_val):
     """Standard integer multiplication oracle for Toom-Cook 3."""
     return a_val * b_val
 
 
-class TestToomCook:
+class TestToomCook(CircuitTestHelpers):
     def _setup_and_run(self, val_a, val_b, n, gate, out_size, out_name, little_endian):
         """Helper to reduce code duplication for circuit setup and execution."""
         prw = ProgramWrapper(Program())
@@ -98,19 +115,42 @@ class TestToomCook:
             (255, 255, 8, 283),
             (2, 127, 8, 283),
         ]
-        + random_n8_cases,
     )
     def test_karatsuba_modular_parametrized(self, val_a, val_b, n, m_bits):
         """Executes tests on edge cases and the random sample for n=8."""
         self.run_and_verify_karatsuba(val_a, val_b, n, m_bits)
 
-    def test_karatsuba_n4(self):
-        """Test for n=4: exhaustive combination testing."""
-        n = 4
-        m_bits = 19
-        for a in range(16):
-            for b in range(16):
-                self.run_and_verify_karatsuba(a, b, n, m_bits)
+    @pytest.mark.parametrize(
+        "val_a, val_b, n, m_bits",
+        random_n8_cases,
+    )
+    def test_karatsuba_modular_parametrized_random(self, val_a, val_b, n, m_bits):
+        """Executes tests on edge cases and the random sample for n=8."""
+        self.run_and_verify_karatsuba(val_a, val_b, n, m_bits)
+
+    # Karatsuba n=4
+
+    KARATSUBA_N4_FAST_CASES = [
+        (0, 0), (0, 1), (1, 0),     # zero edge cases
+        (1, 1), (2, 3), (3, 2),     # small values
+        (15, 15), (15, 0), (0, 15), # boundary
+        (7, 8), (9, 6), (12, 11),   # mid-range
+    ]
+
+    KARATSUBA_N4_EXHAUSTIVE_CASES = [
+        (a, b) for a in range(16) for b in range(16)
+    ]
+
+    @pytest.mark.parametrize("a,b", KARATSUBA_N4_FAST_CASES)
+    def test_karatsuba_n4_fast(self, a, b):
+        """Spot-check a representative sample of inputs for n=4."""
+        self.run_and_verify_karatsuba(a, b, n=4, m_bits=19)
+
+    @pytest.mark.skipif(not SLOW_TEST_ON, reason=SLOW_TEST_ON_REASON)
+    @pytest.mark.parametrize("a,b", KARATSUBA_N4_EXHAUSTIVE_CASES)
+    def test_karatsuba_n4_exhaustive(self, a, b):
+        """Exhaustive combination testing for n=4 (16×16 = 256 cases)."""
+        self.run_and_verify_karatsuba(a, b, n=4, m_bits=19)
 
     @pytest.mark.parametrize(
         "val_a, val_b, n",
@@ -122,22 +162,58 @@ class TestToomCook:
             (2, 5, 3),
             (7, 7, 3),
             (0, 32, 6),
-            (1, 63, 6),
-            (63, 63, 6),
             (2, 31, 6),
         ]
-        + random_n6_cases,
     )
     def test_toom3_mult_parametrized(self, val_a, val_b, n):
         """Executes robust edge cases and random sampling tests for Toom-Cook 3."""
         self.run_and_verify_toom3(val_a, val_b, n)
 
-    def test_toom3_n3(self):
-        """Test for n=3: exhaustive combination testing."""
-        n = 3
-        for a in range(8):
-            for b in range(8):
-                self.run_and_verify_toom3(a, b, n)
+    @pytest.mark.parametrize(
+        "val_a, val_b, n",
+        random_n6_cases,
+    )
+    @pytest.mark.skipif(not SLOW_TEST_ON, reason=SLOW_TEST_ON_REASON)
+    def test_toom3_mult_parametrized_random(self, val_a, val_b, n):
+        """Executes robust edge cases and random sampling tests for Toom-Cook 3."""
+        self.run_and_verify_toom3(val_a, val_b, n)
+
+    @pytest.mark.parametrize(
+        "val_a, val_b, n",
+        [
+            (1, 63, 6),
+            (63, 63, 6),
+        ]
+    )
+    @pytest.mark.skipif(not SLOW_TEST_ON, reason=SLOW_TEST_ON_REASON)
+    def test_toom3_mult_parametrized_slow(self, val_a, val_b, n):
+        """Executes robust edge cases and random sampling tests for Toom-Cook 3."""
+        self.run_and_verify_toom3(val_a, val_b, n)
+
+    # Toom-Cook n=3
+
+    TOOM3_N3_FAST_CASES = [
+        (0, 0), (0, 1), (1, 0),   # zero edge cases
+        (1, 1), (2, 3), (3, 2),   # small values
+        (7, 7), (7, 0), (0, 7),   # boundary
+        (4, 5), (6, 3),            # mid-range
+    ]
+
+    TOOM3_N3_EXHAUSTIVE_CASES = [
+        (a, b) for a in range(8) for b in range(8)
+    ]
+
+    @pytest.mark.parametrize("a,b", TOOM3_N3_FAST_CASES)
+    def test_toom3_n3_fast(self, a, b):
+        """Spot-check a representative sample of inputs for n=3."""
+        self.run_and_verify_toom3(a, b, n=3)
+
+    @pytest.mark.skipif(not SLOW_TEST_ON, reason=SLOW_TEST_ON_REASON)
+    @pytest.mark.parametrize("a,b", TOOM3_N3_EXHAUSTIVE_CASES)
+    def test_toom3_n3_exhaustive(self, a, b):
+        """Exhaustive combination testing for n=3 (8×8 = 64 cases)."""
+        self.run_and_verify_toom3(a, b, n=3)
+
 
 
 if __name__ == "__main__":

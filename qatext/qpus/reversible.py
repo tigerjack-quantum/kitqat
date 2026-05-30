@@ -11,6 +11,8 @@ CircuitLike  – Protocol for ProgramWrapper / QRoutineWrapper duck-typing
 from __future__ import annotations
 
 import logging
+from typing import Literal, overload
+from bitarray import bitarray
 import operator
 from collections.abc import Mapping
 from enum import Enum, auto
@@ -29,7 +31,6 @@ if TYPE_CHECKING:
 
 from bitarray import bitarray, util
 
-DecodedValue = Union[bitarray, list[bitarray], list[str], list[int], tuple[int]]
 class DecodedStates(Mapping[str, object]):
     """Typed wrapper around decoded register states.
 
@@ -37,10 +38,29 @@ class DecodedStates(Mapping[str, object]):
     giving a clear error instead of a cryptic AttributeError downstream.
     """
 
-    def __init__(self, data: dict[str, object], name_to_qarray: dict[str, QArray]):
+    def __init__(
+        self,
+        data: dict[str, object],
+        name_to_qarray: dict[str, QArray],
+        ancillae: dict[str, bitarray] | None = None,
+    ):
         self._data = data
         self._nmap = name_to_qarray
+        self._ancillae: dict[str, bitarray] = ancillae or {}
 
+    def get_ancilla(self, name: str) -> bitarray:
+        """Return the raw bitarray for a compiler-generated ancilla register."""
+        try:
+            return self._ancillae[name]
+        except KeyError:
+            raise KeyError(
+                f"Ancilla '{name}' not found. "
+                f"Available ancillae: {list(self._ancillae)}"
+            )
+
+    def ancillae(self) -> dict[str, bitarray]:
+        """Return all compiler-generated ancilla registers."""
+        return dict(self._ancillae)
     def __getitem__(self, name: str) -> object:
         return self._data[name]
 
@@ -360,7 +380,14 @@ class RSimulator:
         """
         circ = source.to_circ(link=link, inline=True)
         rpr = RSimulator.from_circuit(circ, source._name_to_qarray)
-        rpr.rregs = source._name_to_qarray
+        # Merge rather than overwrite: auto_ancillae (and any other registers
+        # allocated during circuit compilation) must be preserved. They cannot
+        # live in source._name_to_qarray because ProgramWrapper has no
+        # knowledge of them — they are a side-effect of to_circ() / inlining.
+        # The only place that knows about them is rpr.rregs after
+        # alloc_from_circuit has run, so the merge must happen here and not
+        # earlier. User-named registers take priority in case of key collision.
+        rpr.rregs = {**rpr.rregs, **source._name_to_qarray}
         return rpr
 
     # ------------------------------------------------------------------ #
@@ -371,19 +398,64 @@ class RSimulator:
     def simulate_circuit(
         circ: "Circuit",
         name_to_qarray: dict[str, QArray] | None = None,
-    ) -> dict[str, bitarray]:
-        """Simulate *circ* and return ``{register_name: bitarray}``."""
+    ) -> dict[str, bitarray] | str:
+        """Simulate *circ* and return register states."""
         rpr = RSimulator.from_circuit(circ, name_to_qarray)
         return rpr.get_result_by_name()
+
+    @staticmethod
+    def simulate_circuit_as_bitstring(
+        circ: "Circuit",
+        name_to_qarray: dict[str, QArray] | None = None,
+    ) -> dict[str, bitarray] | str:
+        """Simulate *circ* and return register states."""
+        rpr = RSimulator.from_circuit(circ, name_to_qarray)
+        return rpr.get_result()
 
     @staticmethod
     def simulate(
         source: CircuitLike,
         link: Optional[list] = None,
     ) -> dict[str, bitarray]:
-        """Simulate any :class:`CircuitLike` source and return register states."""
         rpr = RSimulator.from_circuit_like(source, link=link)
         return rpr.get_result_by_name()
+
+    @staticmethod
+    def simulate_as_bitstring(
+        source: CircuitLike,
+        link: Optional[list] = None,
+    ) -> str:
+        rpr = RSimulator.from_circuit_like(source, link=link)
+        return rpr.get_result()
+
+    @staticmethod
+    def bitstring_to_register_map(
+        bitstring: str,
+        name_to_qarray: dict[str, QArray],
+    ) -> dict[str, bitarray]:
+        """Slice a full bitstring back into named registers.
+
+        Inverse of :meth:`register_map_to_bitstring`.
+        """
+        bits = bitarray(bitstring)
+        return {name: bits[qa.slic] for name, qa in name_to_qarray.items()}
+
+    @staticmethod
+    def register_map_to_bitstring(
+        register_map: dict[str, bitarray],
+        name_to_qarray: dict[str, QArray],
+    ) -> str:
+        """Reconstruct the full bitstring from named register slices.
+
+        Inverse of :meth:`bitstring_to_register_map`.
+        """
+        # Determine total length from the highest slice endpoint
+        total = max(qa.slic.stop for qa in name_to_qarray.values())
+        bits = bitarray(total)
+        bits.setall(0)
+        for name, qa in name_to_qarray.items():
+            bits[qa.slic] = register_map[name]
+        return bits.to01()
 
     # ------------------------------------------------------------------ #
     # Value decoding                                                     #
@@ -395,7 +467,13 @@ class RSimulator:
         name_to_qarray: dict[str, QArray],
     ) -> DecodedStates:
         result: dict[str, object] = {}
+        ancillae: dict[str, bitarray] = {}
         for name, bits in states.items():
+            if name not in name_to_qarray:
+                # compiler-generated register (auto_ancillae, slice-named regs…)
+                # kept as raw bitarray since there is no qtype metadata for them
+                ancillae[name] = bits
+                continue
             qa = name_to_qarray[name]
             if qa.unknown_size:
                 result[name] = bits
@@ -409,7 +487,7 @@ class RSimulator:
                 result[name] = get_ints_from_bitarray(bits.tolist(), qa.n, qa.m, False)
             else:
                 raise TypeError(f"Unknown qtype: {qa.qtype!r}")
-        return DecodedStates(result, name_to_qarray)
+        return DecodedStates(result, name_to_qarray, ancillae)
 
     # ------------------------------------------------------------------ #
     # Simulate and Value decoding                                        #
@@ -457,7 +535,8 @@ class RSimulator:
         """Simulate *circ* and return a human-readable state summary."""
         name_to_qarray = name_to_qarray or {}
         rpr = RSimulator.from_circuit(circ, name_to_qarray)
-        rpr.rregs = name_to_qarray
+        # rpr.rregs = name_to_qarray
+        rpr.rregs = {**rpr.rregs, **name_to_qarray}  # merge, don't overwrite
         return RSimulator._format_inspection(circ, rpr, name_to_qarray)
 
     @staticmethod
@@ -482,7 +561,8 @@ class RSimulator:
         name_to_qarray = name_to_qarray or {}
         circ = pr.to_circ(**to_circ_kwargs)
         rpr = RSimulator.from_circuit(circ, name_to_qarray)
-        rpr.rregs = name_to_qarray
+        # rpr.rregs = name_to_qarray
+        rpr.rregs = {**rpr.rregs, **name_to_qarray}  # merge, don't overwrite
         return RSimulator._format_inspection(circ, rpr, name_to_qarray)
 
     @staticmethod
@@ -497,5 +577,6 @@ class RSimulator:
         """
         circ = source.to_circ(link=link, inline=True)
         rpr = RSimulator.from_circuit(circ, source._name_to_qarray)
-        rpr.rregs = source._name_to_qarray
+        # rpr.rregs = source._name_to_qarray
+        rpr.rregs = {**rpr.rregs, **source._name_to_qarray}  # merge, don't overwrite
         return RSimulator._format_inspection(circ, rpr, source._name_to_qarray)
