@@ -1,3 +1,11 @@
+"""Implementation of the update operator taken from papers
+    [1] https://doi.org/10.1109/TC.2025.3625044)
+    [2] https://doi.org/10.1145/3801487.3801826)
+
+Note that this is a reversible implementation, since adding w-states, as per
+the original paper, prevents the simulation
+
+"""
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.routines import QRoutine
 from qatext.qatmgmt.routines import QRoutineWrapper
