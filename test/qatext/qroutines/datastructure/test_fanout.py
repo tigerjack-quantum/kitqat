@@ -42,28 +42,6 @@ class TestFanout(CircuitTestHelpers):
         prw.apply(initialize_qureg_given_bitstring(bitstring, False), qval)
 
         prw.apply(fanout(n, m), qval, qarray)
-        # cr = prw.to_circ()
-        # cr = prw.to_circ(link=[], inline=True)
-        # print(cr.depth(default=1))
-
-        # Option 1
-        # res = get_states_from_program_wrapper(prw, None)
-        # print(res)
-        # assert res['Original'].to01() == bitstring
-        # assert res['Clones'].to01() == bitstring * n
-
-        # Option 2, assert missing cause it's just to inspect
-        # state_str = inspect_state_reversible_program(prw, [])
-        # print(state_str)
-
-        # Option 3
-        # same as pr.to_circ()
-        # circ = prw.to_circ()
-        # rpr = RSimulator.from_circuit(circ)
-        # rpr.rregs = prw.get_name_to_qarray()
-        # state = rpr.get_result_by_name()
-        # name_to_values = RSimulator.decode_states(state, prw.get_name_to_qarray())
-
         name_to_values = RSimulator.simulate_and_decode(prw)
         # print(name_to_values)
         original = name_to_values.as_bitstring_list('Original')
