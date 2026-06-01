@@ -11,12 +11,10 @@ CircuitLike  – Protocol for ProgramWrapper / QRoutineWrapper duck-typing
 from __future__ import annotations
 
 import logging
-from typing import Literal, overload
-from bitarray import bitarray
 import operator
 from collections.abc import Mapping
 from enum import Enum, auto
-from typing import (TYPE_CHECKING, Optional, Protocol, Sequence, Union, cast,
+from typing import (TYPE_CHECKING, Optional, Protocol, Sequence, cast,
                     runtime_checkable)
 
 from bitarray import bitarray
@@ -30,6 +28,7 @@ if TYPE_CHECKING:
     from qat.lang.AQASM.program import Program
 
 from bitarray import bitarray, util
+
 
 class DecodedStates(Mapping[str, object]):
     """Typed wrapper around decoded register states.
@@ -332,6 +331,15 @@ class RSimulator:
     # ------------------------------------------------------------------ #
     # Building an RProgram from various sources                           #
     # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def from_program(
+        program: "Program",
+        name_to_qarray: dict[str, QArray] | None = None,
+        **to_circ_kwargs,
+    ) -> RProgram:
+        circ = program.to_circ(**to_circ_kwargs)
+        return RSimulator.from_circuit(circ, name_to_qarray)
 
     @staticmethod
     def from_circuit(
