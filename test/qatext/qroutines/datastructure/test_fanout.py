@@ -66,10 +66,10 @@ class TestFanout(CircuitTestHelpers):
 
         name_to_values = RSimulator.simulate_and_decode(prw)
         # print(name_to_values)
-        assert name_to_values['Original'][0] == bitstring, "Original not correctly initialized %s" % name_to_values["Original"]
-        assert all(val == bitstring for val in name_to_values["Clones"]), "Clones are not equal %s" % name_to_values['Clones']
-
-
+        original = name_to_values.as_bitstring_list('Original')
+        clones   = name_to_values.as_bitstring_list('Clones')
+        assert original[0] == bitstring, "Original not correctly initialized %s" % original
+        assert all(val == bitstring for val in clones), "Clones are not equal %s" % clones
 
 
 
