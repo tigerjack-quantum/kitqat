@@ -15,6 +15,9 @@ class QRoutineWrapper:
     def __getattr__(self, name):
         return getattr(self._qroutine, name)
 
+    def to_circ(self, *, link=None, inline=False):
+        return self._qroutine.to_circ(link=link, inline=inline)
+
     def qarray_wires(
         self,
         n: int,
