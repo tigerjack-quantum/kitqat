@@ -374,6 +374,10 @@ class RSimulator:
             rpr.ralloc(qdiff, "auto_ancillae")
 
         rpr.apply_gates_from_circuit(circ, circ)
+        # Merge: ensure all user-named registers appear in rregs regardless of
+        # whether their slices matched during alloc. auto_ancillae are
+        # preserved.
+        rpr.rregs = {**rpr.rregs, **name_to_qarray}
         return rpr
 
     @staticmethod
