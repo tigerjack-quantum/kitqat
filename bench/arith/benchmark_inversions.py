@@ -8,9 +8,9 @@ from qat.lang.AQASM import Program
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    from qatext.qroutines.algebraic.gf2x.inversion import flt_div
-    from qatext.qroutines.algebraic.gfp.kaliski_inversion import kaliski_block
-    from qatext.utils.statistics.depth import compute_circuit_depth
+    from kitqat.qroutines.algebraic.gf2x.inversion import flt_div
+    from kitqat.qroutines.algebraic.gfp.kaliski_inversion import kaliski_block
+    from kitqat.utils.statistics.depth import compute_circuit_depth
 except ImportError as e:
     print(f"Error importing routines: {e}")
     sys.exit(1)

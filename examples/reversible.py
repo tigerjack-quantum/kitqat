@@ -37,10 +37,10 @@ dict → bitstring     | reconstruct          | RSimulator.register_map_to_bitst
 from qat.lang.AQASM.gates import CCNOT, SWAP, X
 from qat.lang.AQASM.program import Program
 
-from qatext.qatmgmt.program import ProgramWrapper, QArray
-from qatext.qpus.reversible import RGate, RProgram, RSimulator
-from qatext.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_bitstring, initialize_qureg_given_int
-from qatext.qroutines.qregs_mgmt.qregs_layout import swap_qreg_cells
+from kitqat.qatmgmt.program import ProgramWrapper, QArray
+from kitqat.qpus.reversible import RGate, RProgram, RSimulator
+from kitqat.qroutines.qregs_mgmt.qregs_init import initialize_qureg_given_bitstring, initialize_qureg_given_int
+from kitqat.qroutines.qregs_mgmt.qregs_layout import swap_qreg_cells
 
 
 # =============================================================================

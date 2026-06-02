@@ -19,10 +19,10 @@ You can additionally install
 [myQLM](https://myqlm.github.io/myqlm_specific/install.html) with
 
 ```
-pip install 'qatext[myqlm] @ git+ssh://git@github.com/tigerjack/qat-utils.git'
+pip install 'kitqat[myqlm] @ git+ssh://git@github.com/tigerjack/qat-utils.git'
 ```
 
-The reason to make myqlm an optional dependency is that the `qatext` library
+The reason to make myqlm an optional dependency is that the `kitqat` library
 can also be run on the QLM machines.
 
 ## Development
@@ -78,7 +78,7 @@ contained in.
 
 # Structure #
 
-  * The actual code is below `qatext`.
+  * The actual code is below `kitqat`.
   * `experiments` directory contains some experiments that have been made.
   * The `notebooks` directory contains some jupyter notebooks explaining usage
   of most commonly used routines.
@@ -138,8 +138,8 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
 
   * Core infrastructure
     * [x] Reversible simulator
-    * [x] ProgramWrapper and QRoutineWrapper objects (`qatext.qatmgmt`)
-    * [x] Helper functions for Gate, Observable, Result and Sample objects (`qatext.qatmgmt`)
+    * [x] ProgramWrapper and QRoutineWrapper objects (`kitqat.qatmgmt`)
+    * [x] Helper functions for Gate, Observable, Result and Sample objects (`kitqat.qatmgmt`)
 
   * State preparation
     * [x] Dicke state
@@ -147,7 +147,7 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [ ] Quantum-state preparation with universal gate decompositions: [link](https://arxiv.org/pdf/1003.5760.pdf)
     * [ ] Quantum Networks for generating arbitrary quantum states: [link](https://arxiv.org/pdf/quant-ph/0407102.pdf)
 
-  * Quantum walk (`qatext.qroutines.walk`)
+  * Quantum walk (`kitqat.qroutines.walk`)
     * [x] Update operator, version 0 [link](https://doi.org/10.1109/TC.2025.3625044) [link](https://doi.org/10.1145/3801487.3801826)
     * [x] Update operator, version 1 [TODO link]()
 
@@ -161,7 +161,7 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [ ] Higher order embedding [link](https://arxiv.org/pdf/1804.11326.pdf)
     * [ ] Variational/trained embedding [link](https://arxiv.org/pdf/2001.03622.pdf)
 
-  * Integer arithmetic (`qatext.qroutines.arith`)
+  * Integer arithmetic (`kitqat.qroutines.arith`)
     * [x] Cuccaro arithmetic
       * [x] Adder/subtractor
       * [x] Different length registers
@@ -181,7 +181,7 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
       * [x] 2-bit adder
       * [x] 2-bit comparator
 
-  * Arithmetic over finite fields (`qatext.qroutines.algebraic`)
+  * Arithmetic over finite fields (`kitqat.qroutines.algebraic`)
     * [x] GF(2ⁿ)
       * [x] Basic arithmetic (multiplication, schoolbook reduction)
       * [x] Adders (Cuccaro-style, TKK-style, QFT-based)
@@ -190,29 +190,29 @@ Check [my website](https://perriello.faculty.polimi.it/) if you are interested.
     * [x] GF(p)
       * [x] Barrett reduction
       * [x] Kaliski inversion
-    * [x] Montgomery multiplication (`qatext.qroutines.montgomery`)
+    * [x] Montgomery multiplication (`kitqat.qroutines.montgomery`)
 
-  * Linear algebra (`qatext.qroutines.linalg`)
+  * Linear algebra (`kitqat.qroutines.linalg`)
     * [x] Gauss-Jordan elimination [link](https://doi.org/10.1145/3607256)
     * [x] Column permutations [link](https://doi.org/10.1109/QCE52317.2021.00056)
 
-  * Cryptography (`qatext.qroutines.crypto`)
+  * Cryptography (`kitqat.qroutines.crypto`)
     * [x] DES Sbox (Kwan) [link](https://doi.org/10.1109/QCE60285.2024.00011)
 
-  * Data structures (`qatext.qroutines.datastructure`)
+  * Data structures (`kitqat.qroutines.datastructure`)
     * [x] Sorted array insertion/deletion [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
     * [x] Sorted array low-width insertion/deletion [TODO link]()
     * [x] Array existence check [link](https://dam-oclc.bac-lac.gc.ca/download?is_thesis=1&oclc_number=1122760241&id=40c75e28-fea0-4cd1-be3a-94709029fcdc&fileName=Jaques_Samuel.pdf)
 
-  * Combinatorial circuits (`qatext.qroutines`)
+  * Combinatorial circuits (`kitqat.qroutines`)
     * [x] Sorting network (`sorting`)
     * [x] Benes network (`hamming_weight_generate`)
 
-  * Hamming weight (`qatext.qroutines`)
+  * Hamming weight (`kitqat.qroutines`)
     * [x] Compute Hamming weight of a qubit subset (`hamming_weight_compute`)
     * [x] Generate Dicke states / check Hamming weight (`hamming_weight_generate`)
 
-  * Quantum register management (`qatext.qroutines.qregs_mgmt`)
+  * Quantum register management (`kitqat.qroutines.qregs_mgmt`)
     * [x] Register reversal
     * [x] Register rotation (left/right)
     * [x] Data initialisation (bitstring, bitarray, int)

@@ -1,4 +1,4 @@
-from qatext.qroutines.hamming_weight_generate import bartschiE19
+from kitqat.qroutines.hamming_weight_generate import bartschiE19
 
 
 def go(n, k):

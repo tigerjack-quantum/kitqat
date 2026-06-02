@@ -46,7 +46,7 @@ def global_qpu():
     elif SIMULATOR.lower() == "stabs":
         from qat.qpus import Stabs  # type:ignore
 
-        from qatext.synthesis.mctrls.mcx import ccnot, x
+        from kitqat.synthesis.mctrls.mcx import ccnot, x
         qpu_instance = Stabs()
         CircuitTestHelpers.links = [ccnot, x]
     elif SIMULATOR.lower() == "feynman":

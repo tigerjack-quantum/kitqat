@@ -1,9 +1,9 @@
-from qatext.qroutines.hamming_weight_generate import bartschiE19
+from kitqat.qroutines.hamming_weight_generate import bartschiE19
 from qat.lang.AQASM.program import Program
 from qat.core.util import statistics
 # from qat.core.console import display
 # from qat.lang.aqasm.gates import paramgate
-from qatext.synthesis.mctrls.mry2 import MRY
+from kitqat.synthesis.mctrls.mry2 import MRY
 
 def _generate_program(n, k):
     pr = Program()

@@ -1,16 +1,16 @@
 
-from qatext.qpus.reversible import RSimulator
+from kitqat.qpus.reversible import RSimulator
 from itertools import combinations, product
 
 from qat.lang.AQASM import classarith
 from qat.lang.AQASM.program import Program
 from qat.myqlm_clinalg.qpu import CLinalg
-from qatext.qatmgmt.program import ProgramWrapper
-from qatext.qatmgmt.sample import extract_qarray_values_by_named_qarrays
-from qatext.qroutines.arith import cuccaro_arith
-from qatext.qroutines.qregs_mgmt.qregs_init import (
+from kitqat.qatmgmt.program import ProgramWrapper
+from kitqat.qatmgmt.sample import extract_qarray_values_by_named_qarrays
+from kitqat.qroutines.arith import cuccaro_arith
+from kitqat.qroutines.qregs_mgmt.qregs_init import (
     initialize_qureg_given_bitstring, initialize_qureg_given_int)
-from qatext.qroutines.walk.update_reversible0 import update_reversible
+from kitqat.qroutines.walk.update_reversible0 import update_reversible
 
 QPU = CLinalg()
 

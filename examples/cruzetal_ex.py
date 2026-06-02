@@ -1,6 +1,6 @@
 from qat.lang.AQASM.program import Program
 from qat.myqlm_clinalg.qpu import CLinalg
-from qatext.qroutines.hamming_weight_generate.cruzetal19 import w_state
+from kitqat.qroutines.hamming_weight_generate.cruzetal19 import w_state
 
 # ---- Demo & verification ----
 if __name__ == "__main__":

@@ -4,13 +4,13 @@ from typing import Optional, Union
 
 from bitarray import bitarray
 from qat.core.util import statistics
-from qatext.qpus.reversible import RProgram, RSimulator
-from qatext.qroutines import qregs_init as qregs
-from qatext.qroutines.algebraic.gf2x import montgomery_arith as marith
+from kitqat.qpus.reversible import RProgram, RSimulator
+from kitqat.qroutines import qregs_init as qregs
+from kitqat.qroutines.algebraic.gf2x import montgomery_arith as marith
 
 # from qat.lang.AQASM.gates import X, CNOT
 # from qat.core.console import display
-from qatext.utils.statistics.depth import compute_circuit_depth
+from kitqat.utils.statistics.depth import compute_circuit_depth
 from qat.lang.AQASM.program import Program
 
 

@@ -1,6 +1,6 @@
 from qat.core.console import display
 from qat.lang.AQASM.program import Program
-from qatext.qroutines.hamming_weight_generate import bartschiE19
+from kitqat.qroutines.hamming_weight_generate import bartschiE19
 
 
 def main():

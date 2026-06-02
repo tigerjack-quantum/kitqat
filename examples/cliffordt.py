@@ -1,7 +1,7 @@
 from qat.lang.AQASM.gates import CCNOT, CNOT, H, X, Y, Z, S
 from qat.lang.AQASM.program import Program
 from qat.pylinalg import PyLinalg
-from qatext.synthesis import cliffordt as ct
+from kitqat.synthesis import cliffordt as ct
 
 qpu = PyLinalg()
 

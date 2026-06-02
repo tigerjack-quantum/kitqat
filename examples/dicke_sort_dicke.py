@@ -1,11 +1,11 @@
-from qatext.qroutines.hamming_weight_generate import bartschiE19
+from kitqat.qroutines.hamming_weight_generate import bartschiE19
 from qat.core.console import display
 from qat.lang.AQASM import Program
 
 from qat.qpus import PyLinalg
 from math import factorial
 
-from qatext.qroutines import sorting_network as sn
+from kitqat.qroutines import sorting_network as sn
 
 
 def main():

@@ -1,11 +1,11 @@
 import numpy as np
 from qat.lang.AQASM.gates import X
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import RProgram, RSimulator
-from qatext.qroutines.crypto.sbox.des.kwan import sboxes
+from kitqat.qpus.reversible import RProgram, RSimulator
+from kitqat.qroutines.crypto.sbox.des.kwan import sboxes
 
-# from qatext.utils.statistics.depth import compute_circuit_depth
-from qatext.synthesis import cliffordt as ct
+# from kitqat.utils.statistics.depth import compute_circuit_depth
+from kitqat.synthesis import cliffordt as ct
 
 
 def ex_s1():

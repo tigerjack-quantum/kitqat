@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from qat.core.console import display
 from qat.lang.AQASM.program import Program
-from qatext.qpus.reversible import RProgram
+from kitqat.qpus.reversible import RProgram
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -48,7 +48,7 @@ class CircuitTestCase(BasicTestCase):
         elif cls.SIMULATOR.lower() == "stabs":
             cls.logger.info("Stabs")
             from qat.qpus import Stabs  # type:ignore
-            from qatext.synthesis.mctrls.mcx import ccnot, x
+            from kitqat.synthesis.mctrls.mcx import ccnot, x
 
             cls.qpu = Stabs()
             cls.links = [ccnot, x]
