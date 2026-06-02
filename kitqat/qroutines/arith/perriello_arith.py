@@ -1,4 +1,4 @@
-from qat.lang.AQASM.gates import CCNOT, CNOT, X
+from qat.lang.AQASM.gates import CCNOT, CNOT, X, SWAP
 from qat.lang.AQASM.misc import build_gate
 from qat.lang.AQASM.routines import QRoutine
 
@@ -14,8 +14,8 @@ def add_one(n: int, overflow_qubit = False, little_endian = False) -> QRoutine:
     #     qrout.apply(CNOT, i, i+1)
 
 
-@build_gate("2BIT_ADDER", [])
-def two_bit_adder() -> QRoutine:
+@build_gate("2BIT_ADDER", [bool, bool])
+def two_bit_adder(overflow=True, little_endian=False) -> QRoutine:
     """The out qubit should be initialized to 0.
 
     Given two 1-qubit registers a and b, it returns 1 on the output
@@ -24,12 +24,17 @@ def two_bit_adder() -> QRoutine:
     qrout = QRoutine()
     a = qrout.new_wires(1)
     b = qrout.new_wires(1)
-    c = qrout.new_wires(1)
+    c = None
+    if overflow:
+        c = qrout.new_wires(1)
 
     qrout.apply(CNOT, a, b)
-    qrout.apply(X, b)
-    qrout.apply(CCNOT, a, b, c)
-    qrout.apply(X, b)
+    if overflow:
+        qrout.apply(X, b)
+        qrout.apply(CCNOT, a, b, c)
+        qrout.apply(X, b)
+    if little_endian:
+        qrout.apply(SWAP, b, c)
 
     return qrout
 
