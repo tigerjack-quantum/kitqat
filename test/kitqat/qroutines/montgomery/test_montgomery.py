@@ -63,9 +63,9 @@ class TestMontgomery:
 
         res = RSimulator.simulate(prw, [])
         return (
-            get_int_from_bitarray(res["a"], False),
-            get_int_from_bitarray(res["b"], False),
-            get_int_from_bitarray(res[out_name], False),
+            get_int_from_bitarray(res["a"].tolist(), False),
+            get_int_from_bitarray(res["b"].tolist(), False),
+            get_int_from_bitarray(res[out_name].tolist(), False),
         )
 
     @pytest.mark.parametrize("n, p, val_a, val_b", EXHAUSTIVE_CASES_P13 + EDGE_AND_RANDOM_CASES)
@@ -103,7 +103,7 @@ class TestMontgomery:
         prw_form.apply(montgomery_form(n, p), qr_val[0], qr_form[0])
 
         res_form = RSimulator.simulate(prw_form, [])
-        form_val = get_int_from_bitarray(res_form["form"], False)
+        form_val = get_int_from_bitarray(res_form["form"].tolist(), False)
 
         expected_form = int(GF(val % p) * (GF(2) ** n))
 
@@ -118,7 +118,7 @@ class TestMontgomery:
         prw_res.apply(montgomery_res(n, p), qr_fval[0], qr_orig[0])
 
         res_orig = RSimulator.simulate(prw_res, [])
-        back_val = get_int_from_bitarray(res_orig["orig"], False)
+        back_val = get_int_from_bitarray(res_orig["orig"].tolist(), False)
 
         expected_back = int(GF(form_val % p) * (GF(2) ** (-n)))
 
