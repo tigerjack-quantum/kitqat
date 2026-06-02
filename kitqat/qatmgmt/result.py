@@ -1,16 +1,18 @@
-from typing import TYPE_CHECKING, Mapping, cast
+from typing import TYPE_CHECKING, Mapping, Optional, cast
 
 import numpy as np
 from bitarray import bitarray
 from kitqat.qatmgmt.program import QArray
 from kitqat.utils.bits.conversion import (get_bitstring_array,
                                           get_ints_from_bitarray)
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from qat.core.wrappers.result import Result
+    from qat.core.wrappers.result import Result, Sample
 
 
-def get_state_vector_from_result(res: "Result", nqubits: int) -> np.array:
+def get_state_vector_from_result(res: "Result",
+                                 nqubits: int) -> NDArray[np.complexfloating]:
     state_vec = np.zeros(2**nqubits, dtype=np.complex256)
     for sample in res:
         state_dec = sample.state.state
@@ -18,9 +20,10 @@ def get_state_vector_from_result(res: "Result", nqubits: int) -> np.array:
     return state_vec
 
 
-def get_sample_for_basis_dec_from_result(res: "Result",
-                                         basis_state_dec: int,
-                                         little_endian=False):
+def get_sample_for_basis_dec_from_result(
+        res: "Result",
+        basis_state_dec: int,
+        little_endian=False) -> Optional['Sample']:
     attr = "lsb_int" if little_endian else "int"
     for sample in res:
         if getattr(sample.state, attr) == basis_state_dec:
@@ -33,7 +36,8 @@ def get_sample_for_basis_dec_from_result(res: "Result",
     return None
 
 
-def get_sample_for_basis_str_from_result(res: "Result", basis_str_dec: int):
+def get_sample_for_basis_str_from_result(
+        res: "Result", basis_str_dec: int) -> Optional['Sample']:
     for sample in res:
         if sample.state.bitstring == basis_str_dec:
             return sample
@@ -49,9 +53,11 @@ def bitstring_to_register_map(
     bitstring: str,
     name_to_qarray: dict[str, QArray],
 ) -> dict[str, bitarray]:
-    """Slice a full bitstring back into named registers.
+    """Slice a full bitstring back into named registers. Can be used also with
+    sample.state.bitstring.
 
     Inverse of :meth:`register_map_to_bitstring`.
+
     """
     bits = bitarray(bitstring)
     return {name: bits[qa.slic] for name, qa in name_to_qarray.items()}
