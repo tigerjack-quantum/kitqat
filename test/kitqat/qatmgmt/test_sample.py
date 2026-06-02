@@ -36,8 +36,6 @@ class FakeSample:
         self.amplitude = amplitude
 
 
-# @pytest.mark.usefixtures("setup_simulator", "setup_logger")
-# Not needed, since both fixtures have autouse=True and scope=class
 class TestSample(CircuitTestHelpers):
 
     def _create_real_program(self):
@@ -232,21 +230,3 @@ class TestSample(CircuitTestHelpers):
                     "second": [True],
                     "third": "1",
                 }
-
-
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig(
-        level=logging.WARNING,
-        format='%(filename)s %(asctime)s - %(levelname)s - %(message)s')
-    logging.getLogger("kitqat.qatmgmt").setLevel(logging.DEBUG)
-    logging.getLogger(__name__).setLevel(logging.DEBUG)
-
-    test = TestSample()
-    # Pytest fixture setup
-    test.logger = logging.getLogger()
-    from qat.qpus import PyLinalg
-    TestSample.qpu = PyLinalg()  # or some dummy/mock QPU
-    # test.reversible_on = False
-
-    test.test_extract_qarray_values_by_named_qarrays_real()

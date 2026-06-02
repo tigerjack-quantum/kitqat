@@ -522,7 +522,7 @@ class TestErrorHandling(CircuitTestCase):
 # 6.  QPU integration tests  (slow; skipped when QPU not available)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skipif(not SLOW_TEST_ON, reason=SLOW_TEST_ON_REASON)
+# @pytest.mark.skipif(not SLOW_TEST_ON, reason=SLOW_TEST_ON_REASON)
 
 class TestQPUOracle(CircuitTestCase):
     """Cross-check RSimulator against a real QPU.

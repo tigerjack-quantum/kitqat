@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from qat.core.console import display
 from qat.lang.AQASM.program import Program
-from kitqat.qpus.reversible import RProgram
 
 if TYPE_CHECKING:
     from qat.core.wrappers.circuit import Circuit
@@ -25,7 +24,7 @@ class CircuitTestCase(BasicTestCase):
     if QLM_ON:
         SIMULATOR = os.getenv("SIMULATOR", "linalg")
     else:
-        SIMULATOR = os.getenv("SIMULATOR", "pylinalg")
+        SIMULATOR = os.getenv("SIMULATOR", "clinalg")
     # Try to use reversible simulator whenever possible
     REVERSIBLE_ON = os.getenv("REVERSIBLE_ON") is not None
 
@@ -37,8 +36,10 @@ class CircuitTestCase(BasicTestCase):
         if cls.SIMULATOR.lower() == "pylinalg":
             cls.logger.info("PyLinalg")
             from qat.pylinalg import PyLinalg  # type:ignore
-
             cls.qpu = PyLinalg()
+        elif cls.SIMULATOR.lower() == "clinalg":
+            from qat.myqlm_clinalg.qpu import CLinalg  # type:ignore
+            cls.qpu = CLinalg()
         elif cls.SIMULATOR.lower() == "linalg":
             # default to linalg
             from qat.qpus import LinAlg  # type:ignore
@@ -48,6 +49,7 @@ class CircuitTestCase(BasicTestCase):
         elif cls.SIMULATOR.lower() == "stabs":
             cls.logger.info("Stabs")
             from qat.qpus import Stabs  # type:ignore
+
             from kitqat.synthesis.mctrls.mcx import ccnot, x
 
             cls.qpu = Stabs()

@@ -1,9 +1,11 @@
-"""Notes on endianness convention. Most quantum toolkits use little-endianness;
-that is, a 3 qubit register |a \\otimes b \\otimes c> has qreg[0] = c, qreg[1] =
-b, qreg[2] = a.
+"""Notes on endianness convention. In myqlm, allocating a 3 qubit register
+means that, in the displayed circuit, the top register is 0 and the bottom is
+3. If I initialize qreg[0] = a, qreg[1] = b, qreg[2] = c, the output will be
+print as abc. This is what we refer to as big-endiannes.
 
-In myqlm, on the other hand, if qreg[0]=1, qreg[1]=0, qreg[2]=0, the output
-will be |100>. So it can be thougth as big-endianness.
+In other toolkits, instead, a 3 qubit register is allocated from bottom to top:
+bottom register is 0, top is 3, and the output will be cba. It can be thougth
+as big-endianness.
 
 """
 import functools
