@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Type, Union
 
 from qat.lang.AQASM.qbool import QBoolArray
 from qat.lang.AQASM.qint import QInt
-# from kitqat.qatmgmt.qbits import QArray
 from kitqat.qroutines.fake import fake_gate
+from qat.lang.AQASM.program import Program
 
 if TYPE_CHECKING:
     from qat.lang.AQASM.bits import Qbit, QRegister
@@ -26,15 +26,18 @@ class QArray(NamedTuple):
 class ProgramWrapper:
     _name_to_qarray: dict[str, QArray]  # Protocol match needs this visible
 
-    def __init__(self, program_instance):
-        self._program = program_instance
+    def __init__(self, program_instance = None):
+        if program_instance is None:
+            self._program = Program()
+        else:
+            self._program = program_instance
         self._name_to_qarray = {}
 
     def __getattr__(self, name):
         return getattr(self._program, name)
 
-    def to_circ(self, *, link=None, inline=False):
-        return self._program.to_circ(link=link, inline=inline)
+    def to_circ(self, **kwargs):
+        return self._program.to_circ(**kwargs)
 
     def get_name_to_qarray(self):
         return self._name_to_qarray

@@ -6,9 +6,10 @@ __authors__ = [
 import math
 
 from kitqat.algorithms.qaa_utils import oracle, precise_grover_iterations
+from kitqat.qatmgmt.result import bitstring_to_register_map
 from kitqat.qroutines.hamming_weight_generate import bartschiE19
 from kitqat.qroutines.rotation.flip_basis import flip_zero
-from qat.lang.AQASM.program import Program
+from kitqat.qatmgmt.program import ProgramWrapper
 from qat.myqlm_clinalg.qpu import CLinalg
 
 
@@ -22,11 +23,11 @@ def simulate(circuit, **job_params):
 
 
 def qaa(n, sol, init_rout, init_rout_n_states, to_simulate=True):
-    """Example of the Grov er algorithm
+    """Example of the QAA algorithm
 
     """
-    program = Program()
-    wires = program.qalloc(n)
+    program = ProgramWrapper()
+    wires = program.qarray_alloc(1, n, "input", str)
     program.apply(init_rout, wires)
 
     nsteps = precise_grover_iterations(init_rout_n_states)
@@ -46,11 +47,12 @@ def qaa(n, sol, init_rout, init_rout_n_states, to_simulate=True):
     if to_simulate:
         result = simulate(circuit)
         for sample in result:
-            print(sample.state, sample.probability)
+            print(bitstring_to_register_map(sample.state.bitstring, program._name_to_qarray))
+            # print(sample.state, sample.probability)
 
 
 def main():
-    sol = "11000000001100"
+    sol = "10000001010"
     print("*" * 80)
     n = len(sol)
     k = sol.count("1")

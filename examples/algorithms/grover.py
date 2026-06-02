@@ -5,6 +5,8 @@ __authors__ = [
 
 import numpy as np
 from kitqat.algorithms.qaa_utils import oracle, precise_grover_iterations
+from kitqat.qatmgmt.program import ProgramWrapper
+from kitqat.qatmgmt.result import bitstring_to_register_map
 from qat.lang.AQASM.gates import H, X, Z
 from qat.lang.AQASM.program import Program
 from qat.lang.AQASM.routines import QRoutine
@@ -41,8 +43,8 @@ def grover(sol: str, to_simulate=True):
     """
     n = len(sol)
 
-    program = Program()
-    wires = program.qalloc(n)
+    program = ProgramWrapper()
+    wires = program.qarray_alloc(n, 1, "input", str)
 
     for wire in wires:
         program.apply(H, wire)
@@ -60,11 +62,14 @@ def grover(sol: str, to_simulate=True):
     if to_simulate:
         result = simulate(circuit)
         for sample in result:
-            print(sample.state, sample.probability)
+            print(
+                bitstring_to_register_map(sample.state.bitstring,
+                                          program._name_to_qarray))
+            # print(sample.state, sample.probability)
 
 
 def main():
-    sol = "1101101010110"
+    sol = "110110101110"
     print("*" * 80)
     grover(sol)
 
