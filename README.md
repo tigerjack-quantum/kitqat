@@ -1,10 +1,10 @@
 # qat-utils
-A set of useful extensions for Atos qat language used for quantum simulation.
-
-The code here can be run on either the open-source [myQLM
-simulator](https://github.com/myQLM) or the [QLM
-simulator](https://atos.net/en/solutions/quantum-learning-machine), both
-provided by Atos.
+kitqat is a toolkit of utilities and algorithms built on top of the QAT module
+for quantum computing research and development. The code can be run on the
+open-source [myQLM simulator](https://github.com/myQLM). The usage with the
+custom [Qaptiva
+appliance](https://atos.net/en/solutions/quantum-learning-machine) is mostly
+untested.
 
 # Installation #
 ## Library usage
@@ -15,7 +15,7 @@ is by using
 pip install git+ssh://git@github.com/tigerjack/qat-utils.git
 ```
 
-You can additionally install 
+You can additionally install
 [myQLM](https://myqlm.github.io/myqlm_specific/install.html) with
 
 ```
