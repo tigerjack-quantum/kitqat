@@ -34,6 +34,7 @@ dev = [
 ]
 test = [
     "pytest",
+    "pytest-subtests",
     "sympy",
      "parameterized",
      "galois",
