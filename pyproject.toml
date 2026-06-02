@@ -1,6 +1,6 @@
 [project]
 name = "kitqat"
-version = "3.1.0"
+version = "3.1.2"
 description = "Extensions and utilities to QAT"
 authors = [
     {name = "Simone Perriello"}
