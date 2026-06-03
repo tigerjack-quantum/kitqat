@@ -1,4 +1,4 @@
-# qat-utils
+# kitqat
 kitqat is a toolkit of utilities and algorithms built on top of the QAT module
 for quantum computing research and development. The code can be run on the
 open-source [myQLM simulator](https://github.com/myQLM). The usage with the
