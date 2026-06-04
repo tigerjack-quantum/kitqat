@@ -6,8 +6,8 @@ custom [Qaptiva
 appliance](https://atos.net/en/solutions/quantum-learning-machine) is mostly
 untested.
 
-# Installation #
-## Library usage
+# Usage #
+## Installation
 If you would like to use the code, a possible way is to install it through git
 is by using
 
@@ -25,7 +25,6 @@ pip install 'kitqat[myqlm] @ git+ssh://git@github.com/tigerjack/kitqat.git'
 The reason to make myqlm an optional dependency is that the `kitqat` library
 can also be run on the QLM machines.
 
-## Development
 If you would like to test the code and you do not have access to a QLM, you can
 install the open source
 [myQLM](https://myqlm.github.io/myqlm_specific/install.html).
@@ -79,22 +78,17 @@ parameterized testing; this is a legacy feature coming from `unittest`, and all
 new code uses `pytest` built-in methods instead. `jupyter` is required to launch
 notebooks.
 
+## Structure
 
-
-# Structure #
-
-  * The actual code is below `kitqat`.
-  * `experiments` directory contains some experiments that have been made.
-  * The `notebooks` directory contains some jupyter notebooks explaining usage
-  of most commonly used routines.
+  * The actual code is under `kitqat`.
+  * `examples` directory contains some experiments that have been made.
   * `test` directory contains all the tests for all the implemented routines.
 
-# Tests #
-The tests can be run using `python -m unittest` (all tests) or `python -m
-unittest test.module_name` (only a specific test case, replacing module name
-with the actual name of the module). For example, if you want to run all the
-tests related to the RREF circuit, go to the root directory and run `python -m
-unittest test.test_qroutine_rref`.
+# Tests
+The tests can be run using `pytest` (all tests) or 
+`pytest -sv test/qatext/qroutines/walk/test_update_reversible0.py` 
+(only a specific test case, replacing module name
+with the actual name of the module).
 
 When launching tests, you can provide some optional environment variables
 
@@ -102,24 +96,13 @@ When launching tests, you can provide some optional environment variables
 utilities. E.g. `LOG_LEVEL=DEBUG python -m unittest test.test_qroutine_rref`.
   * `SLOW_TEST_ON=1` to enable also time consuming tests
   * `REVERSIBLE_ON=1` to enable the reversible simulator for circuits made only
-    of reversible gates
+    of reversible gates. Keep it on.
   * `QLM_ON=1` to use the QLM instead of myQLM
-  * `SIMULATOR`, to pass the name of a simulator. For myQLM, only the `pylinalg`
-    simulator is actually available. For QLM, there are a variety of available
+  * `SIMULATOR`, to pass the name of a simulator. For myQLM, the `pylinalg` and 
+    `clinalg`
+    simulators are available, and the latter is the default one. 
+    For QLM, there are a variety of available
     simulators depending on the version.
-
-# General Notes #
-
-## Endianness ##
-
-Most quantum toolkits use little-endianness to represent the quantum state. That
-is, a 3 qubit register $|a \otimes b \otimes c\rangle$ has $qreg[0] = c$,
-$qreg[1] = b$, $qreg[2] = a$.
-
-In myqlm, on the other hand, the same quantum state corresponds to $qreg[0]=a$,
-$qreg[1] = b$, $qreg[2] = c$, and therefore the notation can be thought as
-big-endian.
-
 
 # Contributing
 
@@ -132,7 +115,7 @@ repository, followed by public release on GitHub.
   [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 Significant contributions will be acknowledged in
-[CONTRIBUTORS](./docs/CONTRIBUTORS) or release notes.
+[CONTRIBUTORS](./docs/CONTRIBUTORS.md) or release notes.
 
 # Authors and citations #
 Part of the code presented here was used in the results of many of my articles.
