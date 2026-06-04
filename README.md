@@ -112,7 +112,7 @@ repository, followed by public release on GitHub.
 - **External contributors** can submit pull requests on GitHub. All public contributions
   are licensed under the [Apache License 2.0](LICENSE).
 - **Internal contributors** must follow the internal development policy described in
-  [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+  [docs/CONTRIBUTING.md](CONTRIBUTING.md).
 
 Significant contributions will be acknowledged in
 [CONTRIBUTORS](CONTRIBUTORS.md) or release notes.
