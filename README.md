@@ -12,14 +12,14 @@ If you would like to use the code, a possible way is to install it through git
 is by using
 
 ```
-pip install git+ssh://git@github.com/tigerjack/qat-utils.git
+pip install git+ssh://git@github.com/tigerjack/kitqat.git
 ```
 
 You can additionally install
 [myQLM](https://myqlm.github.io/myqlm_specific/install.html) with
 
 ```
-pip install 'kitqat[myqlm] @ git+ssh://git@github.com/tigerjack/qat-utils.git'
+pip install 'kitqat[myqlm] @ git+ssh://git@github.com/tigerjack/kitqat.git'
 ```
 
 The reason to make myqlm an optional dependency is that the `kitqat` library
@@ -55,25 +55,30 @@ pip install nptyping sympy
 pip install paramaterized
 pip install jupyter
 ```
+Then, you can clone this repository and activate the environment.
 
-`nptyping` is used to get dynamic hints for numpy. `sympy`, up to now, is only
+```
+cd <SOME_DIR>
+git clone https://github.com/tigerjack/kitqat.git
+cd kitqat
+pyenv activate myqlm_env
+```
+
+where `<SOME_DIR>` can be whatever directory you want this repository to be
+contained in.
+
+
+## Testing libraries
+
+`galois` is used to double-check 
+field operations.
+`sympy` is only
 used in testing to automatically compute the RREF of a matrix and compare the
 results against our implementation. `parameterized` is used in order to have
 parameterized testing; this is a legacy feature coming from `unittest`, and all
 new code uses `pytest` built-in methods instead. `jupyter` is required to launch
 notebooks.
 
-Then, you can clone this repository and activate the environment.
-
-```
-cd <SOME_DIR>
-git clone https://github.com/tigerjack/qat-utils.git
-cd qat-utils
-pyenv activate myqlm_env
-```
-
-where `<SOME_DIR>` can be whatever directory you want this repository to be
-contained in.
 
 
 # Structure #
@@ -116,19 +121,18 @@ $qreg[1] = b$, $qreg[2] = c$, and therefore the notation can be thought as
 big-endian.
 
 
-# Contribution Guidelines #
-If you would like to contribute to the code, please open a [GitHub
-issue](https://github.com/tigerjack/qat-utils/issues). You can learn all the
-details of myQLM by following the documentation freely available at
-[https://myqlm.github.io/](https://myqlm.github.io/). You can also ask for help
-on the official [slack channel](https://myqlmworkspace.slack.com/).
+# Contributing
 
-## Contributors
-- **Simone Perriello** — Main author and maintainer. All code not otherwise attributed.
-- **Federico Pinto** ([federico.pinto@mail.polimi.it](mailto:federico.pinto@mail.polimi.it)) — 
-  quantum arithmetic routines over GF(2ⁿ) and GF(p), classical benchmarks
-- **Alessandro Finazzi** ([alessandro2.finazzi@mail.polimi.it](mailto:alessandro2.finazzi@mail.polimi.it)) — 
-  quantum walk update operators *(code pending publication of associated paper)*
+This project uses a two-stage development model: internal development in a private
+repository, followed by public release on GitHub.
+
+- **External contributors** can submit pull requests on GitHub. All public contributions
+  are licensed under the [Apache License 2.0](LICENSE).
+- **Internal contributors** must follow the internal development policy described in
+  [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+
+Significant contributions will be acknowledged in
+[CONTRIBUTORS](./docs/CONTRIBUTORS) or release notes.
 
 # Authors and citations #
 Part of the code presented here was used in the results of many of my articles.
