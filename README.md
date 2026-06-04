@@ -115,7 +115,7 @@ repository, followed by public release on GitHub.
   [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 Significant contributions will be acknowledged in
-[CONTRIBUTORS](./docs/CONTRIBUTORS.md) or release notes.
+[CONTRIBUTORS](CONTRIBUTORS.md) or release notes.
 
 # Authors and citations #
 Part of the code presented here was used in the results of many of my articles.
