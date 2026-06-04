@@ -39,7 +39,7 @@ Only maintainers decide when and whether code is released publicly. The stages a
 
 Contributors retain authorship of their work. 
 Significant contributions will be acknowledged in
-[CONTRIBUTORS](./CONTRIBUTORS) or release notes.
+[CONTRIBUTORS](./CONTRIBUTORS.md) or release notes.
 
 ## Acknowledgment
 
